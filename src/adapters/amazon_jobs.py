@@ -86,6 +86,8 @@ class AmazonJobsAdapter(BaseAdapter):
         for cat in self.config.get("gated_categories", []):
             passes.append((f"gated:{cat}", {"category[]": cat}))
 
+        max_pages = int(self.config.get("max_pages_per_pass", 5))
+
         for label, extra_params in passes:
             yield from self._fetch_pass(
                 url=url,
@@ -94,6 +96,7 @@ class AmazonJobsAdapter(BaseAdapter):
                 extra_params=extra_params,
                 seen_ids=seen_ids,
                 pass_label=label,
+                max_pages=max_pages,
             )
 
     def _fetch_pass(
@@ -104,9 +107,11 @@ class AmazonJobsAdapter(BaseAdapter):
         extra_params: dict,
         seen_ids: set[str],
         pass_label: str,
+        max_pages: int = 5,
     ) -> Iterator[Job]:
         offset = 0
         total_hits: int | None = None
+        page = 0
 
         while True:
             params: dict = {
@@ -168,6 +173,10 @@ class AmazonJobsAdapter(BaseAdapter):
                 if icims_id:
                     seen_ids.add(icims_id)
                 yield job
+
+            page += 1
+            if page >= max_pages:
+                break
 
             offset += result_limit
             if offset >= total_hits:

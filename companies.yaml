@@ -7,6 +7,7 @@ defaults:
   max_alerts_per_run: 25
 
 filters:
+  internship_only: true   # only alert on confirmed internship postings
   early_career_keywords:
     - intern
     - internship

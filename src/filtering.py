@@ -176,10 +176,11 @@ def label_job(job: Job, filters: dict, location_ambiguous: bool) -> Job:
     """Step 6: Derive role_type, priority, matched_keywords. Returns new frozen Job."""
     raw = job.raw_text.lower() if job.raw_text else ""
 
-    # Role type detection
+    # Role type detection — use word boundaries so "international" / "internationalization"
+    # don't match as "intern".
     if job.role_type == "internship":
         role_type = "internship"
-    elif any(phrase in raw for phrase in ["intern", "internship", "co-op"]):
+    elif re.search(r'\b(?:intern(?:ship)?|co-op)\b', raw):
         role_type = "internship"
     elif any(phrase in raw for phrase in [
         "new grad", "new graduate", "graduate program", "campus hire", "university graduate"
@@ -268,6 +269,11 @@ def apply_filter_pipeline(
     # Step 6: Label job
     labelled = label_job(job, filters, location_ambiguous)
     reasons.append(f"label: role_type={labelled.role_type} priority={labelled.priority}")
+
+    # Step 7: Internship-only mode (optional global gate)
+    if filters.get("internship_only") and labelled.role_type != "internship":
+        reasons.append("internship_only: dropped")
+        return None, reasons
 
     return labelled, reasons
 

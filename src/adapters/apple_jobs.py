@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_SEARCH_URL = "https://jobs.apple.com/en-us/search"
 _DEFAULT_LOCATIONS = ["united-states-USA"]
-_DEFAULT_MAX_PAGES = 50
+_DEFAULT_MAX_PAGES = 20
 
 _DEFAULT_SOURCES = [
     {
@@ -167,7 +167,7 @@ class AppleJobsAdapter(BaseAdapter):
                 break
 
             if page < max_pages:
-                self.http.polite_delay(1.0, 2.0)
+                self.http.polite_delay(0.3, 0.7)
 
     def _parse_row(
         self,
