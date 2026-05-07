@@ -1,0 +1,26 @@
+{
+  "status": "success",
+  "data": {
+    "count": 2,
+    "positions": [
+      {
+        "id": "MSR-001",
+        "name": "Research Intern - Machine Learning",
+        "location": "Redmond, Washington",
+        "department": "Microsoft Research",
+        "canonicalPositionUrl": "https://jobs.careers.microsoft.com/global/en/job/MSR-001/Research-Intern-Machine-Learning",
+        "t_create": "2025-03-01T00:00:00Z",
+        "description": "<p>Microsoft Research is seeking Research Interns for our machine learning group. You will work on cutting-edge AI research projects and publish papers.</p>"
+      },
+      {
+        "id": "MSR-002",
+        "name": "Research Intern - Systems",
+        "location": "Redmond, Washington",
+        "department": "Microsoft Research",
+        "canonicalPositionUrl": "https://jobs.careers.microsoft.com/global/en/job/MSR-002/Research-Intern-Systems",
+        "t_create": "2025-03-10T00:00:00Z",
+        "description": "<p>Join the systems research group at Microsoft Research for a summer internship. You will collaborate with world-class researchers on distributed systems problems.</p>"
+      }
+    ]
+  }
+}

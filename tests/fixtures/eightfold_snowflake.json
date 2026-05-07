@@ -1,0 +1,26 @@
+{
+  "status": "success",
+  "data": {
+    "count": 2,
+    "positions": [
+      {
+        "id": "12345",
+        "name": "Software Engineer Intern",
+        "location": "San Mateo, California",
+        "department": "Engineering",
+        "canonicalPositionUrl": "https://careers.snowflake.com/us/en/job/SNOWUS12345EXTERNALENUS/Software-Engineer-Intern",
+        "t_create": "2025-01-15T00:00:00Z",
+        "description": "<p>Join Snowflake's Engineering team as a Software Engineer Intern. You will work on distributed systems, cloud infrastructure, and data platforms. Strong CS fundamentals required.</p>"
+      },
+      {
+        "id": "67890",
+        "name": "Data Science Intern",
+        "location": "Bellevue, Washington",
+        "department": "Data Science",
+        "canonicalPositionUrl": "https://careers.snowflake.com/us/en/job/SNOWUS67890EXTERNALENUS/Data-Science-Intern",
+        "t_create": "2025-02-01T00:00:00Z",
+        "description": "<p>Work alongside Snowflake's Data Science team. You will build machine learning models, work with large-scale data, and derive insights from petabytes of information.</p>"
+      }
+    ]
+  }
+}

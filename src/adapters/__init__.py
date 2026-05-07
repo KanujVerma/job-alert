@@ -21,3 +21,11 @@ from src.adapters.apple_jobs import AppleJobsAdapter  # noqa: E402
 ADAPTER_REGISTRY["oracle_careers"] = OracleAdapter
 ADAPTER_REGISTRY["amazon_jobs"] = AmazonJobsAdapter
 ADAPTER_REGISTRY["apple_jobs"] = AppleJobsAdapter
+
+from src.adapters.eightfold import EightfoldAdapter  # noqa: E402
+from src.adapters.microsoft_research import MicrosoftResearchAdapter  # noqa: E402
+from src.adapters.generic_html import GenericHTMLAdapter  # noqa: E402
+
+ADAPTER_REGISTRY["eightfold"] = EightfoldAdapter
+ADAPTER_REGISTRY["microsoft_research"] = MicrosoftResearchAdapter
+ADAPTER_REGISTRY["generic_html"] = GenericHTMLAdapter
