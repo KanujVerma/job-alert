@@ -162,7 +162,7 @@ companies:
     adapter: oracle_careers
     enabled: true
     config:
-      base_url: https://careers.oracle.com
+      base_url: https://eeho.fa.us2.oraclecloud.com
       api_path: /hcmRestApi/resources/latest/recruitingCEJobRequisitions
 
   - name: Microsoft Research

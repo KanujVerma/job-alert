@@ -1,55 +1,49 @@
 # apple_jobs.py
 """
-Apple Jobs adapter — jobs.apple.com/api/role/search (POST).
+Apple Jobs adapter — HTML scraping of jobs.apple.com/en-us/search.
+
+The old POST API (jobs.apple.com/api/role/search) is dead as of 2026-05 —
+it returns 404 for all requests. The search page is server-side rendered and
+exposes job listings directly in HTML, so we scrape it with BeautifulSoup.
 
 The adapter runs two passes based on config["sources"]:
 
 1. Internship pass (kind: "internships"):
-   POST body includes teams: ["internships-STDNT-INTRN"]
+   GET with &team=internships-STDNT-INTRN query param.
    All yielded jobs get role_type = "internship".
 
 2. General pass (kind: "general"):
-   POST body uses empty teams filter.
+   GET without a team filter (all US jobs).
    Jobs get role_type = "unknown".
    Gating (require_early_career) is enforced by the filter pipeline, not here.
 
 Deduplication: if a job id appears in pass 1, it is NOT yielded again in pass 2.
 
-Response shape:
-    {
-        "searchResults": [
-            {
-                "id": "200606296",
-                "postingTitle": "Software Engineering Intern",
-                "location": "Cupertino, California, United States",
-                "teamName": "Software and Services",
-                "jobNumber": "200606296",
-                "homeOffice": false,
-                "jobUrl": "https://jobs.apple.com/en-us/details/200606296/..."
-            }
-        ],
-        "currentPage": 1,
-        "totalRecords": 87,
-        "pageSize": 20
-    }
+Page structure (each page, 20 unique jobs):
+    <div class="... job-list-item ..." id="search-search-job-title-PIPE-{id}-{n}">
+      <div class="... job-title-link ...">
+        <h3><a href="/en-us/details/{id}/{slug}?team=TEAM">Title</a></h3>
+        <span class="team-name mt-0">Team Name</span>
+        <span class="job-posted-date">May 07, 2026</span>
+      </div>
+      <div class="... job-title-location ...">
+        <span class="a11y">Location</span>
+        <span class="table--advanced-search__location-sub">Location Text</span>
+      </div>
+    </div>
 
-HTML fallback (general source only):
-    If the POST returns non-200, the adapter attempts a GET to
-    https://jobs.apple.com/en-us/search?location=united-states-USA
-    and parses job listings with BeautifulSoup. If that also fails,
-    yields nothing and logs the error.
-
-Note: As of 2026-05 the API endpoint redirects with 301 in this
-environment; the adapter handles this gracefully by logging and
-falling back or returning nothing.
+Pagination:
+    GET /en-us/search?location=united-states-USA&page=N
+    Stop when page returns no job rows (past last page).
+    Capped at max_pages (default 50) to prevent runaway.
 
 Config keys:
-    api_url   (str): Default "https://jobs.apple.com/api/role/search"
-    fallback_url (str): Default "https://jobs.apple.com/en-us/search"
-    locations (list[str]): Location filter slugs. Default ["united-states-USA"].
-    sources   (list[dict]): List of source configs with keys:
+    search_url (str): Default "https://jobs.apple.com/en-us/search"
+    locations  (list[str]): Location slugs. Default ["united-states-USA"].
+    max_pages  (int): Max pages per pass. Default 50.
+    sources    (list[dict]): List of source configs with keys:
                 kind       (str): "internships" or "general"
-                teams      (list[str], optional): team slugs to filter
+                team       (str, optional): team slug to filter
                 require_early_career (bool): passed through to filter pipeline
 """
 
@@ -69,22 +63,23 @@ from src.models import Job
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_API_URL = "https://jobs.apple.com/api/role/search"
-_DEFAULT_FALLBACK_URL = "https://jobs.apple.com/en-us/search"
+_DEFAULT_SEARCH_URL = "https://jobs.apple.com/en-us/search"
 _DEFAULT_LOCATIONS = ["united-states-USA"]
+_DEFAULT_MAX_PAGES = 50
 
 _DEFAULT_SOURCES = [
     {
         "kind": "internships",
-        "teams": ["internships-STDNT-INTRN"],
+        "team": "internships-STDNT-INTRN",
         "require_early_career": False,
     },
     {
         "kind": "general",
-        "teams": [],
         "require_early_career": True,
     },
 ]
+
+_POSTED_DATE_FMT = "%b %d, %Y"  # "May 07, 2026"
 
 
 class AppleJobsAdapter(BaseAdapter):
@@ -93,140 +88,131 @@ class AppleJobsAdapter(BaseAdapter):
     def fetch(self) -> Iterator[Job]:
         seen_ids: set[str] = set()
 
-        api_url = self.config.get("api_url", _DEFAULT_API_URL)
+        search_url = self.config.get("search_url", _DEFAULT_SEARCH_URL)
         locations = self.config.get("locations", _DEFAULT_LOCATIONS)
+        max_pages = int(self.config.get("max_pages", _DEFAULT_MAX_PAGES))
         sources = self.config.get("sources", _DEFAULT_SOURCES)
 
         for source in sources:
             kind = source.get("kind", "general")
-            teams = source.get("teams", [])
+            team = source.get("team", "")
             role_type = "internship" if kind == "internships" else "unknown"
 
             yield from self._fetch_source(
-                api_url=api_url,
+                search_url=search_url,
                 locations=locations,
-                teams=teams,
+                team=team,
                 role_type=role_type,
                 seen_ids=seen_ids,
                 source_kind=kind,
+                max_pages=max_pages,
             )
 
     def _fetch_source(
         self,
-        api_url: str,
+        search_url: str,
         locations: list[str],
-        teams: list[str],
+        team: str,
         role_type: str,
         seen_ids: set[str],
         source_kind: str,
+        max_pages: int,
     ) -> Iterator[Job]:
-        page = 1
-        page_size: int | None = None
-        total_records: int | None = None
+        try:
+            from bs4 import BeautifulSoup  # type: ignore
+        except ImportError:
+            logger.error(
+                "Apple Jobs adapter requires beautifulsoup4. "
+                "Install it: pip install beautifulsoup4"
+            )
+            return
 
-        while True:
-            payload: dict[str, Any] = {
-                "query": "",
-                "filters": {
-                    "range": {
-                        "standardWeeklyHours": {"start": None, "end": None}
-                    },
-                    "roleChange": False,
-                    "managementLevel": [],
-                    "locations": locations,
-                },
+        location_param = locations[0] if locations else "united-states-USA"
+
+        for page in range(1, max_pages + 1):
+            params: dict[str, Any] = {
+                "location": location_param,
                 "page": page,
-                "locale": "en-US",
-                "sort": "newest",
             }
-            if teams:
-                payload["filters"]["teams"] = teams
+            if team:
+                params["team"] = team
 
             try:
-                resp = self.http.post(api_url, json=payload)
-            except requests.HTTPError as exc:
-                logger.warning(
-                    "Apple Jobs '%s' HTTP error on page %d: %s",
-                    source_kind, page, exc,
-                )
-                if source_kind == "general":
-                    yield from self._html_fallback(role_type, seen_ids)
-                return
+                resp = self.http.get(search_url, params=params)
             except requests.RequestException as exc:
                 logger.warning(
                     "Apple Jobs '%s' request failed on page %d: %s",
                     source_kind, page, exc,
                 )
-                if source_kind == "general":
-                    yield from self._html_fallback(role_type, seen_ids)
                 return
 
-            # Check content type — Apple may return HTML on error
-            ctype = resp.headers.get("content-type", "")
-            if "json" not in ctype:
-                logger.warning(
-                    "Apple Jobs '%s' returned non-JSON (status %d). "
-                    "content-type: %s",
-                    source_kind, resp.status_code, ctype,
-                )
-                if source_kind == "general":
-                    yield from self._html_fallback(role_type, seen_ids)
-                return
+            soup = BeautifulSoup(resp.text, "html.parser")
+            rows = soup.find_all(
+                "div",
+                class_=lambda c: c and "job-list-item" in c,
+            )
 
-            try:
-                data = resp.json()
-            except ValueError as exc:
-                logger.warning(
-                    "Apple Jobs '%s' invalid JSON on page %d: %s",
-                    source_kind, page, exc,
-                )
-                return
-
-            if page_size is None:
-                page_size = data.get("pageSize", 20)
-            if total_records is None:
-                total_records = data.get("totalRecords", 0)
-
-            results = data.get("searchResults", [])
-            if not results:
+            if not rows:
                 break
 
-            for raw_job in results:
-                job = self._parse_job(raw_job, role_type)
-                if job is None:
-                    continue
-                job_id_key = str(raw_job.get("id") or raw_job.get("jobNumber") or "")
-                if job_id_key and job_id_key in seen_ids:
-                    continue
-                if job_id_key:
-                    seen_ids.add(job_id_key)
-                yield job
+            yielded_this_page = 0
+            for row in rows:
+                job = self._parse_row(row, role_type, seen_ids)
+                if job is not None:
+                    yielded_this_page += 1
+                    yield job
 
-            # Pagination: continue while (page-1)*pageSize < totalRecords
-            if total_records is not None and page_size:
-                if page * page_size >= total_records:
-                    break
-            else:
+            if yielded_this_page == 0:
+                # All jobs on this page were already seen — stop
                 break
 
-            page += 1
-            self.http.polite_delay(1.0, 2.0)
+            if page < max_pages:
+                self.http.polite_delay(1.0, 2.0)
 
-    def _parse_job(self, raw: dict, role_type: str) -> Job | None:
-        title = (raw.get("postingTitle") or "").strip()
+    def _parse_row(
+        self,
+        row: Any,
+        role_type: str,
+        seen_ids: set[str],
+    ) -> Job | None:
+        # Find the main job link (not the locationPicker variant)
+        link = row.find(
+            "a",
+            href=lambda h: h and "/en-us/details/" in h and "locationPicker" not in h,
+        )
+        if link is None:
+            return None
+
+        title = link.get_text(strip=True)
         if not title:
             return None
 
-        official_id = str(raw.get("id") or raw.get("jobNumber") or "").strip()
-        location = (raw.get("location") or "").strip()
-        department = (raw.get("teamName") or None)
-        if department:
-            department = department.strip()
+        href = link.get("href", "")
+        # Extract official ID: /en-us/details/{id}/{slug}
+        id_match = re.match(r"/en-us/details/([^/]+)/", href)
+        official_id = id_match.group(1) if id_match else ""
 
-        job_url = (raw.get("jobUrl") or "").strip()
-        if not job_url and official_id:
-            slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
-            job_url = f"https://jobs.apple.com/en-us/details/{official_id}/{slug}"
+        # Dedup by official ID across passes
+        if official_id and official_id in seen_ids:
+            return None
+        if official_id:
+            seen_ids.add(official_id)
+
+        job_url = "https://jobs.apple.com" + href if href.startswith("/") else href
+
+        # Team / department
+        team_span = row.find("span", class_="team-name")
+        department = team_span.get_text(strip=True) if team_span else None
+        if not department:
+            department = None
+
+        # Location
+        loc_span = row.find("span", class_="table--advanced-search__location-sub")
+        location = loc_span.get_text(strip=True) if loc_span else ""
+
+        # Posted date
+        date_span = row.find("span", class_="job-posted-date")
+        posted_at = _parse_posted_date(date_span.get_text(strip=True) if date_span else "")
 
         raw_parts = [title, location]
         if department:
@@ -250,7 +236,7 @@ class AppleJobsAdapter(BaseAdapter):
             category=None,
             url=job_url,
             source_platform=self.source_platform,
-            posted_at=None,
+            posted_at=posted_at,
             detected_at=datetime.now(tz=timezone.utc),
             raw_text=raw_text,
             role_type=role_type,
@@ -258,64 +244,13 @@ class AppleJobsAdapter(BaseAdapter):
             matched_keywords=(),
         )
 
-    def _html_fallback(self, role_type: str, seen_ids: set[str]) -> Iterator[Job]:
-        """
-        HTML fallback: GET the Apple jobs search page and parse with BeautifulSoup.
-        Used only for the 'general' source when the API is unavailable.
-        Returns nothing if BeautifulSoup parsing fails.
-        """
-        fallback_url = self.config.get("fallback_url", _DEFAULT_FALLBACK_URL)
-        params = {"location": "united-states-USA"}
-        logger.warning(
-            "Apple Jobs API unavailable — falling back to HTML scrape: %s",
-            fallback_url,
+
+def _parse_posted_date(text: str) -> datetime | None:
+    if not text:
+        return None
+    try:
+        return datetime.strptime(text.strip(), _POSTED_DATE_FMT).replace(
+            tzinfo=timezone.utc
         )
-
-        try:
-            resp = self.http.get(fallback_url, params=params)
-        except requests.RequestException as exc:
-            logger.error("Apple Jobs HTML fallback request failed: %s", exc)
-            return
-
-        try:
-            from bs4 import BeautifulSoup  # type: ignore
-        except ImportError:
-            logger.error(
-                "Apple Jobs HTML fallback: BeautifulSoup not installed. "
-                "Install beautifulsoup4 to enable fallback parsing."
-            )
-            return
-
-        try:
-            soup = BeautifulSoup(resp.text, "html.parser")
-            # Apple's search page renders jobs in <a> tags with data attributes
-            # or in JSON embedded in a <script id="__NEXT_DATA__"> block.
-            script_tag = soup.find("script", {"id": "__NEXT_DATA__"})
-            if script_tag and script_tag.string:
-                import json
-                page_data = json.loads(script_tag.string)
-                # Attempt to find job listings in the page data
-                jobs_data = (
-                    page_data.get("props", {})
-                    .get("pageProps", {})
-                    .get("searchResults", [])
-                )
-                for raw_job in jobs_data:
-                    job = self._parse_job(raw_job, role_type)
-                    if job is None:
-                        continue
-                    job_id_key = str(
-                        raw_job.get("id") or raw_job.get("jobNumber") or ""
-                    )
-                    if job_id_key and job_id_key in seen_ids:
-                        continue
-                    if job_id_key:
-                        seen_ids.add(job_id_key)
-                    yield job
-            else:
-                logger.warning(
-                    "Apple Jobs HTML fallback: could not find __NEXT_DATA__ "
-                    "in page. No jobs extracted."
-                )
-        except Exception as exc:
-            logger.error("Apple Jobs HTML fallback parsing failed: %s", exc)
+    except ValueError:
+        return None

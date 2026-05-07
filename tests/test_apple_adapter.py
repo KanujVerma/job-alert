@@ -1,8 +1,6 @@
-"""Tests for AppleJobsAdapter."""
+"""Tests for AppleJobsAdapter (HTML scraping mode)."""
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,14 +8,50 @@ import requests
 
 from src.adapters.apple_jobs import AppleJobsAdapter
 from src.http import HTTPClient
-from src.models import Job
-
-FIXTURES = Path(__file__).parent / "fixtures"
 
 
-def _load_fixture(name: str) -> dict:
-    return json.loads((FIXTURES / name).read_text())
+# ---------------------------------------------------------------------------
+# HTML helpers
+# ---------------------------------------------------------------------------
 
+def _job_card_html(
+    job_id: str,
+    title: str,
+    team: str = "Software and Services",
+    location: str = "Cupertino, California, United States",
+    posted: str = "May 07, 2026",
+    team_code: str = "SOFTDV",
+) -> str:
+    loc_span = (
+        f'<span class="table--advanced-search__location-sub">{location}</span>'
+        if location else ""
+    )
+    return f"""
+<div class="d-flex flex-row row large-12 job-title job-list-item" id="search-job-{job_id}">
+  <div class="d-flex flex-column column large-6 small-12 text-align-start job-title-link">
+    <h3><a class="link-inline" href="/en-us/details/{job_id}/slug?team={team_code}">{title}</a></h3>
+    <a class="link-inline" href="/en-us/details/{job_id}/slug/locationPicker">Choose Location</a>
+    <span class="team-name mt-0">{team}</span>
+    <span class="job-posted-date">{posted}</span>
+  </div>
+  <div class="column large-4 small-12 text-align-start job-title-location">
+    <span class="a11y">Location</span>
+    {loc_span}
+  </div>
+</div>"""
+
+
+def _page_html(*cards: str) -> str:
+    return "<html><body>" + "".join(cards) + "</body></html>"
+
+
+def _empty_page() -> str:
+    return "<html><body></body></html>"
+
+
+# ---------------------------------------------------------------------------
+# Test fixtures / factories
+# ---------------------------------------------------------------------------
 
 def _make_http() -> MagicMock:
     http = MagicMock(spec=HTTPClient)
@@ -25,188 +59,179 @@ def _make_http() -> MagicMock:
     return http
 
 
-def _make_adapter(http: MagicMock, config: dict | None = None) -> AppleJobsAdapter:
+def _mock_get(text: str, status: int = 200) -> MagicMock:
+    resp = MagicMock()
+    resp.status_code = status
+    resp.text = text
+    resp.raise_for_status = MagicMock()
+    return resp
+
+
+def _make_adapter(
+    http: MagicMock,
+    config: dict | None = None,
+) -> AppleJobsAdapter:
     cfg = config or {
-        "api_url": "https://jobs.apple.com/api/role/search",
+        "search_url": "https://jobs.apple.com/en-us/search",
         "locations": ["united-states-USA"],
+        "max_pages": 10,
         "sources": [
-            {
-                "kind": "internships",
-                "teams": ["internships-STDNT-INTRN"],
-                "require_early_career": False,
-            },
-            {
-                "kind": "general",
-                "teams": [],
-                "require_early_career": True,
-            },
+            {"kind": "internships", "team": "internships-STDNT-INTRN", "require_early_career": False},
+            {"kind": "general", "require_early_career": True},
         ],
     }
     return AppleJobsAdapter(company="Apple", config=cfg, http=http)
 
 
-def _mock_response(data: dict, status: int = 200, content_type: str = "application/json") -> MagicMock:
-    resp = MagicMock()
-    resp.status_code = status
-    resp.json.return_value = data
-    resp.headers = {"content-type": content_type}
-    resp.raise_for_status = MagicMock()
-    return resp
-
-
-def _make_empty_response() -> MagicMock:
-    return _mock_response({"searchResults": [], "currentPage": 1, "totalRecords": 0, "pageSize": 20})
-
-
 # ---------------------------------------------------------------------------
-# Basic role_type assignment
+# Role type assignment
 # ---------------------------------------------------------------------------
 
-class TestAppleRoleType:
+class TestRoleType:
     def test_internship_source_sets_internship_role_type(self):
-        fixture = _load_fixture("apple_jobs_intern.json")
+        page = _page_html(_job_card_html("100", "Software Engineering Intern"))
         http = _make_http()
-        # intern pass → general pass (empty)
-        http.post.side_effect = [
-            _mock_response(fixture),
-            _make_empty_response(),
+        # intern: page1, then empty; general: empty
+        http.get.side_effect = [
+            _mock_get(page),        # intern page 1
+            _mock_get(_empty_page()),  # intern page 2 (stop)
+            _mock_get(_empty_page()),  # general page 1
         ]
-
-        adapter = _make_adapter(http)
-        jobs = list(adapter.fetch())
-
-        intern_jobs = [j for j in jobs if j.role_type == "internship"]
-        assert len(intern_jobs) == len(fixture["searchResults"])
+        jobs = list(_make_adapter(http).fetch())
+        assert len(jobs) == 1
+        assert jobs[0].role_type == "internship"
 
     def test_general_source_sets_unknown_role_type(self):
-        fixture = _load_fixture("apple_jobs_general.json")
+        page = _page_html(_job_card_html("200", "Software Engineer"))
         http = _make_http()
-        # intern pass (empty) → general pass
-        http.post.side_effect = [
-            _make_empty_response(),
-            _mock_response(fixture),
+        # intern: empty; general: page1, then empty
+        http.get.side_effect = [
+            _mock_get(_empty_page()),  # intern page 1
+            _mock_get(page),           # general page 1
+            _mock_get(_empty_page()),  # general page 2 (stop)
         ]
-
-        adapter = _make_adapter(http)
-        jobs = list(adapter.fetch())
-
-        general_jobs = [j for j in jobs if j.role_type == "unknown"]
-        assert len(general_jobs) == len(fixture["searchResults"])
-
-    def test_all_intern_jobs_have_internship_role_type(self):
-        fixture = _load_fixture("apple_jobs_intern.json")
-        http = _make_http()
-        http.post.side_effect = [_mock_response(fixture), _make_empty_response()]
-
         jobs = list(_make_adapter(http).fetch())
-        for j in jobs:
-            if j.title != "Software Engineer, New Grad":  # won't appear from intern fixture
-                assert j.role_type == "internship"
+        assert len(jobs) == 1
+        assert jobs[0].role_type == "unknown"
+
+    def test_internship_only_config(self):
+        page = _page_html(
+            _job_card_html("101", "iOS Intern"),
+            _job_card_html("102", "ML Intern"),
+        )
+        http = _make_http()
+        http.get.side_effect = [_mock_get(page), _mock_get(_empty_page())]
+        config = {
+            "search_url": "https://jobs.apple.com/en-us/search",
+            "locations": ["united-states-USA"],
+            "max_pages": 5,
+            "sources": [{"kind": "internships", "team": "internships-STDNT-INTRN"}],
+        }
+        adapter = AppleJobsAdapter(company="Apple", config=config, http=http)
+        jobs = list(adapter.fetch())
+        assert len(jobs) == 2
+        assert all(j.role_type == "internship" for j in jobs)
 
 
 # ---------------------------------------------------------------------------
 # Field mapping
 # ---------------------------------------------------------------------------
 
-class TestAppleFieldMapping:
+class TestFieldMapping:
+    def _single_job(self) -> list:
+        page = _page_html(_job_card_html(
+            job_id="200606296",
+            title="Software Engineering Intern",
+            team="Software and Services",
+            location="Cupertino, California, United States",
+            posted="May 07, 2026",
+        ))
+        http = _make_http()
+        http.get.side_effect = [
+            _mock_get(page),
+            _mock_get(_empty_page()),
+            _mock_get(_empty_page()),
+        ]
+        return list(_make_adapter(http).fetch())
+
     def test_source_platform(self):
-        fixture = _load_fixture("apple_jobs_intern.json")
-        http = _make_http()
-        http.post.side_effect = [_mock_response(fixture), _make_empty_response()]
+        jobs = self._single_job()
+        assert jobs[0].source_platform == "apple_jobs"
 
-        jobs = list(_make_adapter(http).fetch())
-        for j in jobs:
-            assert j.source_platform == "apple_jobs"
+    def test_company(self):
+        jobs = self._single_job()
+        assert jobs[0].company == "Apple"
 
-    def test_field_mapping_first_intern_job(self):
-        fixture = _load_fixture("apple_jobs_intern.json")
-        http = _make_http()
-        http.post.side_effect = [_mock_response(fixture), _make_empty_response()]
+    def test_title(self):
+        jobs = self._single_job()
+        assert jobs[0].title == "Software Engineering Intern"
 
-        jobs = list(_make_adapter(http).fetch())
-        j = jobs[0]
+    def test_location(self):
+        jobs = self._single_job()
+        assert jobs[0].location == "Cupertino, California, United States"
 
-        assert j.title == "Software Engineering Intern"
-        assert j.location == "Cupertino, California, United States"
-        assert j.department == "Software and Services"
-        assert "200606296" in j.url
-        assert j.category is None
-        assert j.posted_at is None  # Apple API has no posted_at in search results
+    def test_department(self):
+        jobs = self._single_job()
+        assert jobs[0].department == "Software and Services"
+
+    def test_url_contains_official_id(self):
+        jobs = self._single_job()
+        assert "200606296" in jobs[0].url
+        assert "jobs.apple.com" in jobs[0].url
 
     def test_official_id_in_job_id(self):
-        fixture = _load_fixture("apple_jobs_intern.json")
-        http = _make_http()
-        http.post.side_effect = [_mock_response(fixture), _make_empty_response()]
-
-        jobs = list(_make_adapter(http).fetch())
+        jobs = self._single_job()
         assert "200606296" in jobs[0].id
 
-    def test_raw_text_lowercased_contains_title_location_team(self):
-        fixture = _load_fixture("apple_jobs_intern.json")
-        http = _make_http()
-        http.post.side_effect = [_mock_response(fixture), _make_empty_response()]
+    def test_posted_at_parsed(self):
+        jobs = self._single_job()
+        assert jobs[0].posted_at is not None
+        assert jobs[0].posted_at.year == 2026
+        assert jobs[0].posted_at.month == 5
+        assert jobs[0].posted_at.day == 7
 
-        jobs = list(_make_adapter(http).fetch())
+    def test_raw_text_lowercase_contains_key_fields(self):
+        jobs = self._single_job()
         j = jobs[0]
         assert j.raw_text == j.raw_text.lower()
         assert "software engineering intern" in j.raw_text
         assert "cupertino" in j.raw_text
         assert "software and services" in j.raw_text
 
-    def test_url_constructed_when_missing(self):
-        data = {
-            "searchResults": [
-                {
-                    "id": "999888",
-                    "postingTitle": "Test Role",
-                    "location": "Cupertino, CA",
-                    "teamName": "Engineering",
-                    "jobNumber": "999888",
-                    "homeOffice": False,
-                    "jobUrl": "",  # empty
-                }
-            ],
-            "currentPage": 1,
-            "totalRecords": 1,
-            "pageSize": 20,
-        }
-        http = _make_http()
-        http.post.side_effect = [_mock_response(data), _make_empty_response()]
+    def test_category_is_none(self):
+        jobs = self._single_job()
+        assert jobs[0].category is None
 
+    def test_empty_location_kept(self):
+        page = _page_html(_job_card_html("300", "Remote Job", location=""))
+        http = _make_http()
+        http.get.side_effect = [
+            _mock_get(page), _mock_get(_empty_page()), _mock_get(_empty_page()),
+        ]
         jobs = list(_make_adapter(http).fetch())
-        assert len(jobs) == 1
-        assert "999888" in jobs[0].url
-        assert "jobs.apple.com" in jobs[0].url
+        assert jobs[0].location == ""
 
     def test_job_without_title_skipped(self):
-        data = {
-            "searchResults": [
-                {
-                    "id": "111",
-                    "postingTitle": "",
-                    "location": "US",
-                    "teamName": "Eng",
-                    "jobNumber": "111",
-                    "homeOffice": False,
-                    "jobUrl": "https://example.com",
-                },
-                {
-                    "id": "222",
-                    "postingTitle": "Real Job",
-                    "location": "Cupertino",
-                    "teamName": "Eng",
-                    "jobNumber": "222",
-                    "homeOffice": False,
-                    "jobUrl": "https://jobs.apple.com/222",
-                },
-            ],
-            "currentPage": 1,
-            "totalRecords": 2,
-            "pageSize": 20,
-        }
+        # locationPicker link should not be matched; empty-title row skipped
+        bad_html = """
+<html><body>
+<div class="job-list-item">
+  <div class="job-title-link">
+    <h3><a href="/en-us/details/111/slug/locationPicker">Choose</a></h3>
+    <span class="team-name">Eng</span>
+  </div>
+</div>
+<div class="job-list-item">
+  <div class="job-title-link">
+    <h3><a href="/en-us/details/222/real-job?team=ENG">Real Job</a></h3>
+    <span class="team-name">Eng</span>
+  </div>
+</div>
+</body></html>"""
         http = _make_http()
-        http.post.side_effect = [_mock_response(data), _make_empty_response()]
-
+        http.get.side_effect = [
+            _mock_get(bad_html), _mock_get(_empty_page()), _mock_get(_empty_page()),
+        ]
         jobs = list(_make_adapter(http).fetch())
         assert len(jobs) == 1
         assert jobs[0].title == "Real Job"
@@ -216,198 +241,169 @@ class TestAppleFieldMapping:
 # Deduplication
 # ---------------------------------------------------------------------------
 
-class TestAppleDeduplication:
-    def test_job_in_intern_and_general_yielded_once(self):
-        """
-        apple_jobs_general.json contains id 200606296 which is also in
-        apple_jobs_intern.json. It should only be yielded once.
-        """
-        intern_fixture = _load_fixture("apple_jobs_intern.json")
-        general_fixture = _load_fixture("apple_jobs_general.json")
-
+class TestDeduplication:
+    def test_job_appearing_in_both_passes_yielded_once(self):
+        shared_card = _job_card_html("200606296", "Software Engineering Intern")
+        intern_page = _page_html(shared_card)
+        general_page = _page_html(
+            shared_card,
+            _job_card_html("200606299", "New Grad Software Engineer"),
+        )
         http = _make_http()
-        http.post.side_effect = [
-            _mock_response(intern_fixture),
-            _mock_response(general_fixture),
+        http.get.side_effect = [
+            _mock_get(intern_page),    # intern page 1
+            _mock_get(_empty_page()),  # intern page 2
+            _mock_get(general_page),   # general page 1
+            _mock_get(_empty_page()),  # general page 2
         ]
-
         jobs = list(_make_adapter(http).fetch())
 
-        # Count how many times 200606296 appears
-        count_296 = sum(1 for j in jobs if "200606296" in j.id)
-        assert count_296 == 1
+        ids_with_296 = [j for j in jobs if "200606296" in j.id]
+        assert len(ids_with_296) == 1
 
-    def test_total_unique_jobs_across_both_passes(self):
+    def test_role_type_from_first_pass_wins(self):
+        shared_card = _job_card_html("200606296", "Software Engineering Intern")
+        http = _make_http()
+        http.get.side_effect = [
+            _mock_get(_page_html(shared_card)),   # intern page 1
+            _mock_get(_empty_page()),              # intern page 2
+            _mock_get(_page_html(shared_card)),   # general page 1 (dup)
+            _mock_get(_empty_page()),              # general page 2
+        ]
+        jobs = list(_make_adapter(http).fetch())
+        job = next(j for j in jobs if "200606296" in j.id)
+        assert job.role_type == "internship"
+
+    def test_total_unique_across_both_passes(self):
         """3 intern + 2 general (1 overlap) = 4 unique."""
-        intern_fixture = _load_fixture("apple_jobs_intern.json")
-        general_fixture = _load_fixture("apple_jobs_general.json")
-
+        intern_page = _page_html(
+            _job_card_html("101", "Intern A"),
+            _job_card_html("102", "Intern B"),
+            _job_card_html("103", "Intern C"),
+        )
+        general_page = _page_html(
+            _job_card_html("103", "Intern C"),   # dup
+            _job_card_html("200", "New Grad Dev"),
+        )
         http = _make_http()
-        http.post.side_effect = [
-            _mock_response(intern_fixture),
-            _mock_response(general_fixture),
+        http.get.side_effect = [
+            _mock_get(intern_page), _mock_get(_empty_page()),
+            _mock_get(general_page), _mock_get(_empty_page()),
         ]
-
         jobs = list(_make_adapter(http).fetch())
-        # intern: 200606296, 200606297, 200606298
-        # general: 200606299 (new), 200606296 (dup)
         assert len(jobs) == 4
-
-    def test_role_type_preserved_from_first_pass(self):
-        """Shared job yielded as internship (first pass), not unknown (second)."""
-        intern_fixture = _load_fixture("apple_jobs_intern.json")
-        general_fixture = _load_fixture("apple_jobs_general.json")
-
-        http = _make_http()
-        http.post.side_effect = [
-            _mock_response(intern_fixture),
-            _mock_response(general_fixture),
-        ]
-
-        jobs = list(_make_adapter(http).fetch())
-        job_296 = next(j for j in jobs if "200606296" in j.id)
-        assert job_296.role_type == "internship"
 
 
 # ---------------------------------------------------------------------------
 # Pagination
 # ---------------------------------------------------------------------------
 
-class TestApplePagination:
-    def test_intern_pagination_fetches_all_pages(self):
-        page1 = {
-            "searchResults": [
-                {"id": "1", "postingTitle": "Intern A", "location": "Cupertino, CA",
-                 "teamName": "Eng", "jobNumber": "1", "homeOffice": False,
-                 "jobUrl": "https://jobs.apple.com/1"},
-            ],
-            "currentPage": 1,
-            "totalRecords": 2,
-            "pageSize": 1,
-        }
-        page2 = {
-            "searchResults": [
-                {"id": "2", "postingTitle": "Intern B", "location": "Seattle, WA",
-                 "teamName": "Eng", "jobNumber": "2", "homeOffice": False,
-                 "jobUrl": "https://jobs.apple.com/2"},
-            ],
-            "currentPage": 2,
-            "totalRecords": 2,
-            "pageSize": 1,
-        }
+class TestPagination:
+    def test_fetches_multiple_pages_until_empty(self):
+        page1 = _page_html(_job_card_html("1", "Job One"))
+        page2 = _page_html(_job_card_html("2", "Job Two"))
         http = _make_http()
-        # intern: page1, page2 | general: empty
-        http.post.side_effect = [
-            _mock_response(page1),
-            _mock_response(page2),
-            _make_empty_response(),
+        http.get.side_effect = [
+            _mock_get(page1),           # intern page 1
+            _mock_get(page2),           # intern page 2
+            _mock_get(_empty_page()),   # intern page 3 (stop)
+            _mock_get(_empty_page()),   # general page 1
         ]
+        config = {
+            "search_url": "https://jobs.apple.com/en-us/search",
+            "locations": ["united-states-USA"],
+            "max_pages": 10,
+            "sources": [
+                {"kind": "internships", "team": "internships-STDNT-INTRN"},
+                {"kind": "general"},
+            ],
+        }
+        jobs = list(AppleJobsAdapter(company="Apple", config=config, http=http).fetch())
+        assert len([j for j in jobs if j.role_type == "internship"]) == 2
+
+    def test_max_pages_cap_respected(self):
+        always_full = _page_html(_job_card_html("999", "Infinite Job"))
+        # Each call returns a page with the same job ID → after page 1 all are dups → stops
+        # To test max_pages cap, we need unique IDs each page
+        pages = [_mock_get(_page_html(_job_card_html(str(i), f"Job {i}"))) for i in range(20)]
+        http = _make_http()
+        http.get.side_effect = pages  # never returns empty — should stop at max_pages
 
         config = {
-            "api_url": "https://jobs.apple.com/api/role/search",
+            "search_url": "https://jobs.apple.com/en-us/search",
             "locations": ["united-states-USA"],
-            "sources": [
-                {"kind": "internships", "teams": ["internships-STDNT-INTRN"]},
-                {"kind": "general", "teams": []},
-            ],
+            "max_pages": 3,
+            "sources": [{"kind": "general"}],
         }
-        adapter = AppleJobsAdapter(company="Apple", config=config, http=http)
-        jobs = list(adapter.fetch())
+        jobs = list(AppleJobsAdapter(company="Apple", config=config, http=http).fetch())
+        assert len(jobs) == 3  # max_pages=3 → 3 jobs max
 
-        intern_jobs = [j for j in jobs if j.role_type == "internship"]
-        assert len(intern_jobs) == 2
-
-    def test_pagination_stops_at_total_records(self):
-        """If currentPage*pageSize >= totalRecords, don't fetch next page."""
-        page1 = {
-            "searchResults": [
-                {"id": "1", "postingTitle": "Job A", "location": "CA",
-                 "teamName": "Eng", "jobNumber": "1", "homeOffice": False, "jobUrl": ""},
-            ],
-            "currentPage": 1,
-            "totalRecords": 1,
-            "pageSize": 20,
-        }
+    def test_stops_when_all_on_page_are_already_seen(self):
+        """If every job on a page was seen in pass 1, stop paginating."""
+        shared_card = _job_card_html("shared", "Shared Job")
         http = _make_http()
-        # intern: page1 | general: empty
-        http.post.side_effect = [_mock_response(page1), _make_empty_response()]
-
+        http.get.side_effect = [
+            _mock_get(_page_html(shared_card)),   # intern page 1
+            _mock_get(_empty_page()),              # intern page 2
+            _mock_get(_page_html(shared_card)),   # general page 1 (all dups → stop)
+        ]
         jobs = list(_make_adapter(http).fetch())
-        # Only 2 POST calls: intern (1 page) + general (1 page)
-        assert http.post.call_count == 2
+        # Only called 3 times (no general page 2 fetch)
+        assert http.get.call_count == 3
+
+    def test_team_param_sent_for_internship_pass(self):
+        http = _make_http()
+        http.get.return_value = _mock_get(_empty_page())
+        list(_make_adapter(http).fetch())
+        # First call (intern page 1) should include team param
+        first_call_kwargs = http.get.call_args_list[0]
+        params = first_call_kwargs[1].get("params") or first_call_kwargs[0][1]
+        assert params.get("team") == "internships-STDNT-INTRN"
+
+    def test_no_team_param_for_general_pass(self):
+        http = _make_http()
+        http.get.return_value = _mock_get(_empty_page())
+        list(_make_adapter(http).fetch())
+        # Second call (general page 1) should NOT include team param
+        second_call_kwargs = http.get.call_args_list[1]
+        params = second_call_kwargs[1].get("params") or second_call_kwargs[0][1]
+        assert "team" not in params or not params.get("team")
+
+    def test_polite_delay_called_between_pages(self):
+        page1 = _page_html(_job_card_html("1", "Job One"))
+        page2 = _page_html(_job_card_html("2", "Job Two"))
+        http = _make_http()
+        http.get.side_effect = [
+            _mock_get(page1), _mock_get(page2), _mock_get(_empty_page()),
+            _mock_get(_empty_page()),
+        ]
+        list(_make_adapter(http).fetch())
+        assert http.polite_delay.call_count >= 1
 
 
 # ---------------------------------------------------------------------------
-# Error handling and fallback
+# Error handling
 # ---------------------------------------------------------------------------
 
-class TestAppleErrorHandling:
-    def test_http_error_intern_yields_nothing_from_intern_pass(self):
+class TestErrorHandling:
+    def test_request_exception_stops_source_gracefully(self):
         http = _make_http()
-        http.post.side_effect = [
-            requests.HTTPError("404"),      # intern fails
-            _make_empty_response(),         # general empty
+        http.get.side_effect = [
+            requests.RequestException("timeout"),   # intern fails
+            _mock_get(_empty_page()),               # general page 1
         ]
-
         jobs = list(_make_adapter(http).fetch())
-        assert all(j.role_type == "unknown" or True for j in jobs)
-        assert len(jobs) == 0  # both empty
-
-    def test_general_http_error_triggers_no_crash(self):
-        """General pass HTTP error is caught; adapter still yields intern jobs."""
-        intern_fixture = _load_fixture("apple_jobs_intern.json")
-        http = _make_http()
-        http.post.side_effect = [
-            _mock_response(intern_fixture),  # intern succeeds
-            requests.HTTPError("503"),        # general fails
-        ]
-
-        # Need to mock the fallback GET too
-        fallback_resp = MagicMock()
-        fallback_resp.status_code = 200
-        fallback_resp.text = "<html><body>no jobs here</body></html>"
-        fallback_resp.raise_for_status = MagicMock()
-        http.get.return_value = fallback_resp
-
-        jobs = list(_make_adapter(http).fetch())
-        # Intern jobs should still be present
-        intern_jobs = [j for j in jobs if j.role_type == "internship"]
-        assert len(intern_jobs) == len(intern_fixture["searchResults"])
-
-    def test_non_json_content_type_handled_gracefully(self):
-        """Non-JSON response is handled without crash."""
-        http = _make_http()
-        html_resp = _mock_response({}, content_type="text/html")
-        http.post.side_effect = [
-            html_resp,               # intern gets HTML (treated as error)
-            _make_empty_response(),  # general empty
-        ]
-        # Fallback GET
-        fallback = MagicMock()
-        fallback.status_code = 200
-        fallback.text = "<html></html>"
-        fallback.raise_for_status = MagicMock()
-        http.get.return_value = fallback
-
-        jobs = list(_make_adapter(http).fetch())
-        # No crash, may yield 0 or more jobs
         assert isinstance(jobs, list)
+        assert len(jobs) == 0
 
-    def test_internship_only_config_works(self):
-        """Config with only internship source works."""
-        fixture = _load_fixture("apple_jobs_intern.json")
+    def test_second_source_still_runs_after_first_source_error(self):
+        page = _page_html(_job_card_html("300", "Software Engineer"))
         http = _make_http()
-        http.post.return_value = _mock_response(fixture)
-
-        config = {
-            "api_url": "https://jobs.apple.com/api/role/search",
-            "locations": ["united-states-USA"],
-            "sources": [
-                {"kind": "internships", "teams": ["internships-STDNT-INTRN"]},
-            ],
-        }
-        adapter = AppleJobsAdapter(company="Apple", config=config, http=http)
-        jobs = list(adapter.fetch())
-
-        assert len(jobs) == len(fixture["searchResults"])
-        assert all(j.role_type == "internship" for j in jobs)
+        http.get.side_effect = [
+            requests.RequestException("timeout"),   # intern fails
+            _mock_get(page),                        # general page 1
+            _mock_get(_empty_page()),               # general page 2
+        ]
+        jobs = list(_make_adapter(http).fetch())
+        assert len(jobs) == 1
+        assert jobs[0].role_type == "unknown"

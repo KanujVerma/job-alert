@@ -30,6 +30,11 @@ Response shape:
         ]
     }
 
+Note: As of 2026-05 the HCM REST API at eeho.fa.us2.oraclecloud.com returns
+count=0/items=[] for all anonymous requests — the Oracle CE SPA performs a
+JavaScript-based session handshake that we cannot replicate without a headless
+browser. The adapter yields nothing until Playwright support is added in v2.
+
 If the HCM endpoint returns a non-200 response (e.g. the tenant URL changes or
 access is revoked), the adapter logs the error and yields nothing — it does NOT
 fall back to web scraping, because the Oracle careers page is a heavy React SPA
