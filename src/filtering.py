@@ -1,4 +1,5 @@
 from __future__ import annotations
+import dataclasses
 import hashlib
 import re
 import unicodedata
@@ -212,18 +213,8 @@ def label_job(job: Job, filters: dict, location_ambiguous: bool) -> Job:
             matched.append(kw)
 
     # Return new frozen Job with updated fields
-    return Job(
-        id=job.id,
-        company=job.company,
-        title=job.title,
-        location=job.location,
-        department=job.department,
-        category=job.category,
-        url=job.url,
-        source_platform=job.source_platform,
-        posted_at=job.posted_at,
-        detected_at=job.detected_at,
-        raw_text=job.raw_text,
+    return dataclasses.replace(
+        job,
         role_type=role_type,
         priority=priority,
         matched_keywords=tuple(matched),
