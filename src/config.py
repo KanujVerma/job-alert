@@ -64,10 +64,13 @@ def validate_config(
 
     # 2. Adapter registry check
     if not adapter_registry:
-        logger.warning(
-            "ADAPTER_REGISTRY is empty — skipping adapter validation. "
-            "Adapters will be registered in Phase 2+."
-        )
+        if config.companies:
+            # Phase 1: registry empty — adapter check skipped. Will validate once adapters are registered.
+            logger.warning(
+                "ADAPTER_REGISTRY is empty — adapter validation skipped for %d defined "
+                "company/companies. This is expected in Phase 1; adapters will be "
+                "validated once they are registered.", len(config.companies)
+            )
     else:
         for company in config.companies:
             adapter = company.get("adapter")

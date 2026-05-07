@@ -22,3 +22,9 @@ class Job:
     role_type: str  # "internship" | "new-grad" | "entry-level" | "unknown"
     priority: str   # "preferred" | "normal"
     matched_keywords: tuple[str, ...]  # use tuple so dataclass stays hashable/frozen
+
+    def __post_init__(self):
+        if self.role_type not in ROLE_TYPES:
+            raise ValueError(f"Invalid role_type: {self.role_type!r}. Must be one of {ROLE_TYPES}")
+        if self.priority not in PRIORITY_TYPES:
+            raise ValueError(f"Invalid priority: {self.priority!r}. Must be one of {PRIORITY_TYPES}")

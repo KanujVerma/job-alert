@@ -108,6 +108,7 @@ def do_run(args) -> int:
     alert_count = 0
     cap_hit = False
     summary_jobs = []
+    any_company_succeeded = False
 
     # Determine which companies to process
     companies = config.companies
@@ -135,6 +136,7 @@ def do_run(args) -> int:
         fetched = []
         try:
             fetched = list(adapter.fetch())
+            any_company_succeeded = True
         except Exception as e:
             logger.error(f"{cname}: fetch failed: {e}", exc_info=True)
 
@@ -192,7 +194,7 @@ def do_run(args) -> int:
             description="\n".join(desc_lines),
         )
 
-    if first_run:
+    if first_run and any_company_succeeded:
         mark_first_run_complete(state)
 
     if not getattr(args, "dry_run", False):
@@ -266,6 +268,17 @@ def main():
     daemon_parser.add_argument("--company", help="Only process this company by name")
     daemon_parser.add_argument("--dry-run", action="store_true")
     daemon_parser.add_argument("--verbose", action="store_true")
+    # These flags only take effect on the first run cycle; subsequent cycles ignore them.
+    daemon_parser.add_argument(
+        "--firehose-first-run",
+        action="store_true",
+        help="On first run, notify all found jobs",
+    )
+    daemon_parser.add_argument(
+        "--summary-first-run",
+        action="store_true",
+        help="On first run, send one summary embed",
+    )
 
     args = parser.parse_args()
     setup_logging(verbose=getattr(args, "verbose", False))

@@ -2,7 +2,6 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import re
-import unicodedata
 from typing import NamedTuple
 
 from src.models import Job
@@ -104,10 +103,8 @@ def filter_location(job: Job, filters: dict) -> FilterResult:
         if city in combined:
             return FilterResult(True, f"US city match: {city}")
 
-    # Empty/ambiguous location
-    if not location_lower.strip():
-        return FilterResult(True, "location ambiguous")
-
+    # Non-empty but unrecognized locations are passed through rather than dropped,
+    # to avoid false negatives (e.g. "Hybrid" or vague office names).
     return FilterResult(True, "location ambiguous")
 
 

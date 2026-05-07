@@ -9,7 +9,6 @@ from src.models import Job
 
 logger = logging.getLogger(__name__)
 
-_EMPTY_STATE = {"version": 1, "first_run_completed_at": None, "companies": {}}
 _MAX_SEEN_IDS = 5000
 
 
