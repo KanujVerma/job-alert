@@ -1,0 +1,220 @@
+defaults:
+  schedule_minutes: 15
+  request_delay_seconds: [2, 4]
+  user_agent_base: "job-alert-bot/0.1"
+  state_path: state/seen_jobs.json
+  timezone: America/Los_Angeles
+  max_alerts_per_run: 25
+
+filters:
+  early_career_keywords:
+    - intern
+    - internship
+    - co-op
+    - university
+    - student
+    - new grad
+    - new graduate
+    - early career
+    - entry level
+    - entry-level
+    - graduate
+    - campus
+    - recent graduate
+  technical_role_keywords:
+    - software
+    - software engineer
+    - software engineering
+    - swe
+    - developer
+    - backend
+    - frontend
+    - full stack
+    - cloud
+    - infrastructure
+    - platform
+    - systems
+    - security
+    - data
+    - data scientist
+    - data science
+    - data engineer
+    - business intelligence
+    - bi engineer
+    - analytics
+    - ai
+    - artificial intelligence
+    - ml
+    - machine learning
+    - applied scientist
+    - research scientist
+    - product manager
+    - product management
+    - program manager
+    - program management
+    - technical product manager
+    - technical program manager
+    - technical program management
+    - program manager intern
+    - technical program manager intern
+    - tpm
+    - tpm intern
+    - pm intern
+    - solutions architect
+    - hardware engineer
+    - hardware engineering
+  exclude_keywords:
+    - warehouse
+    - fulfillment
+    - retail
+    - sales associate
+    - account executive
+    - customer support
+    - call center
+    - legal
+    - finance
+    - accounting
+    - human resources
+    - hr
+    - facilities
+    - maintenance
+    - security guard
+    - manufacturing operator
+  exclude_unless_intern:
+    - marketing
+    - technician
+    - hardware
+    - manufacturing
+    - operations
+    - business analyst
+  preferred_locations:
+    - California
+    - CA
+    - Texas
+    - TX
+    - Chicago
+    - Illinois
+    - IL
+    - New York
+    - NY
+    - Remote
+
+companies:
+  - name: Micron
+    adapter: workday
+    enabled: true
+    config:
+      base_url: https://micron.wd1.myworkdayjobs.com
+      tenant: micron
+      site: External
+
+  - name: Salesforce
+    adapter: workday
+    enabled: true
+    config:
+      base_url: https://salesforce.wd12.myworkdayjobs.com
+      tenant: salesforce
+      site: External_Career_Site
+
+  - name: CrowdStrike
+    adapter: workday
+    enabled: true
+    config:
+      base_url: https://crowdstrike.wd5.myworkdayjobs.com
+      tenant: crowdstrike
+      site: crowdstrikecareers
+
+  - name: Intel
+    adapter: workday
+    enabled: true
+    config:
+      base_url: https://intel.wd1.myworkdayjobs.com
+      tenant: intel
+      site: External
+
+  - name: Applied Materials
+    adapter: workday
+    enabled: true
+    config:
+      base_url: https://amat.wd1.myworkdayjobs.com
+      tenant: amat
+      site: External
+
+  - name: Western Digital
+    adapter: smartrecruiters
+    enabled: true
+    config:
+      slug: WesternDigital
+
+  - name: SanDisk
+    adapter: smartrecruiters
+    enabled: true
+    config:
+      slug: sandisk
+
+  - name: Plaid
+    adapter: lever
+    enabled: true
+    config:
+      slug: plaid
+
+  - name: Oracle
+    adapter: oracle_careers
+    enabled: true
+    config:
+      base_url: https://careers.oracle.com
+      api_path: /hcmRestApi/resources/latest/recruitingCEJobRequisitions
+
+  - name: Microsoft Research
+    adapter: microsoft_research
+    enabled: true
+    config:
+      base_url: https://www.microsoft.com/en-us/research/careers/open-positions/
+
+  - name: Amazon
+    adapter: amazon_jobs
+    enabled: true
+    config:
+      include_internship_search: true
+      base_categories:
+        - Software Development
+        - Data Science
+        - Business Intelligence and Data Engineering
+        - Applied Science
+        - Research Science
+        - "Project, Program, and Product Management — Technical"
+        - "Systems, Quality, and Security Engineering"
+        - Solutions Architecture
+        - Hardware Development
+      gated_categories:
+        - category: "Project/Program/Product Management — Non-Tech"
+          require_early_career: true
+
+  - name: Apple
+    adapter: apple_jobs
+    enabled: true
+    config:
+      sources:
+        - kind: internships
+          team: internships-STDNT-INTRN
+          require_early_career: false
+        - kind: general
+          require_early_career: true
+
+  - name: Snowflake
+    adapter: eightfold
+    enabled: true
+    config:
+      base_url: https://careers.snowflake.com
+      api_path: /api/apply/v2/jobs
+      location_country: United States
+
+  - name: Applied Digital
+    adapter: generic_html
+    enabled: true
+    config:
+      url: https://www.applieddigital.com/careers
+      job_card_selector: ""
+      title_selector: ""
+      location_selector: ""
+      url_selector: ""
