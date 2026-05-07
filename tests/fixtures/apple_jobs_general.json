@@ -1,0 +1,25 @@
+{
+  "searchResults": [
+    {
+      "id": "200606299",
+      "postingTitle": "Software Engineer, New Grad",
+      "location": "Cupertino, California, United States",
+      "teamName": "Software and Services",
+      "jobNumber": "200606299",
+      "homeOffice": false,
+      "jobUrl": "https://jobs.apple.com/en-us/details/200606299/software-engineer-new-grad"
+    },
+    {
+      "id": "200606296",
+      "postingTitle": "Software Engineering Intern",
+      "location": "Cupertino, California, United States",
+      "teamName": "Software and Services",
+      "jobNumber": "200606296",
+      "homeOffice": false,
+      "jobUrl": "https://jobs.apple.com/en-us/details/200606296/software-engineering-intern"
+    }
+  ],
+  "currentPage": 1,
+  "totalRecords": 2,
+  "pageSize": 20
+}

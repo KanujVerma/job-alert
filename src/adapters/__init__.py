@@ -13,3 +13,11 @@ from src.adapters.smartrecruiters import SmartRecruitersAdapter  # noqa: E402
 
 ADAPTER_REGISTRY["lever"] = LeverAdapter
 ADAPTER_REGISTRY["smartrecruiters"] = SmartRecruitersAdapter
+
+from src.adapters.oracle_careers import OracleAdapter  # noqa: E402
+from src.adapters.amazon_jobs import AmazonJobsAdapter  # noqa: E402
+from src.adapters.apple_jobs import AppleJobsAdapter  # noqa: E402
+
+ADAPTER_REGISTRY["oracle_careers"] = OracleAdapter
+ADAPTER_REGISTRY["amazon_jobs"] = AmazonJobsAdapter
+ADAPTER_REGISTRY["apple_jobs"] = AppleJobsAdapter

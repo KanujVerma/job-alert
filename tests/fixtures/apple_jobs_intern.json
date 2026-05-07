@@ -1,0 +1,34 @@
+{
+  "searchResults": [
+    {
+      "id": "200606296",
+      "postingTitle": "Software Engineering Intern",
+      "location": "Cupertino, California, United States",
+      "teamName": "Software and Services",
+      "jobNumber": "200606296",
+      "homeOffice": false,
+      "jobUrl": "https://jobs.apple.com/en-us/details/200606296/software-engineering-intern"
+    },
+    {
+      "id": "200606297",
+      "postingTitle": "Machine Learning Intern",
+      "location": "Seattle, Washington, United States",
+      "teamName": "AI/ML",
+      "jobNumber": "200606297",
+      "homeOffice": false,
+      "jobUrl": "https://jobs.apple.com/en-us/details/200606297/machine-learning-intern"
+    },
+    {
+      "id": "200606298",
+      "postingTitle": "Hardware Engineering Intern",
+      "location": "Austin, Texas, United States",
+      "teamName": "Hardware",
+      "jobNumber": "200606298",
+      "homeOffice": false,
+      "jobUrl": "https://jobs.apple.com/en-us/details/200606298/hardware-engineering-intern"
+    }
+  ],
+  "currentPage": 1,
+  "totalRecords": 3,
+  "pageSize": 20
+}

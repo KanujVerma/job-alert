@@ -1,0 +1,49 @@
+{
+  "count": 3,
+  "hasMore": false,
+  "totalResults": 3,
+  "limit": 25,
+  "offset": 0,
+  "items": [
+    {
+      "requisitionList": [
+        {
+          "Id": "240612",
+          "Title": "Software Engineering Intern",
+          "PrimaryLocation": "US-CA-Santa Clara",
+          "JobFunction": "Information Technology",
+          "PostedDate": "2025-01-15T00:00:00+00:00",
+          "ExternalURL": "https://careers.oracle.com/jobs/240612/software-engineering-intern",
+          "ShortDescription": "Join Oracle's software engineering internship program."
+        }
+      ]
+    },
+    {
+      "requisitionList": [
+        {
+          "Id": "240613",
+          "Title": "Cloud Infrastructure Intern",
+          "PrimaryLocation": "US-TX-Austin",
+          "JobFunction": "Engineering",
+          "PostedDate": "2025-01-20T00:00:00+00:00",
+          "ExternalURL": "https://careers.oracle.com/jobs/240613/cloud-infrastructure-intern",
+          "ShortDescription": "Work on Oracle Cloud infrastructure."
+        }
+      ]
+    },
+    {
+      "requisitionList": [
+        {
+          "Id": "240614",
+          "Title": "Data Science Intern",
+          "PrimaryLocation": "US-WA-Seattle",
+          "JobFunction": "Data Analytics",
+          "PostedDate": "2025-02-01T00:00:00+00:00",
+          "ExternalURL": "",
+          "ShortDescription": ""
+        }
+      ]
+    }
+  ],
+  "links": []
+}
