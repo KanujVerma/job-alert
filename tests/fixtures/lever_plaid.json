@@ -1,0 +1,28 @@
+[
+  {
+    "id": "abc123def456",
+    "text": "Software Engineering Intern",
+    "categories": {
+      "commitment": "Internship",
+      "department": "Engineering",
+      "location": "San Francisco, CA",
+      "team": "Backend"
+    },
+    "description": "<p>Join Plaid as a <strong>Software Engineering Intern</strong> on the Backend team. You will work on core infrastructure, APIs, and data pipelines.</p>",
+    "hostedUrl": "https://jobs.lever.co/plaid/abc123def456",
+    "createdAt": 1715000000000
+  },
+  {
+    "id": "xyz789ghi012",
+    "text": "Data Science Intern",
+    "categories": {
+      "commitment": "Internship",
+      "department": "Data",
+      "location": "New York, NY",
+      "team": "Analytics"
+    },
+    "description": "<p>Work on <em>machine learning</em> models and data analysis at Plaid.</p>",
+    "hostedUrl": "https://jobs.lever.co/plaid/xyz789ghi012",
+    "createdAt": 1715100000000
+  }
+]

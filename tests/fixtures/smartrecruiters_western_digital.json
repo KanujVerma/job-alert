@@ -1,0 +1,59 @@
+{
+  "totalFound": 150,
+  "offset": 0,
+  "limit": 100,
+  "content": [
+    {
+      "id": "744000125027538",
+      "name": "Intern - Environmental Specialist",
+      "uuid": "07711c41-ea93-41d1-8844-040c92a0b382",
+      "refNumber": "REF31168L",
+      "company": {
+        "identifier": "WesternDigital",
+        "name": "Western Digital"
+      },
+      "releasedDate": "2025-01-15T00:00:00.000Z",
+      "location": {
+        "city": "San Jose",
+        "region": "California",
+        "country": "US",
+        "remote": false,
+        "hybrid": false
+      },
+      "department": {
+        "label": "Engineering"
+      },
+      "typeOfEmployment": {
+        "id": "intern",
+        "label": "Intern"
+      },
+      "visibility": "PUBLIC",
+      "ref": "https://api.smartrecruiters.com/v1/companies/WesternDigital/postings/744000125027538"
+    },
+    {
+      "id": "744000125025429",
+      "name": "Professional 1, Information Technology",
+      "uuid": "03b924a5-129f-4a37-bc2e-0cf7a7db7127",
+      "refNumber": "REF33283G",
+      "company": {
+        "identifier": "WesternDigital",
+        "name": "Western Digital"
+      },
+      "releasedDate": "2025-01-16T00:00:00.000Z",
+      "location": {
+        "city": "Milpitas",
+        "region": "California",
+        "country": "US",
+        "remote": false,
+        "hybrid": false
+      },
+      "department": {},
+      "typeOfEmployment": {
+        "id": "permanent",
+        "label": "Full-time"
+      },
+      "visibility": "PUBLIC",
+      "ref": "https://api.smartrecruiters.com/v1/companies/WesternDigital/postings/744000125025429"
+    }
+  ]
+}
