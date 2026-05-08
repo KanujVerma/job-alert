@@ -1,18 +1,23 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from src.models import Job
 from src.http import HTTPClient
+
+if TYPE_CHECKING:
+    from src.browser import BrowserClient
 
 
 class BaseAdapter(ABC):
     source_platform: str  # class-level constant, e.g. "workday"
 
-    def __init__(self, company: str, config: dict, http: HTTPClient):
+    def __init__(self, company: str, config: dict, http: HTTPClient, browser: "BrowserClient | None" = None):
         self.company = company
         self.config = config
         self.http = http
+        self.browser = browser
 
     @abstractmethod
     def fetch(self) -> Iterator[Job]:
