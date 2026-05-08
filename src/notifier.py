@@ -62,13 +62,23 @@ class Notifier:
         if job.priority == "preferred":
             title += f" [PRIORITY: {job.location}]"
 
-        # Format detected_at
+        # Format timestamps in PT
         try:
             import zoneinfo
             pt_tz = zoneinfo.ZoneInfo("America/Los_Angeles")
             detected_str = job.detected_at.astimezone(pt_tz).strftime(_PT_FORMAT)
+            posted_str = (
+                job.posted_at.astimezone(pt_tz).strftime(_PT_FORMAT)
+                if job.posted_at is not None
+                else "Unknown"
+            )
         except Exception:
             detected_str = job.detected_at.strftime("%Y-%m-%d %H:%M UTC")
+            posted_str = (
+                job.posted_at.strftime("%Y-%m-%d UTC")
+                if job.posted_at is not None
+                else "Unknown"
+            )
 
         # Department / category field
         dept_parts = [p for p in [job.department, job.category] if p]
@@ -88,6 +98,7 @@ class Notifier:
                 "inline": False,
             },
             {"name": "🔗 URL", "value": job.url, "inline": False},
+            {"name": "📅 Posted", "value": posted_str, "inline": True},
             {"name": "🕐 Detected", "value": detected_str, "inline": True},
         ]
 

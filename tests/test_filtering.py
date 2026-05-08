@@ -371,8 +371,8 @@ class TestApplyFilterPipeline:
         )
         result_job, reasons = apply_filter_pipeline(job, _FILTERS, source_config={})
         assert result_job is not None
-        # 6 reasons: location, exclude, early_career, tech_role, per_company, label
-        assert len(reasons) == 6
+        # 7 reasons: freshness, location, exclude, early_career, tech_role, per_company, label
+        assert len(reasons) == 7
 
     def test_warehouse_job_fails_at_exclude(self):
         job = make_job(

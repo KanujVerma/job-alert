@@ -8,6 +8,7 @@ defaults:
 
 filters:
   internship_only: true   # only alert on confirmed internship postings
+  freshness_hours: 48     # drop jobs posted more than 48h ago (skipped if posted_at unknown)
   early_career_keywords:
     - intern
     - internship

@@ -2,6 +2,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import re
+from datetime import datetime, timezone
 from typing import NamedTuple
 
 from src.models import Job
@@ -32,16 +33,42 @@ US_TECH_CITIES = {
 }
 
 NON_US_SIGNALS = {
+    # Countries
     "india", "canada", "uk", "united kingdom", "germany", "france", "australia",
     "japan", "china", "singapore", "mexico", "brazil", "ireland", "netherlands",
     "sweden", "norway", "denmark", "finland", "switzerland", "spain", "italy",
-    "poland", "czech republic", "romania", "hungary", "budapest",
-    "bangalore", "mumbai", "delhi", "hyderabad",
-    "toronto", "vancouver", "montreal",
-    "london", "berlin", "paris",
-    "sydney", "melbourne", "tokyo", "beijing", "shanghai", "seoul",
-    "amsterdam", "dublin", "stockholm", "oslo", "zurich", "madrid", "rome",
-    "warsaw", "prague", "bucharest",
+    "poland", "czech republic", "romania", "hungary",
+    "taiwan", "south korea", "korea", "philippines", "indonesia", "malaysia",
+    "vietnam", "thailand", "hong kong", "new zealand",
+    "argentina", "colombia", "chile", "peru",
+    "israel", "turkey", "türkiye",
+    "uae", "united arab emirates", "saudi arabia", "qatar", "kuwait", "bahrain", "oman",
+    "egypt", "nigeria", "kenya", "south africa",
+    "pakistan", "bangladesh", "sri lanka",
+    "ukraine", "russia",
+    # Cities — Europe
+    "budapest", "london", "berlin", "paris", "amsterdam", "dublin", "stockholm",
+    "oslo", "zurich", "madrid", "rome", "warsaw", "prague", "bucharest",
+    # Cities — India
+    "bangalore", "mumbai", "delhi", "hyderabad", "chennai", "pune", "kolkata",
+    # Cities — Canada
+    "toronto", "vancouver", "montreal", "ottawa", "calgary",
+    # Cities — Australia / NZ
+    "sydney", "melbourne", "brisbane", "perth", "auckland", "wellington",
+    # Cities — East Asia
+    "tokyo", "osaka", "beijing", "shanghai", "guangzhou", "shenzhen",
+    "seoul", "busan", "taipei", "tainan", "taichung", "kaohsiung",
+    "hong kong",
+    # Cities — Southeast Asia
+    "manila", "jakarta", "kuala lumpur", "bangkok", "ho chi minh", "hanoi",
+    # Cities — Middle East
+    "dubai", "abu dhabi", "riyadh", "jeddah", "doha", "tel aviv", "jerusalem",
+    "istanbul", "ankara",
+    # Cities — Africa / LatAm
+    "cairo", "nairobi", "lagos", "cape town", "johannesburg",
+    "buenos aires", "bogota", "santiago", "lima",
+    # Cities — EE / Russia
+    "moscow", "kyiv",
 }
 
 
@@ -74,6 +101,20 @@ def _phrase_in_text(phrase: str, text: str) -> bool:
 # ---------------------------------------------------------------------------
 # Filter functions
 # ---------------------------------------------------------------------------
+
+def filter_freshness(job: Job, filters: dict) -> FilterResult:
+    """Step 0: Drop jobs older than freshness_hours when posted_at is known."""
+    freshness_hours = filters.get("freshness_hours")
+    if not freshness_hours:
+        return FilterResult(True, "not configured")
+    if job.posted_at is None:
+        return FilterResult(True, "posted_at unknown, allowing")
+    now = datetime.now(timezone.utc)
+    age_hours = (now - job.posted_at).total_seconds() / 3600
+    if age_hours > float(freshness_hours):
+        return FilterResult(False, f"stale: {age_hours:.0f}h old (limit {freshness_hours}h)")
+    return FilterResult(True, f"fresh: {age_hours:.0f}h old")
+
 
 def filter_location(job: Job, filters: dict) -> FilterResult:
     """Step 1: Location filter."""
@@ -234,6 +275,12 @@ def apply_filter_pipeline(
     reasons is a list of strings explaining each step outcome (for --verbose logging).
     """
     reasons = []
+
+    # Step 0: Freshness
+    result = filter_freshness(job, filters)
+    reasons.append(f"freshness: {result.reason}")
+    if not result.passes:
+        return None, reasons
 
     # Step 1: Location
     result = filter_location(job, filters)

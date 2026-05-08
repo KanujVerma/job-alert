@@ -95,7 +95,7 @@ def test_field_mapping():
     job = jobs[0]
 
     assert job.title == "Software Engineering Intern"
-    assert job.url == f"{_BASE_URL}/job/Boise-ID/Software-Engineering-Intern_JR12345"
+    assert job.url == f"{_BASE_URL}/External/job/Boise-ID/Software-Engineering-Intern_JR12345"
     assert job.location == "Boise, ID"
     assert job.department == "Engineering"
     assert job.category == "Software Engineering"

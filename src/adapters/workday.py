@@ -111,7 +111,16 @@ class WorkdayAdapter(BaseAdapter):
                 job_family_group = posting.get("jobFamilyGroup") or ""
                 job_family = posting.get("jobFamily") or ""
 
-                url = f"{base_url}{external_path}" if external_path else ""
+                # Workday externalPath may or may not include the site segment.
+                # Ensure it's always present: base_url/{site}/job/...
+                if external_path:
+                    site_prefix = f"/{site.strip('/')}/"
+                    if not external_path.startswith(site_prefix):
+                        url = f"{base_url.rstrip('/')}/{site.strip('/')}{external_path}"
+                    else:
+                        url = f"{base_url.rstrip('/')}{external_path}"
+                else:
+                    url = ""
                 official_id = _extract_official_id(bullet_fields)
                 posted_at = _parse_posted_on(posted_on)
                 department = job_family_group if job_family_group else None
