@@ -23,7 +23,7 @@ class BrowserSessionContext:
     cookies: dict[str, str]
     headers: dict[str, str]
     final_url: str
-    captured_urls: list[str]
+    captured_urls: tuple[str, ...]
 
 
 class BrowserClient:
@@ -136,7 +136,7 @@ class BrowserClient:
                 cookies=cookies,
                 headers=headers,
                 final_url=final_url,
-                captured_urls=captured_urls,
+                captured_urls=tuple(captured_urls),
             )
 
         except Exception as exc:
@@ -168,6 +168,8 @@ class BrowserClient:
 
     def _save_artifacts(self, page, company: str, error: Exception) -> None:
         sanitized = re.sub(r"[^A-Za-z0-9_-]", "_", company)
+        if not sanitized:
+            sanitized = "_unknown_"
         ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         artifact_dir = Path("debug_artifacts") / sanitized / ts
         try:

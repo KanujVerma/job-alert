@@ -7,7 +7,7 @@ def test_session_context_is_frozen():
         cookies={"sid": "abc"},
         headers={"Origin": "https://careers.snowflake.com"},
         final_url="https://careers.snowflake.com/us/en/jobs",
-        captured_urls=["https://careers.snowflake.com/api/apply/v2/jobs?limit=20"],
+        captured_urls=("https://careers.snowflake.com/api/apply/v2/jobs?limit=20",),
     )
     assert ctx.cookies == {"sid": "abc"}
     assert ctx.final_url == "https://careers.snowflake.com/us/en/jobs"
@@ -16,7 +16,8 @@ def test_session_context_is_frozen():
 
 def test_session_context_frozen_raises_on_mutate():
     import pytest
-    ctx = BrowserSessionContext(cookies={}, headers={}, final_url="", captured_urls=[])
+    ctx = BrowserSessionContext(cookies={}, headers={}, final_url="", captured_urls=())
+    assert isinstance(ctx.captured_urls, tuple)
     with pytest.raises((AttributeError, TypeError)):
         ctx.cookies = {}  # type: ignore
 
@@ -99,6 +100,14 @@ def test_bootstrap_session_saves_artifacts_on_failure(tmp_path, monkeypatch):
     mock_pw_manager, _, _, mock_context, mock_page = _make_mock_pw()
     mock_page.goto.side_effect = Exception("Navigation timeout")
 
+    # Make screenshot actually write a file so the assertion can verify it exists
+    def fake_screenshot(path):
+        from pathlib import Path
+        Path(path).write_bytes(b"PNG")
+
+    mock_page.screenshot.side_effect = fake_screenshot
+    mock_page.content.return_value = "<html></html>"
+
     with patch("src.browser._sync_playwright", return_value=mock_pw_manager):
         client = BrowserClient()
         with pytest.raises(Exception, match="Navigation timeout"):
@@ -110,6 +119,8 @@ def test_bootstrap_session_saves_artifacts_on_failure(tmp_path, monkeypatch):
     artifact_dirs = list((tmp_path / "debug_artifacts" / "Snowflake").iterdir())
     assert len(artifact_dirs) == 1
     assert (artifact_dirs[0] / "error.txt").read_text() == "Exception: Navigation timeout"
+    assert (artifact_dirs[0] / "screenshot.png").exists()
+    assert (artifact_dirs[0] / "page.html").exists()
 
 
 def test_close_is_idempotent():
@@ -132,3 +143,15 @@ def test_context_manager_closes_on_exit():
     mock_context.close.assert_called_once()
     mock_browser.close.assert_called_once()
     mock_pw_instance.stop.assert_called_once()
+
+
+def test_capture_debug_artifacts_no_page(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    client = BrowserClient()
+    client.capture_debug_artifacts("Snowflake", ValueError("post-bootstrap failure"))
+    artifact_dirs = list((tmp_path / "debug_artifacts" / "Snowflake").iterdir())
+    assert len(artifact_dirs) == 1
+    assert (artifact_dirs[0] / "error.txt").read_text() == "ValueError: post-bootstrap failure"
+    # No screenshot or page.html when page is None
+    assert not (artifact_dirs[0] / "screenshot.png").exists()
+    assert not (artifact_dirs[0] / "page.html").exists()
