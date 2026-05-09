@@ -316,6 +316,15 @@ class TestClassifyJobs:
         result = classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
         assert job in result
 
+    def test_exactly_at_freshness_boundary_is_candidate(self):
+        job = make_job(_jid(1))
+        at_boundary = (_NOW_V3 - timedelta(hours=_FRESHNESS)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": at_boundary, "last_seen": at_boundary, "alerted": False}
+        })
+        result = classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
+        assert job in result, "job exactly at freshness_hours should still be a candidate (> not >=)"
+
     def test_last_seen_always_updated(self):
         job = make_job(_jid(1))
         old = (_NOW_V3 - timedelta(hours=1)).isoformat()

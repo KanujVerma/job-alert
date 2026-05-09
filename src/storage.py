@@ -128,6 +128,9 @@ def classify_jobs(
 
     Returns only jobs that should proceed to Discord alerting.
     """
+    if now.tzinfo is None:
+        raise ValueError("classify_jobs: 'now' must be tz-aware")
+
     company_state = state["companies"].setdefault(
         company, {"last_checked_at": None, "seen_jobs": {}}
     )
