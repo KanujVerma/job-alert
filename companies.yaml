@@ -204,12 +204,14 @@ companies:
           require_early_career: true
 
   - name: Snowflake
-    adapter: eightfold
+    adapter: eightfold_playwright
     enabled: true
     config:
       base_url: https://careers.snowflake.com
       api_path: /api/apply/v2/jobs
       location_country: United States
+      use_playwright: true
+      browser_timeout_seconds: 30
 
   - name: Applied Digital
     adapter: generic_html
