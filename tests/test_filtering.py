@@ -464,3 +464,46 @@ class TestApplyFilterPipeline:
         assert result_job is not None
         assert any("per_company" in r for r in reasons)
         assert "no override" in reasons[-2]  # per_company passes
+
+
+# ---------------------------------------------------------------------------
+# Word-boundary tests — Task 1 (v3)
+# ---------------------------------------------------------------------------
+
+class TestWordBoundaryFiltering:
+    """Short keywords must not match inside longer words."""
+
+    TECH_KWS = ["ml", "pm", "swe", "tpm", "software engineer"]
+    EARLY_KWS = ["intern", "internship"]
+
+    @pytest.mark.parametrize("raw_text,kw", [
+        ("developer with html and xml skills", "ml"),   # ml inside html/xml
+        ("company-wide product initiative", "pm"),       # pm inside company
+        ("go elsewhere to apply", "swe"),                # swe inside elsewhere
+        ("template-driven architecture", "tpm"),         # tpm inside template
+        ("international business program", "intern"),    # intern inside international
+    ])
+    def test_no_false_positives(self, raw_text, kw):
+        job = make_job(raw_text=raw_text)
+        tech_result = filter_tech_role(job, {"technical_role_keywords": [kw]})
+        early_result = filter_early_career(job, {"early_career_keywords": [kw]})
+        # At most one should match (depending on which list the keyword is in)
+        # Neither should match due to word-boundary violation
+        assert not tech_result.passes or kw not in ["ml", "pm", "swe", "tpm"]
+        assert not early_result.passes or kw not in ["intern"]
+
+    @pytest.mark.parametrize("raw_text,kw,fn", [
+        ("ML engineer intern 2026", "ml", "tech"),
+        ("PM intern product role", "pm", "tech"),
+        ("SWE intern summer 2026", "swe", "tech"),
+        ("software engineer intern", "software engineer", "tech"),
+        ("software intern 2026", "intern", "early"),
+        ("internship program", "internship", "early"),
+    ])
+    def test_true_positives_still_match(self, raw_text, kw, fn):
+        job = make_job(raw_text=raw_text)
+        if fn == "tech":
+            result = filter_tech_role(job, {"technical_role_keywords": [kw]})
+        else:
+            result = filter_early_career(job, {"early_career_keywords": [kw]})
+        assert result.passes, f"'{kw}' should match in '{raw_text}'"

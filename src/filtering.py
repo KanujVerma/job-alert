@@ -177,7 +177,7 @@ def filter_early_career(job: Job, filters: dict) -> FilterResult:
     raw = job.raw_text.lower() if job.raw_text else ""
 
     for kw in filters.get("early_career_keywords", []):
-        if _phrase_in_text(kw.lower(), raw):
+        if _word_in_text(kw.lower(), raw):
             return FilterResult(True, f"early-career keyword: {kw}")
 
     if job.role_type == "internship":
@@ -191,7 +191,7 @@ def filter_tech_role(job: Job, filters: dict) -> FilterResult:
     raw = job.raw_text.lower() if job.raw_text else ""
 
     for kw in filters.get("technical_role_keywords", []):
-        if _phrase_in_text(kw.lower(), raw):
+        if _word_in_text(kw.lower(), raw):
             return FilterResult(True, f"tech keyword: {kw}")
 
     return FilterResult(False, "no technical role signal")
