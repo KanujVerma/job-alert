@@ -267,7 +267,8 @@ class TestBootstrapSessionXHRInterception:
         mock_page.close.assert_not_called()
         assert client._page is mock_page
 
-    def test_page_closed_on_bootstrap_failure(self):
+    def test_page_closed_on_bootstrap_failure(self, monkeypatch, tmp_path):
+        monkeypatch.chdir(tmp_path)  # prevent debug_artifacts/ from landing in repo root
         client, mock_page = _make_mock_browser_for_intercept()
         mock_page.goto.side_effect = RuntimeError("timeout")
 

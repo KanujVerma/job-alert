@@ -114,7 +114,9 @@ class BrowserClient:
         page = self._context.new_page()
         try:
             if wait_for_response_url:
-                needle = wait_for_response_url.replace("**", "")
+                # Strip glob wildcards (* and **) — caller must use ** only at boundaries
+                # e.g. "**/api/v2/jobs**" → "/api/v2/jobs"; single * in middle not supported
+                needle = wait_for_response_url.replace("**", "").replace("*", "")
 
                 def handle_response(resp) -> None:
                     nonlocal captured_request_headers, captured_first_response
