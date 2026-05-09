@@ -188,7 +188,9 @@ def mark_cap_suppressed(jobs: list[Job], company: str, state: dict) -> None:
 
 
 def update_last_checked(company: str, state: dict, now: datetime) -> None:
-    """Update last_checked_at for company. Creates the company entry if missing."""
+    """Update last_checked_at for company. Creates the company entry if missing. now must be tz-aware."""
+    if now.tzinfo is None:
+        raise ValueError("update_last_checked: 'now' must be tz-aware")
     company_state = state["companies"].setdefault(
         company, {"last_checked_at": None, "seen_jobs": {}}
     )
@@ -197,7 +199,9 @@ def update_last_checked(company: str, state: dict, now: datetime) -> None:
 
 
 def prune_seen_jobs(state: dict, ttl_days: int, now: datetime) -> None:
-    """Evict seen_jobs entries where last_seen is older than ttl_days."""
+    """Evict seen_jobs entries where last_seen is older than ttl_days. now must be tz-aware."""
+    if now.tzinfo is None:
+        raise ValueError("prune_seen_jobs: 'now' must be tz-aware")
     cutoff = now - timedelta(days=ttl_days)
     for company_state in state.get("companies", {}).values():
         seen_jobs = company_state.get("seen_jobs", {})

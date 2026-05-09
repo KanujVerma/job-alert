@@ -437,6 +437,14 @@ class TestPruneSeenJobs:
         prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)
         assert "boundary_job" not in state["companies"]["TestCo"]["seen_jobs"]
 
+    def test_exactly_at_cutoff_is_kept(self):
+        cutoff = (_NOW_V3 - timedelta(days=180)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            "boundary": {"first_seen": cutoff, "last_seen": cutoff, "alerted": True}
+        })
+        prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)
+        assert "boundary" in state["companies"]["TestCo"]["seen_jobs"]
+
     def test_empty_seen_jobs_no_error(self):
         state = _make_v2_state()
         prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)  # must not raise
