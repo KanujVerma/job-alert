@@ -385,6 +385,63 @@ class TestMarkCapSuppressed:
         mark_cap_suppressed([], "TestCo", state)  # must not raise
 
 
+from src.storage import update_last_checked, prune_seen_jobs
+
+
+class TestUpdateLastChecked:
+    def test_updates_existing_company(self):
+        state = _make_v2_state()
+        update_last_checked("TestCo", state, _NOW_V3)
+        assert state["companies"]["TestCo"]["last_checked_at"] == _NOW_V3.isoformat()
+
+    def test_creates_missing_company(self):
+        state = {"version": 2, "first_run_completed_at": None, "companies": {}}
+        update_last_checked("NewCo", state, _NOW_V3)
+        assert "NewCo" in state["companies"]
+        assert state["companies"]["NewCo"]["last_checked_at"] == _NOW_V3.isoformat()
+        assert "seen_jobs" in state["companies"]["NewCo"]
+
+    def test_preserves_seen_jobs(self):
+        state = _make_v2_state(seen_jobs={_jid(1): {
+            "first_seen": _NOW_V3.isoformat(), "last_seen": _NOW_V3.isoformat(), "alerted": True
+        }})
+        update_last_checked("TestCo", state, _NOW_V3)
+        assert _jid(1) in state["companies"]["TestCo"]["seen_jobs"]
+
+
+class TestPruneSeenJobs:
+    def test_removes_stale_entries(self):
+        old = (_NOW_V3 - timedelta(days=200)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            "old_job": {"first_seen": old, "last_seen": old, "alerted": True},
+            "new_job": {"first_seen": _NOW_V3.isoformat(), "last_seen": _NOW_V3.isoformat(), "alerted": True},
+        })
+        prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)
+        assert "old_job" not in state["companies"]["TestCo"]["seen_jobs"]
+        assert "new_job" in state["companies"]["TestCo"]["seen_jobs"]
+
+    def test_keeps_recent_entries(self):
+        recent = (_NOW_V3 - timedelta(days=30)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            "recent_job": {"first_seen": recent, "last_seen": recent, "alerted": True},
+        })
+        prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)
+        assert "recent_job" in state["companies"]["TestCo"]["seen_jobs"]
+
+    def test_boundary_exactly_at_ttl(self):
+        # Entry at exactly TTL days + 1 second old should be removed (< not <=)
+        cutoff = (_NOW_V3 - timedelta(days=180, seconds=1)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            "boundary_job": {"first_seen": cutoff, "last_seen": cutoff, "alerted": True},
+        })
+        prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)
+        assert "boundary_job" not in state["companies"]["TestCo"]["seen_jobs"]
+
+    def test_empty_seen_jobs_no_error(self):
+        state = _make_v2_state()
+        prune_seen_jobs(state, ttl_days=180, now=_NOW_V3)  # must not raise
+
+
 class TestLoadStateMigration:
     def test_v1_file_migrated_and_saved(self, tmp_path):
         state_file = tmp_path / "seen_jobs.json"

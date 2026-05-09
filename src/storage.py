@@ -187,6 +187,28 @@ def mark_cap_suppressed(jobs: list[Job], company: str, state: dict) -> None:
             seen_jobs[job.id]["cap_suppressed"] = True
 
 
+def update_last_checked(company: str, state: dict, now: datetime) -> None:
+    """Update last_checked_at for company. Creates the company entry if missing."""
+    company_state = state["companies"].setdefault(
+        company, {"last_checked_at": None, "seen_jobs": {}}
+    )
+    company_state.setdefault("seen_jobs", {})
+    company_state["last_checked_at"] = now.isoformat()
+
+
+def prune_seen_jobs(state: dict, ttl_days: int, now: datetime) -> None:
+    """Evict seen_jobs entries where last_seen is older than ttl_days."""
+    cutoff = now - timedelta(days=ttl_days)
+    for company_state in state.get("companies", {}).values():
+        seen_jobs = company_state.get("seen_jobs", {})
+        to_remove = [
+            jid for jid, entry in seen_jobs.items()
+            if datetime.fromisoformat(entry["last_seen"]) < cutoff
+        ]
+        for jid in to_remove:
+            del seen_jobs[jid]
+
+
 def is_first_run(state: dict) -> bool:
     """Return True if first_run_completed_at is None or missing."""
     return state.get("first_run_completed_at") is None
