@@ -239,3 +239,12 @@ def test_pagination_fetches_all_pages():
     jobs = list(adapter.fetch())
     assert len(jobs) == 3
     assert adapter.http.get.call_count == 2
+
+
+from src.adapters import ADAPTER_REGISTRY
+
+
+def test_adapter_registered():
+    from src.adapters.eightfold_playwright import EightfoldPlaywrightAdapter
+    assert "eightfold_playwright" in ADAPTER_REGISTRY
+    assert ADAPTER_REGISTRY["eightfold_playwright"] is EightfoldPlaywrightAdapter

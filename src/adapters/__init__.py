@@ -29,3 +29,7 @@ from src.adapters.generic_html import GenericHTMLAdapter  # noqa: E402
 ADAPTER_REGISTRY["eightfold"] = EightfoldAdapter
 ADAPTER_REGISTRY["microsoft_research"] = MicrosoftResearchAdapter
 ADAPTER_REGISTRY["generic_html"] = GenericHTMLAdapter
+
+from src.adapters.eightfold_playwright import EightfoldPlaywrightAdapter  # noqa: E402
+
+ADAPTER_REGISTRY["eightfold_playwright"] = EightfoldPlaywrightAdapter
