@@ -134,13 +134,18 @@ def test_returns_empty_if_browser_unavailable():
     adapter.browser.bootstrap_session.assert_not_called()
 
 
-def test_returns_empty_if_no_cookies():
+def test_returns_empty_if_no_cookies_and_no_headers():
+    """With no cookies AND no headers AND no captured_request_headers, adapter still
+    tries the API (two-tier strategy does not require cookies).  If the API returns
+    an empty positions list the result is also empty."""
     adapter = _make_adapter()
     adapter.browser.bootstrap_session.return_value = BrowserSessionContext(
         cookies={}, headers={}, final_url="https://careers.snowflake.com", captured_urls=()
     )
-    assert list(adapter.fetch()) == []
-    adapter.http.get.assert_not_called()
+    # Return empty positions so we get an empty result without an assertion error
+    adapter.http.get.return_value = _mock_response({"count": 0, "positions": []})
+    result = list(adapter.fetch())
+    assert result == []
 
 
 # ---------------------------------------------------------------------------
@@ -171,17 +176,22 @@ def test_http_error_after_bootstrap_returns_empty(caplog):
     assert result == []
 
 
-def test_api_failure_status_returns_empty(caplog):
+def test_api_failure_status_falls_back_and_returns_empty(caplog):
+    """Auth failure in HTTP tier triggers evaluate_fetch fallback.
+    If evaluate_fetch also returns empty positions, result is []."""
     import logging
     adapter = _make_adapter()
     adapter.http.get.return_value = _mock_response(
         {"status": "failure", "errorMsg": "Tenant not identified"}
     )
+    # evaluate_fetch fallback returns empty payload
+    adapter.browser.evaluate_fetch.return_value = {"count": 0, "positions": []}
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.INFO):
         result = list(adapter.fetch())
 
     assert result == []
+    adapter.browser.evaluate_fetch.assert_called()
 
 
 # ---------------------------------------------------------------------------
@@ -248,3 +258,149 @@ def test_adapter_registered():
     from src.adapters.eightfold_playwright import EightfoldPlaywrightAdapter
     assert "eightfold_playwright" in ADAPTER_REGISTRY
     assert ADAPTER_REGISTRY["eightfold_playwright"] is EightfoldPlaywrightAdapter
+
+
+# ---------------------------------------------------------------------------
+# Two-tier auth tests
+# ---------------------------------------------------------------------------
+
+import json as _json_mod
+
+_FIXTURE = FIXTURE_PATH  # reuse existing fixture path alias
+
+_SESSION_V3 = BrowserSessionContext(
+    cookies={"PHPSESSID": "test-session"},
+    headers={
+        "Origin": "https://careers.snowflake.com",
+        "Referer": "https://careers.snowflake.com/us/en/jobs",
+        "User-Agent": "Mozilla/5.0",
+    },
+    final_url="https://careers.snowflake.com/us/en/jobs",
+    captured_urls=("https://careers.snowflake.com/api/apply/v2/jobs?limit=20",),
+    captured_request_headers={
+        "Authorization": "Bearer tenant-token-xyz",
+        "Accept": "application/json",
+    },
+    captured_first_response=None,
+)
+
+
+def _make_adapter_v3(session=None, browser_available=True):
+    http = MagicMock(spec=HTTPClient)
+    browser = MagicMock(spec=BrowserClient)
+    browser.available = browser_available
+    browser.bootstrap_session.return_value = session or _SESSION_V3
+    return EightfoldPlaywrightAdapter(
+        company="Snowflake",
+        config=_CONFIG,
+        http=http,
+        browser=browser,
+    )
+
+
+class TestTwoTierAuth:
+    def test_httpClient_relay_success_uses_captured_headers(self):
+        """If intercepted headers work, HTTPClient is used for all pages."""
+        adapter = _make_adapter_v3()
+        payload = _json_mod.loads(_FIXTURE.read_text())
+        adapter.http.get.return_value = _mock_response(payload)
+
+        jobs = list(adapter.fetch())
+
+        assert len(jobs) > 0
+        call_kwargs = adapter.http.get.call_args[1]
+        # Should use captured_request_headers, not cookies
+        assert call_kwargs.get("headers") == _SESSION_V3.captured_request_headers
+
+    def test_httpClient_401_switches_to_evaluate_fetch(self):
+        """HTTP 401 triggers fallback to page.evaluate_fetch."""
+        adapter = _make_adapter_v3()
+        payload = _json_mod.loads(_FIXTURE.read_text())
+
+        # First call returns 401, evaluate_fetch returns good data
+        adapter.http.get.return_value = _mock_response({}, status=401)
+        adapter.browser.evaluate_fetch.return_value = payload
+
+        jobs = list(adapter.fetch())
+
+        adapter.browser.evaluate_fetch.assert_called()
+        assert len(jobs) > 0
+
+    def test_httpClient_403_switches_to_evaluate_fetch(self):
+        adapter = _make_adapter_v3()
+        payload = _json_mod.loads(_FIXTURE.read_text())
+
+        adapter.http.get.return_value = _mock_response({}, status=403)
+        adapter.browser.evaluate_fetch.return_value = payload
+
+        jobs = list(adapter.fetch())
+
+        adapter.browser.evaluate_fetch.assert_called()
+        assert len(jobs) > 0
+
+    def test_errormsg_in_response_switches_to_evaluate_fetch(self):
+        """JSON errorMsg triggers fallback."""
+        adapter = _make_adapter_v3()
+        payload = _json_mod.loads(_FIXTURE.read_text())
+
+        auth_error = {"status": "failure", "errorMsg": "Tenant not identified"}
+        adapter.http.get.return_value = _mock_response(auth_error)
+        adapter.browser.evaluate_fetch.return_value = payload
+
+        jobs = list(adapter.fetch())
+
+        adapter.browser.evaluate_fetch.assert_called()
+        assert len(jobs) > 0
+
+    def test_captured_first_response_skips_first_httpClient_call(self):
+        """Page-1 from captured_first_response — HTTPClient is not called."""
+        from src.adapters.eightfold import _LIMIT
+        fixture_data = _json_mod.loads(_FIXTURE.read_text())
+        first_resp_json = _json_mod.dumps(fixture_data)
+
+        session_with_capture = BrowserSessionContext(
+            cookies=_SESSION_V3.cookies,
+            headers=_SESSION_V3.headers,
+            final_url=_SESSION_V3.final_url,
+            captured_urls=_SESSION_V3.captured_urls,
+            captured_request_headers=_SESSION_V3.captured_request_headers,
+            captured_first_response=first_resp_json,
+        )
+        adapter = _make_adapter_v3(session=session_with_capture)
+        # If page-1 is used from captured_first_response and it's a single-page result, no HTTP call
+        jobs = list(adapter.fetch())
+
+        assert len(jobs) > 0
+        adapter.http.get.assert_not_called()  # all data from captured response
+
+    def test_evaluate_fetch_failure_returns_empty(self):
+        """evaluate_fetch exception → capture_debug_artifacts + return []."""
+        adapter = _make_adapter_v3()
+        adapter.http.get.return_value = _mock_response({}, status=401)
+        adapter.browser.evaluate_fetch.side_effect = RuntimeError("page closed")
+
+        jobs = list(adapter.fetch())
+
+        assert jobs == []
+        adapter.browser.capture_debug_artifacts.assert_called_once()
+
+    def test_no_captured_headers_falls_through_to_session_headers(self):
+        """If captured_request_headers is empty, fall back to session.headers."""
+        session_no_capture = BrowserSessionContext(
+            cookies=_SESSION_V3.cookies,
+            headers=_SESSION_V3.headers,
+            final_url=_SESSION_V3.final_url,
+            captured_urls=(),
+            captured_request_headers={},  # empty
+            captured_first_response=None,
+        )
+        adapter = _make_adapter_v3(session=session_no_capture)
+        payload = _json_mod.loads(_FIXTURE.read_text())
+        adapter.http.get.return_value = _mock_response(payload)
+
+        jobs = list(adapter.fetch())
+
+        assert len(jobs) > 0
+        call_kwargs = adapter.http.get.call_args[1]
+        # Should use session.headers when captured_request_headers is empty
+        assert call_kwargs.get("headers") == _SESSION_V3.headers

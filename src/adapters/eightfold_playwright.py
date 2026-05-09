@@ -1,17 +1,16 @@
 # src/adapters/eightfold_playwright.py
 """Eightfold adapter with Playwright browser bootstrap for JS-rendered SPA auth.
 
-Pilot adapter for Snowflake (careers.snowflake.com). Boots the SPA via
-BrowserClient to capture session cookies, then uses the existing HTTPClient
-for JSON pagination. Parser logic mirrors EightfoldAdapter._parse but is
-implemented locally to avoid inheritance coupling.
+Two-tier auth strategy:
+1. Intercept XHR request headers during SPA boot → relay via HTTPClient (fast).
+2. If relay returns 401/403 or auth error JSON → fall back to browser.evaluate_fetch().
 
-Config keys (same as eightfold adapter, plus):
-  use_playwright: true
-  browser_timeout_seconds: 30    (optional, default 30)
+Pilot adapter for Snowflake (careers.snowflake.com).
+Config keys: base_url, api_path, location_country, use_playwright, browser_timeout_seconds.
 """
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -26,8 +25,13 @@ from src.models import Job
 logger = logging.getLogger(__name__)
 
 
+def _is_auth_failure(payload: dict) -> bool:
+    """Return True if the JSON payload indicates an authentication/tenant failure."""
+    return payload.get("status") == "failure" or bool(payload.get("errorMsg"))
+
+
 class EightfoldPlaywrightAdapter(BaseAdapter):
-    """Eightfold adapter that bootstraps the SPA via Playwright to obtain auth cookies."""
+    """Eightfold adapter that bootstraps the SPA via Playwright to obtain auth."""
 
     source_platform = "eightfold_playwright"
 
@@ -45,7 +49,7 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
         domain = self.config.get("domain") or base_url.split("//", 1)[-1].split("/")[0]
         timeout_seconds = int(self.config.get("browser_timeout_seconds", 30))
 
-        # Step 1: Boot SPA, capture cookies + headers
+        # Step 1: Boot SPA, intercept XHR request headers
         try:
             session = self.browser.bootstrap_session(
                 base_url,
@@ -60,19 +64,49 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
             )
             return
 
-        if not session.cookies:
-            logger.warning(
-                "EightfoldPlaywrightAdapter[%s]: bootstrap returned no cookies — cannot auth",
-                self.company,
-            )
-            return
-
-        # Step 2: Paginate the JSON API with captured cookies + headers
         api_url = f"{base_url}{api_path}"
+        detected_at = datetime.now(tz=timezone.utc)
         offset = 0
         total: int | None = None
-        detected_at = datetime.now(tz=timezone.utc)
+        use_fallback = False
 
+        # Prefer captured request headers; fall back to session headers if empty
+        relay_headers = session.captured_request_headers or session.headers
+
+        # Step 2: Page-1 optimisation — use captured response if available
+        if session.captured_first_response:
+            try:
+                payload = json.loads(session.captured_first_response)
+                data = payload.get("data") or payload
+                positions = data.get("positions", [])
+                page_total = data.get("count", len(positions))
+                if total is None:
+                    total = page_total
+                for pos in positions:
+                    try:
+                        job = _parse_position(
+                            pos, self.company, self.source_platform, detected_at
+                        )
+                        if job is not None:
+                            yield job
+                    except Exception as exc:
+                        logger.warning(
+                            "EightfoldPlaywrightAdapter[%s]: skipping position %s: %s",
+                            self.company, pos.get("id"), exc,
+                        )
+                offset += len(positions)
+                if total is not None and offset >= total:
+                    return
+                self.http.polite_delay(1.0, 2.0)
+            except (ValueError, KeyError) as exc:
+                logger.warning(
+                    "EightfoldPlaywrightAdapter[%s]: bad captured_first_response, "
+                    "continuing from offset 0: %s",
+                    self.company, exc,
+                )
+                offset = 0  # reset and start from scratch
+
+        # Step 3: Paginate remaining pages
         while True:
             params: dict = {
                 "domain": domain,
@@ -83,43 +117,62 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
             if location_country:
                 params["location_country"] = location_country
 
-            try:
-                resp = self.http.get(
-                    api_url,
-                    params=params,
-                    cookies=session.cookies,
-                    headers=session.headers,
-                )
-            except requests.RequestException as exc:
-                logger.error(
-                    "EightfoldPlaywrightAdapter[%s]: request failed at offset=%d: %s",
-                    self.company, offset, exc,
-                )
-                return
+            if use_fallback:
+                try:
+                    payload = self.browser.evaluate_fetch(api_url, params)
+                except Exception as exc:
+                    logger.error(
+                        "EightfoldPlaywrightAdapter[%s]: evaluate_fetch failed at offset=%d: %s",
+                        self.company, offset, exc,
+                    )
+                    self.browser.capture_debug_artifacts(self.company, exc)
+                    return
+            else:
+                try:
+                    resp = self.http.get(
+                        api_url,
+                        params=params,
+                        cookies=session.cookies,
+                        headers=relay_headers,
+                    )
+                except requests.RequestException as exc:
+                    logger.error(
+                        "EightfoldPlaywrightAdapter[%s]: request failed at offset=%d: %s",
+                        self.company, offset, exc,
+                    )
+                    return
 
-            if not resp.ok:
-                logger.error(
-                    "EightfoldPlaywrightAdapter[%s]: HTTP %d at offset=%d",
-                    self.company, resp.status_code, offset,
-                )
-                return
+                if resp.status_code in (401, 403):
+                    logger.info(
+                        "EightfoldPlaywrightAdapter[%s]: HTTP %d — switching to page.evaluate fallback",
+                        self.company, resp.status_code,
+                    )
+                    use_fallback = True
+                    continue  # retry this offset with fallback
 
-            try:
-                payload = resp.json()
-            except ValueError as exc:
-                logger.error(
-                    "EightfoldPlaywrightAdapter[%s]: JSON parse error at offset=%d: %s",
-                    self.company, offset, exc,
-                )
-                return
+                if not resp.ok:
+                    logger.error(
+                        "EightfoldPlaywrightAdapter[%s]: HTTP %d at offset=%d",
+                        self.company, resp.status_code, offset,
+                    )
+                    return
 
-            status = payload.get("status")
-            if status == "failure":
-                logger.warning(
-                    "EightfoldPlaywrightAdapter[%s]: API returned failure: %s",
-                    self.company, payload.get("errorMsg", "unknown"),
-                )
-                return
+                try:
+                    payload = resp.json()
+                except ValueError as exc:
+                    logger.error(
+                        "EightfoldPlaywrightAdapter[%s]: JSON parse error at offset=%d: %s",
+                        self.company, offset, exc,
+                    )
+                    return
+
+                if _is_auth_failure(payload):
+                    logger.info(
+                        "EightfoldPlaywrightAdapter[%s]: auth error ('%s') — switching to page.evaluate fallback",
+                        self.company, payload.get("errorMsg", "unknown"),
+                    )
+                    use_fallback = True
+                    continue  # retry this offset with fallback
 
             data = payload.get("data") or payload
             positions = data.get("positions", [])
@@ -133,10 +186,12 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
 
             for pos in positions:
                 try:
-                    job = _parse_position(pos, self.company, self.source_platform, detected_at)
+                    job = _parse_position(
+                        pos, self.company, self.source_platform, detected_at
+                    )
                     if job is not None:
                         yield job
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     logger.warning(
                         "EightfoldPlaywrightAdapter[%s]: skipping position %s: %s",
                         self.company, pos.get("id"), exc,
