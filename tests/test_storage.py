@@ -42,7 +42,7 @@ class TestLoadState:
     def test_no_file_returns_empty_state(self, tmp_path):
         path = str(tmp_path / "nonexistent.json")
         state = load_state(path)
-        assert state["version"] == 1
+        assert state["version"] == 2
         assert state["first_run_completed_at"] is None
         assert state["companies"] == {}
 
@@ -57,7 +57,8 @@ class TestLoadState:
         state = load_state(str(path))
         assert state["first_run_completed_at"] == "2026-01-01T00:00:00+00:00"
         assert "Acme" in state["companies"]
-        assert "abc123" in state["companies"]["Acme"]["seen_ids"]
+        # v1 file is migrated on load: seen_ids → seen_jobs
+        assert "abc123" in state["companies"]["Acme"]["seen_jobs"]
 
     def test_corrupt_json_returns_empty_state(self, tmp_path):
         path = tmp_path / "state.json"
@@ -76,7 +77,8 @@ class TestSaveState:
         }
         save_state(original, path)
         loaded = load_state(path)
-        assert loaded["companies"]["Acme"]["seen_ids"] == ["id1"]
+        # v1 file is migrated on load: seen_ids → seen_jobs
+        assert "id1" in loaded["companies"]["Acme"]["seen_jobs"]
 
     def test_atomic_no_temp_file_left(self, tmp_path):
         path = str(tmp_path / "state.json")
@@ -190,3 +192,111 @@ class TestMarkFirstRunComplete:
         state = {"version": 1, "first_run_completed_at": None, "companies": {}}
         mark_first_run_complete(state)
         assert is_first_run(state) is False
+
+
+import json as _json  # avoid shadowing local json var
+
+# ---------------------------------------------------------------------------
+# v1 → v2 migration tests — Task 2 (v3)
+# ---------------------------------------------------------------------------
+
+from src.storage import _migrate_v1_to_v2  # will be added in step 3
+
+
+class TestMigrateV1ToV2:
+    def test_converts_seen_ids_to_seen_jobs(self):
+        v1 = {
+            "version": 1,
+            "first_run_completed_at": "2026-01-01T00:00:00+00:00",
+            "companies": {
+                "Micron": {
+                    "last_checked_at": "2026-05-08T10:00:00+00:00",
+                    "seen_ids": ["micron::workday::ABC", "micron::workday::XYZ"],
+                }
+            },
+        }
+        result = _migrate_v1_to_v2(v1)
+
+        assert result["version"] == 2
+        assert result["first_run_completed_at"] == "2026-01-01T00:00:00+00:00"
+        company = result["companies"]["Micron"]
+        assert "seen_ids" not in company
+        assert company["last_checked_at"] == "2026-05-08T10:00:00+00:00"
+        seen_jobs = company["seen_jobs"]
+        assert "micron::workday::ABC" in seen_jobs
+        assert "micron::workday::XYZ" in seen_jobs
+        entry = seen_jobs["micron::workday::ABC"]
+        assert entry["alerted"] is True
+        assert entry["first_seen"] is not None
+        assert entry["last_seen"] == entry["first_seen"]
+
+    def test_empty_seen_ids_becomes_empty_seen_jobs(self):
+        v1 = {
+            "version": 1,
+            "first_run_completed_at": None,
+            "companies": {
+                "Amazon": {"last_checked_at": None, "seen_ids": []}
+            },
+        }
+        result = _migrate_v1_to_v2(v1)
+        assert result["companies"]["Amazon"]["seen_jobs"] == {}
+        assert "seen_ids" not in result["companies"]["Amazon"]
+
+    def test_multiple_companies_migrated_independently(self):
+        v1 = {
+            "version": 1,
+            "first_run_completed_at": None,
+            "companies": {
+                "A": {"last_checked_at": None, "seen_ids": ["a::p::1"]},
+                "B": {"last_checked_at": None, "seen_ids": ["b::p::2"]},
+            },
+        }
+        result = _migrate_v1_to_v2(v1)
+        assert "a::p::1" in result["companies"]["A"]["seen_jobs"]
+        assert "b::p::2" in result["companies"]["B"]["seen_jobs"]
+
+
+class TestLoadStateMigration:
+    def test_v1_file_migrated_and_saved(self, tmp_path):
+        state_file = tmp_path / "seen_jobs.json"
+        v1 = {
+            "version": 1,
+            "first_run_completed_at": None,
+            "companies": {
+                "Salesforce": {
+                    "last_checked_at": None,
+                    "seen_ids": ["sf::workday::001"],
+                }
+            },
+        }
+        state_file.write_text(_json.dumps(v1))
+
+        state = load_state(str(state_file))
+
+        assert state["version"] == 2
+        assert "seen_jobs" in state["companies"]["Salesforce"]
+        # Verify migration was persisted to disk
+        reloaded = _json.loads(state_file.read_text())
+        assert reloaded["version"] == 2
+        assert "seen_jobs" in reloaded["companies"]["Salesforce"]
+
+    def test_v2_file_loaded_without_migration(self, tmp_path):
+        state_file = tmp_path / "seen_jobs.json"
+        v2 = {
+            "version": 2,
+            "first_run_completed_at": None,
+            "companies": {},
+        }
+        state_file.write_text(_json.dumps(v2))
+        original_mtime = state_file.stat().st_mtime
+
+        state = load_state(str(state_file))
+
+        assert state["version"] == 2
+        # File should not have been rewritten (no migration needed)
+        assert state_file.stat().st_mtime == original_mtime
+
+    def test_empty_state_returns_v2(self, tmp_path):
+        path = str(tmp_path / "nonexistent.json")
+        state = load_state(path)
+        assert state["version"] == 2

@@ -13,23 +13,50 @@ _MAX_SEEN_IDS = 5000
 
 
 def _empty_state() -> dict:
-    return {"version": 1, "first_run_completed_at": None, "companies": {}}
+    return {"version": 2, "first_run_completed_at": None, "companies": {}}
+
+
+def _migrate_v1_to_v2(state: dict) -> dict:
+    """Convert v1 state (seen_ids lists) to v2 (seen_jobs dicts). Mutates and returns state."""
+    migration_ts = datetime.now(timezone.utc).isoformat()
+    for company_state in state.get("companies", {}).values():
+        seen_ids = company_state.pop("seen_ids", [])
+        company_state["seen_jobs"] = {
+            jid: {
+                "first_seen": migration_ts,
+                "last_seen": migration_ts,
+                "alerted": True,
+            }
+            for jid in seen_ids
+        }
+    state["version"] = 2
+    return state
 
 
 def load_state(path: str) -> dict:
-    """Load JSON state; return empty state dict if file doesn't exist."""
+    """Load JSON state; return empty v2 state if file missing or corrupt.
+
+    Automatically migrates v1 state (seen_ids lists) to v2 (seen_jobs dicts)
+    on first load and persists the result atomically.
+    """
     if not os.path.exists(path):
         return _empty_state()
     try:
         with open(path, "r") as f:
             data = json.load(f)
-        # Ensure schema keys exist
         data.setdefault("version", 1)
         data.setdefault("first_run_completed_at", None)
         data.setdefault("companies", {})
+
+        if data["version"] == 1:
+            logger.info("Migrating state from v1 to v2...")
+            data = _migrate_v1_to_v2(data)
+            save_state(data, path)
+            logger.info("State migration complete.")
+
         return data
     except (json.JSONDecodeError, OSError) as e:
-        logger.error(f"Failed to load state from {path}: {e}. Starting fresh.")
+        logger.error("Failed to load state from %s: %s. Starting fresh.", path, e)
         return _empty_state()
 
 
