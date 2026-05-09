@@ -473,24 +473,24 @@ class TestApplyFilterPipeline:
 class TestWordBoundaryFiltering:
     """Short keywords must not match inside longer words."""
 
-    TECH_KWS = ["ml", "pm", "swe", "tpm", "software engineer"]
-    EARLY_KWS = ["intern", "internship"]
-
     @pytest.mark.parametrize("raw_text,kw", [
         ("developer with html and xml skills", "ml"),   # ml inside html/xml
         ("company-wide product initiative", "pm"),       # pm inside company
-        ("go elsewhere to apply", "swe"),                # swe inside elsewhere
+        ("I swear this works", "swe"),                   # swe inside swear
         ("template-driven architecture", "tpm"),         # tpm inside template
+    ])
+    def test_no_tech_false_positives(self, raw_text, kw):
+        job = make_job(raw_text=raw_text)
+        result = filter_tech_role(job, {"technical_role_keywords": [kw]})
+        assert not result.passes, f"'{kw}' should not match inside '{raw_text}'"
+
+    @pytest.mark.parametrize("raw_text,kw", [
         ("international business program", "intern"),    # intern inside international
     ])
-    def test_no_false_positives(self, raw_text, kw):
+    def test_no_early_career_false_positives(self, raw_text, kw):
         job = make_job(raw_text=raw_text)
-        tech_result = filter_tech_role(job, {"technical_role_keywords": [kw]})
-        early_result = filter_early_career(job, {"early_career_keywords": [kw]})
-        # At most one should match (depending on which list the keyword is in)
-        # Neither should match due to word-boundary violation
-        assert not tech_result.passes or kw not in ["ml", "pm", "swe", "tpm"]
-        assert not early_result.passes or kw not in ["intern"]
+        result = filter_early_career(job, {"early_career_keywords": [kw]})
+        assert not result.passes, f"'{kw}' should not match inside '{raw_text}'"
 
     @pytest.mark.parametrize("raw_text,kw,fn", [
         ("ML engineer intern 2026", "ml", "tech"),
