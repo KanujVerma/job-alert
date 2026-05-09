@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,6 +17,22 @@ except ImportError:
 
 _DEBUG_HTML_MAX = 1_048_576  # 1 MB cap on saved HTML
 
+_HEADER_BLOCK_PREFIXES = ("sec-fetch-", "sec-ch-", ":", "x-playwright-")
+_HEADER_BLOCK_EXACT = frozenset({"host", "connection", "content-length", "transfer-encoding"})
+
+
+def _filter_request_headers(headers: dict[str, str]) -> dict[str, str]:
+    """Drop browser-internal and pseudo-headers; keep forwarding-safe ones."""
+    result = {}
+    for k, v in headers.items():
+        k_lower = k.lower()
+        if any(k_lower.startswith(p) for p in _HEADER_BLOCK_PREFIXES):
+            continue
+        if k_lower in _HEADER_BLOCK_EXACT:
+            continue
+        result[k] = v
+    return result
+
 
 @dataclass(frozen=True)
 class BrowserSessionContext:
@@ -24,6 +40,8 @@ class BrowserSessionContext:
     headers: dict[str, str]
     final_url: str
     captured_urls: tuple[str, ...]
+    captured_request_headers: dict[str, str] = field(default_factory=dict)
+    captured_first_response: str | None = None
 
 
 class BrowserClient:
@@ -40,6 +58,7 @@ class BrowserClient:
         self._pw = None
         self._browser = None
         self._context = None
+        self._page = None
 
     def __enter__(self) -> "BrowserClient":
         return self
@@ -79,29 +98,38 @@ class BrowserClient:
         wait_for_response_url: str | None = None,
         timeout_seconds: int = 30,
     ) -> BrowserSessionContext:
-        """Navigate to url, wait for SPA to settle, return cookies + safe headers.
+        """Navigate to url, wait for SPA to settle, return session context.
 
-        Primary wait: wait_for_selector if provided, else networkidle.
-        Secondary: if wait_for_response_url is set, record matching XHR URLs
-        in the returned captured_urls (non-blocking — does not fail if absent).
-
-        On any exception: saves debug artifacts to debug_artifacts/{company}/{ts}/
-        then re-raises so the adapter can log and return [].
+        If wait_for_response_url is provided, intercepts the first matching XHR
+        and captures its request headers + response body.
+        The page stays open after return — call close() when done.
+        On any exception: saves debug artifacts then re-raises.
         """
         self._ensure_started()
         timeout_ms = timeout_seconds * 1000
         captured_urls: list[str] = []
+        captured_request_headers: dict[str, str] = {}
+        captured_first_response: str | None = None
 
         page = self._context.new_page()
         try:
             if wait_for_response_url:
                 needle = wait_for_response_url.replace("**", "")
-                page.on(
-                    "response",
-                    lambda resp: captured_urls.append(resp.url)
-                    if needle in resp.url
-                    else None,
-                )
+
+                def handle_response(resp) -> None:
+                    nonlocal captured_request_headers, captured_first_response
+                    if needle in resp.url:
+                        captured_urls.append(resp.url)
+                        if not captured_request_headers:  # first match only
+                            captured_request_headers = _filter_request_headers(
+                                dict(resp.request.headers)
+                            )
+                            try:
+                                captured_first_response = resp.text()
+                            except Exception:
+                                pass
+
+                page.on("response", handle_response)
 
             page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
 
@@ -132,20 +160,46 @@ class BrowserClient:
             except Exception:
                 pass
 
+            self._page = page  # keep alive for evaluate_fetch fallback
             return BrowserSessionContext(
                 cookies=cookies,
                 headers=headers,
                 final_url=final_url,
                 captured_urls=tuple(captured_urls),
+                captured_request_headers=captured_request_headers,
+                captured_first_response=captured_first_response,
             )
 
         except Exception as exc:
-            # Save debug artifacts while the page is still open, then re-raise
             self._save_artifacts(page, company, exc)
+            page.close()  # close only on failure
+            self._page = None
             raise
+        # No finally: page.close() — success path keeps the page alive
 
-        finally:
-            page.close()
+    def evaluate_fetch(self, url: str, params: dict) -> dict:
+        """Run a fetch() call inside the live Playwright page. Returns parsed JSON.
+
+        Requires bootstrap_session to have been called first.
+        Uses credentials: 'include' so localStorage/sessionStorage tokens apply.
+        """
+        if self._page is None:
+            raise RuntimeError(
+                "No active page — bootstrap_session must be called before evaluate_fetch"
+            )
+        js = """
+        async (args) => {
+            const p = new URLSearchParams(args.params);
+            const resp = await fetch(args.url + '?' + p.toString(), {credentials: 'include'});
+            if (!resp.ok) {
+                throw new Error('fetch failed: ' + resp.status + ' ' + resp.statusText);
+            }
+            return resp.json();
+        }
+        """
+        return self._page.evaluate(
+            js, {"url": url, "params": {k: str(v) for k, v in params.items()}}
+        )
 
     def capture_debug_artifacts(self, company: str, error: Exception) -> None:
         """Save error.txt for post-bootstrap failures (no page available)."""
@@ -153,6 +207,12 @@ class BrowserClient:
 
     def close(self) -> None:
         """Idempotent teardown. Call in do_run() finally block."""
+        if self._page is not None:
+            try:
+                self._page.close()
+            except Exception:
+                pass
+            self._page = None
         for attr, method in [("_context", "close"), ("_browser", "close"), ("_pw", "stop")]:
             obj = getattr(self, attr, None)
             if obj is not None:

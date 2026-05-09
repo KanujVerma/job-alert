@@ -62,7 +62,8 @@ def test_bootstrap_session_returns_context():
     assert ctx.headers["Origin"] == "https://careers.snowflake.com"
     assert "careers.snowflake.com" in ctx.headers["Referer"]
     assert ctx.headers["User-Agent"] == "Mozilla/5.0 Chrome/120"
-    mock_page.close.assert_called_once()
+    # Page stays open after bootstrap (Task 6 v3 change); close is called lazily via client.close()
+    mock_page.close.assert_not_called()
 
 
 def test_bootstrap_session_captures_xhr_urls():
@@ -155,3 +156,176 @@ def test_capture_debug_artifacts_no_page(tmp_path, monkeypatch):
     # No screenshot or page.html when page is None
     assert not (artifact_dirs[0] / "screenshot.png").exists()
     assert not (artifact_dirs[0] / "page.html").exists()
+
+
+# ---------------------------------------------------------------------------
+# Task 6 (v3): XHR interception + evaluate_fetch
+# ---------------------------------------------------------------------------
+
+from unittest.mock import call
+
+
+class TestBrowserSessionContextV3:
+    def test_new_fields_have_defaults(self):
+        """Existing 4-arg construction still works — new fields are optional."""
+        ctx = BrowserSessionContext(
+            cookies={"sid": "abc"},
+            headers={"Origin": "https://example.com"},
+            final_url="https://example.com/jobs",
+            captured_urls=(),
+        )
+        assert ctx.captured_request_headers == {}
+        assert ctx.captured_first_response is None
+
+    def test_new_fields_can_be_set(self):
+        ctx = BrowserSessionContext(
+            cookies={},
+            headers={},
+            final_url="https://example.com",
+            captured_urls=(),
+            captured_request_headers={"Authorization": "Bearer token"},
+            captured_first_response='{"data": {"positions": []}}',
+        )
+        assert ctx.captured_request_headers == {"Authorization": "Bearer token"}
+        assert ctx.captured_first_response == '{"data": {"positions": []}}'
+
+
+def _make_mock_browser_for_intercept():
+    """Build a BrowserClient with a mocked Playwright stack for intercept tests."""
+    mock_page = MagicMock()
+    mock_page.url = "https://careers.snowflake.com/us/en/jobs"
+    mock_page.evaluate.return_value = "Mozilla/5.0 Test"
+
+    mock_context = MagicMock()
+    mock_context.new_page.return_value = mock_page
+    mock_context.cookies.return_value = [{"name": "PHPSESSID", "value": "sess123"}]
+
+    mock_browser_obj = MagicMock()
+    mock_pw = MagicMock()
+    mock_pw.chromium.launch.return_value = mock_browser_obj
+    mock_browser_obj.new_context.return_value = mock_context
+
+    with patch("src.browser._sync_playwright") as mock_sync_pw:
+        mock_sync_pw.return_value.__enter__ = MagicMock(return_value=mock_pw)
+        mock_sync_pw.return_value.__exit__ = MagicMock(return_value=False)
+        mock_sync_pw.return_value.start.return_value = mock_pw
+
+        client = BrowserClient()
+        client._pw = mock_pw
+        client._browser = mock_browser_obj
+        client._context = mock_context
+
+    return client, mock_page
+
+
+class TestBootstrapSessionXHRInterception:
+    def test_captures_request_headers_on_matching_response(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+
+        # Simulate a response event for the matching URL
+        captured_handler = None
+
+        def fake_on(event, handler):
+            nonlocal captured_handler
+            if event == "response":
+                captured_handler = handler
+
+        mock_page.on.side_effect = fake_on
+
+        # After goto, fire a fake matching response
+        def fake_goto(*args, **kwargs):
+            if captured_handler:
+                mock_resp = MagicMock()
+                mock_resp.url = "https://careers.snowflake.com/api/apply/v2/jobs?limit=20"
+                mock_resp.request.headers = {
+                    "Authorization": "Bearer tok",
+                    "sec-fetch-site": "same-origin",  # should be filtered
+                    ":method": "GET",                  # should be filtered
+                }
+                mock_resp.text.return_value = '{"data": {"positions": [], "count": 0}}'
+                captured_handler(mock_resp)
+
+        mock_page.goto.side_effect = fake_goto
+        mock_page.wait_for_load_state = MagicMock()
+
+        session = client.bootstrap_session(
+            "https://careers.snowflake.com",
+            wait_for_response_url="**/api/apply/v2/jobs**",
+        )
+
+        assert "Authorization" in session.captured_request_headers
+        assert "sec-fetch-site" not in session.captured_request_headers
+        assert ":method" not in session.captured_request_headers
+        assert session.captured_first_response is not None
+
+    def test_page_stays_open_after_bootstrap(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        mock_page.wait_for_load_state = MagicMock()
+
+        client.bootstrap_session("https://careers.snowflake.com")
+
+        mock_page.close.assert_not_called()
+        assert client._page is mock_page
+
+    def test_page_closed_on_bootstrap_failure(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        mock_page.goto.side_effect = RuntimeError("timeout")
+
+        with pytest.raises(RuntimeError):
+            client.bootstrap_session("https://careers.snowflake.com", company="Snowflake")
+
+        mock_page.close.assert_called_once()
+        assert client._page is None
+
+    def test_close_closes_page(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        mock_page.wait_for_load_state = MagicMock()
+        client.bootstrap_session("https://careers.snowflake.com")
+
+        client.close()
+
+        mock_page.close.assert_called_once()
+        assert client._page is None
+
+
+class TestEvaluateFetch:
+    def test_raises_without_active_page(self):
+        client = BrowserClient()
+        with pytest.raises(RuntimeError, match="bootstrap_session must be called"):
+            client.evaluate_fetch("https://example.com/api", {})
+
+    def test_calls_page_evaluate_with_correct_args(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        client._page = mock_page
+        mock_page.evaluate.return_value = {"data": {"positions": [], "count": 0}}
+
+        result = client.evaluate_fetch(
+            "https://careers.snowflake.com/api/apply/v2/jobs",
+            {"limit": 20, "offset": 0},
+        )
+
+        assert result == {"data": {"positions": [], "count": 0}}
+        mock_page.evaluate.assert_called_once()
+        call_args = mock_page.evaluate.call_args
+        assert "fetch" in call_args[0][0]  # JS code contains fetch
+        assert call_args[0][1]["url"] == "https://careers.snowflake.com/api/apply/v2/jobs"
+        assert call_args[0][1]["params"]["limit"] == "20"
+
+
+class TestHeaderFiltering:
+    def test_pseudo_headers_filtered(self):
+        from src.browser import _filter_request_headers
+        headers = {
+            ":method": "GET",
+            ":authority": "careers.snowflake.com",
+            "Authorization": "Bearer tok",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-mode": "cors",
+            "Accept": "application/json",
+        }
+        result = _filter_request_headers(headers)
+        assert ":method" not in result
+        assert ":authority" not in result
+        assert "sec-fetch-site" not in result
+        assert "Authorization" in result
+        assert "Accept" in result
