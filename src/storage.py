@@ -9,8 +9,6 @@ from src.models import Job
 
 logger = logging.getLogger(__name__)
 
-_MAX_SEEN_IDS = 5000
-
 
 def _empty_state() -> dict:
     return {"version": 2, "first_run_completed_at": None, "companies": {}}
@@ -80,41 +78,6 @@ def save_state(state: dict, path: str) -> None:
             pass
         raise
 
-
-def get_new_jobs(jobs: list[Job], company: str, state: dict) -> list[Job]:
-    """Return jobs whose id is NOT in state["companies"][company]["seen_ids"]."""
-    company_state = state["companies"].get(company, {})
-    seen_ids = set(company_state.get("seen_ids", []))
-    return [job for job in jobs if job.id not in seen_ids]
-
-
-def mark_seen(jobs: list[Job], company: str, state: dict) -> None:
-    """Add job IDs to state, update last_checked_at, prune seen_ids to 5000."""
-    if company not in state["companies"]:
-        state["companies"][company] = {"last_checked_at": None, "seen_ids": []}
-
-    company_state = state["companies"][company]
-    existing_ids = company_state.get("seen_ids", [])
-    new_ids = [job.id for job in jobs]
-
-    # Merge and deduplicate preserving order (existing first, then new)
-    seen_set = set(existing_ids)
-    for jid in new_ids:
-        if jid not in seen_set:
-            existing_ids.append(jid)
-            seen_set.add(jid)
-
-    # Prune to last MAX_SEEN_IDS
-    if len(existing_ids) > _MAX_SEEN_IDS:
-        existing_ids = existing_ids[-_MAX_SEEN_IDS:]
-
-    company_state["seen_ids"] = existing_ids
-    company_state["last_checked_at"] = datetime.now(timezone.utc).isoformat()
-
-
-# ---------------------------------------------------------------------------
-# v2 state functions — replace get_new_jobs / mark_seen
-# ---------------------------------------------------------------------------
 
 def classify_jobs(
     jobs: list[Job],

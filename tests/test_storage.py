@@ -9,8 +9,6 @@ import pytest
 from src.storage import (
     load_state,
     save_state,
-    get_new_jobs,
-    mark_seen,
     is_first_run,
     mark_first_run_complete,
 )
@@ -93,73 +91,6 @@ class TestSaveState:
         state = {"version": 1, "first_run_completed_at": None, "companies": {}}
         save_state(state, path)
         assert os.path.exists(path)
-
-
-class TestGetNewJobs:
-    def test_new_id_is_included(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        jobs = [make_job("new-id-1"), make_job("new-id-2")]
-        new = get_new_jobs(jobs, "Acme", state)
-        assert len(new) == 2
-
-    def test_known_id_is_excluded(self):
-        state = {
-            "version": 1,
-            "first_run_completed_at": None,
-            "companies": {"Acme": {"last_checked_at": None, "seen_ids": ["old-id"]}},
-        }
-        jobs = [make_job("old-id"), make_job("brand-new")]
-        new = get_new_jobs(jobs, "Acme", state)
-        assert len(new) == 1
-        assert new[0].id == "brand-new"
-
-    def test_empty_jobs_returns_empty(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        new = get_new_jobs([], "Acme", state)
-        assert new == []
-
-
-class TestMarkSeen:
-    def test_adds_ids(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        jobs = [make_job("id1"), make_job("id2")]
-        mark_seen(jobs, "Acme", state)
-        assert "id1" in state["companies"]["Acme"]["seen_ids"]
-        assert "id2" in state["companies"]["Acme"]["seen_ids"]
-
-    def test_updates_last_checked_at(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        mark_seen([make_job("x")], "Acme", state)
-        ts = state["companies"]["Acme"]["last_checked_at"]
-        assert ts is not None
-        # Should be a valid ISO timestamp
-        datetime.fromisoformat(ts)
-
-    def test_no_duplicate_ids(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        jobs = [make_job("same-id")]
-        mark_seen(jobs, "Acme", state)
-        mark_seen(jobs, "Acme", state)
-        ids = state["companies"]["Acme"]["seen_ids"]
-        assert ids.count("same-id") == 1
-
-    def test_prunes_to_5000(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        # Pre-fill with 5000 IDs
-        state["companies"]["Acme"] = {
-            "last_checked_at": None,
-            "seen_ids": [f"old-{i}" for i in range(5000)],
-        }
-        new_jobs = [make_job("brand-new")]
-        mark_seen(new_jobs, "Acme", state)
-        ids = state["companies"]["Acme"]["seen_ids"]
-        assert len(ids) == 5000
-        assert "brand-new" in ids
-
-    def test_creates_company_entry_if_missing(self):
-        state = {"version": 1, "first_run_completed_at": None, "companies": {}}
-        mark_seen([], "NewCo", state)
-        assert "NewCo" in state["companies"]
 
 
 class TestIsFirstRun:

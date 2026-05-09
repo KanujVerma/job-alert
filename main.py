@@ -3,6 +3,7 @@ import argparse
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -11,10 +12,13 @@ from src.adapters import ADAPTER_REGISTRY
 from src.storage import (
     load_state,
     save_state,
-    get_new_jobs,
-    mark_seen,
     is_first_run,
     mark_first_run_complete,
+    classify_jobs,
+    mark_alerted,
+    mark_cap_suppressed,
+    update_last_checked,
+    prune_seen_jobs,
 )
 from src.http import HTTPClient
 from src.browser import BrowserClient
@@ -81,6 +85,9 @@ def do_run(args) -> int:
     state_path = config.defaults.get("state_path", "state/seen_jobs.json")
     state = load_state(state_path)
     first_run = is_first_run(state)
+
+    ttl_days = int(config.defaults.get("first_seen_ttl_days", 180))
+    prune_seen_jobs(state, ttl_days, datetime.now(timezone.utc))
 
     # Determine notification mode
     notify = False
@@ -158,15 +165,24 @@ def do_run(args) -> int:
                     matched.append(filtered_job)
                 filter_reasons[job.id] = reasons
 
-            # Diff against state
-            new_jobs = get_new_jobs(matched, cname, state)
+            # Classify against first_seen state (also updates last_seen in-memory)
+            freshness_hours = float(config.filters.get("freshness_hours", 48))
+            now = datetime.now(timezone.utc)
+            alert_candidates = classify_jobs(
+                matched, cname, state, freshness_hours, now,
+                verbose=getattr(args, "verbose", False),
+            )
 
+            actually_alerted: list = []
+            cap_suppressed_jobs: list = []
             alerted = 0
-            for job in new_jobs:
+
+            for job in alert_candidates:
                 if notify and not getattr(args, "dry_run", False):
                     if not cap_hit:
                         if alert_count >= max_alerts:
                             cap_hit = True
+                            cap_suppressed_jobs.append(job)
                             if notifier:
                                 notifier.send_summary(
                                     title="⚠️ Alert Cap Reached",
@@ -177,16 +193,21 @@ def do_run(args) -> int:
                                 notifier.send_job_alert(job)
                             alert_count += 1
                             alerted += 1
+                            actually_alerted.append(job)
+                    else:
+                        cap_suppressed_jobs.append(job)
                 elif summary_mode:
                     summary_jobs.append(job)
 
-            # Mark seen (even in dry-run)
-            mark_seen(new_jobs, cname, state)
+            # Persist first_seen state (always) and alert status (only when not dry-run)
+            mark_alerted(actually_alerted, cname, state)
+            mark_cap_suppressed(cap_suppressed_jobs, cname, state)
+            update_last_checked(cname, state, now)
 
             if getattr(args, "verbose", False):
                 print(
                     f"{cname}: fetched={len(fetched)} matched={len(matched)} "
-                    f"new={len(new_jobs)} alerted={alerted}"
+                    f"candidates={len(alert_candidates)} alerted={alerted}"
                 )
 
             # Polite delay between companies
