@@ -44,7 +44,6 @@ filters:
     - business intelligence
     - bi engineer
     - analytics
-    - ai
     - artificial intelligence
     - ml
     - machine learning
@@ -82,6 +81,8 @@ filters:
     - maintenance
     - security guard
     - manufacturing operator
+    - economics
+    - economist
   exclude_unless_intern:
     - marketing
     - technician
