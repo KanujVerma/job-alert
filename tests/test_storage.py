@@ -194,8 +194,6 @@ class TestMarkFirstRunComplete:
         assert is_first_run(state) is False
 
 
-import json as _json  # avoid shadowing local json var
-
 # ---------------------------------------------------------------------------
 # v1 → v2 migration tests — Task 2 (v3)
 # ---------------------------------------------------------------------------
@@ -269,14 +267,14 @@ class TestLoadStateMigration:
                 }
             },
         }
-        state_file.write_text(_json.dumps(v1))
+        state_file.write_text(json.dumps(v1))
 
         state = load_state(str(state_file))
 
         assert state["version"] == 2
         assert "seen_jobs" in state["companies"]["Salesforce"]
         # Verify migration was persisted to disk
-        reloaded = _json.loads(state_file.read_text())
+        reloaded = json.loads(state_file.read_text())
         assert reloaded["version"] == 2
         assert "seen_jobs" in reloaded["companies"]["Salesforce"]
 
@@ -287,7 +285,7 @@ class TestLoadStateMigration:
             "first_run_completed_at": None,
             "companies": {},
         }
-        state_file.write_text(_json.dumps(v2))
+        state_file.write_text(json.dumps(v2))
         original_mtime = state_file.stat().st_mtime
 
         state = load_state(str(state_file))

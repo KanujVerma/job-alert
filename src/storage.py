@@ -51,8 +51,11 @@ def load_state(path: str) -> dict:
         if data["version"] == 1:
             logger.info("Migrating state from v1 to v2...")
             data = _migrate_v1_to_v2(data)
-            save_state(data, path)
-            logger.info("State migration complete.")
+            try:
+                save_state(data, path)
+                logger.info("State migration complete.")
+            except Exception as save_err:
+                logger.warning("Migration succeeded but failed to persist: %s — will re-migrate next run.", save_err)
 
         return data
     except (json.JSONDecodeError, OSError) as e:
