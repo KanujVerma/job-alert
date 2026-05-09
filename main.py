@@ -17,6 +17,7 @@ from src.storage import (
     mark_first_run_complete,
 )
 from src.http import HTTPClient
+from src.browser import BrowserClient
 from src.notifier import Notifier
 from src.filtering import apply_filter_pipeline
 from src.scheduler import run_loop
@@ -119,70 +120,81 @@ def do_run(args) -> int:
     min_delay = float(delay_range[0]) if isinstance(delay_range, list) else 2.0
     max_delay = float(delay_range[1]) if isinstance(delay_range, (list, tuple)) and len(delay_range) > 1 else 4.0
 
-    for company_cfg in companies:
-        if not company_cfg.get("enabled", True):
-            continue
+    needs_browser = any(
+        c.get("enabled", True) and c.get("config", {}).get("use_playwright", False)
+        for c in companies
+    )
+    browser = BrowserClient() if needs_browser else None
 
-        cname = company_cfg["name"]
-        adapter_key = company_cfg.get("adapter")
+    try:
+        for company_cfg in companies:
+            if not company_cfg.get("enabled", True):
+                continue
 
-        if adapter_key not in ADAPTER_REGISTRY:
-            logger.debug(f"Skipping {cname}: adapter '{adapter_key}' not registered")
-            continue
+            cname = company_cfg["name"]
+            adapter_key = company_cfg.get("adapter")
 
-        adapter_cls = ADAPTER_REGISTRY[adapter_key]
-        adapter = adapter_cls(cname, company_cfg.get("config", {}), http)
+            if adapter_key not in ADAPTER_REGISTRY:
+                logger.debug(f"Skipping {cname}: adapter '{adapter_key}' not registered")
+                continue
 
-        fetched = []
-        try:
-            fetched = list(adapter.fetch())
-            any_company_succeeded = True
-        except Exception as e:
-            logger.error(f"{cname}: fetch failed: {e}", exc_info=True)
+            adapter_cls = ADAPTER_REGISTRY[adapter_key]
+            adapter = adapter_cls(cname, company_cfg.get("config", {}), http, browser=browser)
 
-        # Apply filter pipeline
-        source_config = company_cfg.get("config", {})
-        matched = []
-        filter_reasons = {}
-        for job in fetched:
-            filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
-            if filtered_job is not None:
-                matched.append(filtered_job)
-            filter_reasons[job.id] = reasons
+            fetched = []
+            try:
+                fetched = list(adapter.fetch())
+                any_company_succeeded = True
+            except Exception as e:
+                logger.error(f"{cname}: fetch failed: {e}", exc_info=True)
 
-        # Diff against state
-        new_jobs = get_new_jobs(matched, cname, state)
+            # Apply filter pipeline
+            source_config = company_cfg.get("config", {})
+            matched = []
+            filter_reasons = {}
+            for job in fetched:
+                filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
+                if filtered_job is not None:
+                    matched.append(filtered_job)
+                filter_reasons[job.id] = reasons
 
-        alerted = 0
-        for job in new_jobs:
-            if notify and not getattr(args, "dry_run", False):
-                if not cap_hit:
-                    if alert_count >= max_alerts:
-                        cap_hit = True
-                        if notifier:
-                            notifier.send_summary(
-                                title="⚠️ Alert Cap Reached",
-                                description=f"Max alerts per run ({max_alerts}) reached. Remaining jobs silenced.",
-                            )
-                    else:
-                        if notifier:
-                            notifier.send_job_alert(job)
-                        alert_count += 1
-                        alerted += 1
-            elif summary_mode:
-                summary_jobs.append(job)
+            # Diff against state
+            new_jobs = get_new_jobs(matched, cname, state)
 
-        # Mark seen (even in dry-run)
-        mark_seen(new_jobs, cname, state)
+            alerted = 0
+            for job in new_jobs:
+                if notify and not getattr(args, "dry_run", False):
+                    if not cap_hit:
+                        if alert_count >= max_alerts:
+                            cap_hit = True
+                            if notifier:
+                                notifier.send_summary(
+                                    title="⚠️ Alert Cap Reached",
+                                    description=f"Max alerts per run ({max_alerts}) reached. Remaining jobs silenced.",
+                                )
+                        else:
+                            if notifier:
+                                notifier.send_job_alert(job)
+                            alert_count += 1
+                            alerted += 1
+                elif summary_mode:
+                    summary_jobs.append(job)
 
-        if getattr(args, "verbose", False):
-            print(
-                f"{cname}: fetched={len(fetched)} matched={len(matched)} "
-                f"new={len(new_jobs)} alerted={alerted}"
-            )
+            # Mark seen (even in dry-run)
+            mark_seen(new_jobs, cname, state)
 
-        # Polite delay between companies
-        http.polite_delay(min_delay, max_delay)
+            if getattr(args, "verbose", False):
+                print(
+                    f"{cname}: fetched={len(fetched)} matched={len(matched)} "
+                    f"new={len(new_jobs)} alerted={alerted}"
+                )
+
+            # Polite delay between companies
+            http.polite_delay(min_delay, max_delay)
+
+    finally:
+        if browser is not None:
+            browser.close()
 
     # Summary mode: send one embed
     if summary_mode and summary_jobs and notifier and not getattr(args, "dry_run", False):
