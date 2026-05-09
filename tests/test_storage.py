@@ -254,6 +254,128 @@ class TestMigrateV1ToV2:
         assert "b::p::2" in result["companies"]["B"]["seen_jobs"]
 
 
+from datetime import timedelta
+from src.storage import classify_jobs, mark_alerted, mark_cap_suppressed
+
+_NOW_V3 = datetime(2026, 5, 8, 12, 0, 0, tzinfo=timezone.utc)
+_FRESHNESS = 48.0  # hours
+
+
+def _make_v2_state(company: str = "TestCo", seen_jobs: dict | None = None) -> dict:
+    return {
+        "version": 2,
+        "first_run_completed_at": None,
+        "companies": {
+            company: {
+                "last_checked_at": None,
+                "seen_jobs": seen_jobs or {},
+            }
+        },
+    }
+
+
+def _jid(n: int = 1) -> str:
+    return f"testco::platform::{n:03d}"
+
+
+class TestClassifyJobs:
+    def test_new_job_is_alert_candidate(self):
+        job = make_job(_jid(1))
+        state = _make_v2_state()
+        result = classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
+        assert job in result
+        entry = state["companies"]["TestCo"]["seen_jobs"][_jid(1)]
+        assert entry["alerted"] is False
+        assert entry["first_seen"] == _NOW_V3.isoformat()
+
+    def test_alerted_job_skipped(self):
+        job = make_job(_jid(1))
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": _NOW_V3.isoformat(), "last_seen": _NOW_V3.isoformat(), "alerted": True}
+        })
+        result = classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
+        assert job not in result
+
+    def test_stale_unalerted_job_suppressed(self):
+        job = make_job(_jid(1))
+        old = (_NOW_V3 - timedelta(hours=72)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": old, "last_seen": old, "alerted": False}
+        })
+        result = classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
+        assert job not in result
+        entry = state["companies"]["TestCo"]["seen_jobs"][_jid(1)]
+        assert entry.get("stale_suppressed") is True
+
+    def test_fresh_unalerted_job_is_candidate(self):
+        job = make_job(_jid(1))
+        recent = (_NOW_V3 - timedelta(hours=24)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": recent, "last_seen": recent, "alerted": False}
+        })
+        result = classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
+        assert job in result
+
+    def test_last_seen_always_updated(self):
+        job = make_job(_jid(1))
+        old = (_NOW_V3 - timedelta(hours=1)).isoformat()
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": old, "last_seen": old, "alerted": True}
+        })
+        classify_jobs([job], "TestCo", state, _FRESHNESS, _NOW_V3)
+        assert state["companies"]["TestCo"]["seen_jobs"][_jid(1)]["last_seen"] == _NOW_V3.isoformat()
+
+    def test_missing_company_created(self):
+        job = make_job(_jid(1))
+        state = {"version": 2, "first_run_completed_at": None, "companies": {}}
+        result = classify_jobs([job], "NewCo", state, _FRESHNESS, _NOW_V3)
+        assert job in result
+        assert "NewCo" in state["companies"]
+
+
+class TestMarkAlerted:
+    def test_sets_alerted_true(self):
+        job = make_job(_jid(1))
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": _NOW_V3.isoformat(), "last_seen": _NOW_V3.isoformat(), "alerted": False}
+        })
+        mark_alerted([job], "TestCo", state)
+        assert state["companies"]["TestCo"]["seen_jobs"][_jid(1)]["alerted"] is True
+
+    def test_clears_cap_suppressed(self):
+        job = make_job(_jid(1))
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {
+                "first_seen": _NOW_V3.isoformat(), "last_seen": _NOW_V3.isoformat(),
+                "alerted": False, "cap_suppressed": True,
+            }
+        })
+        mark_alerted([job], "TestCo", state)
+        entry = state["companies"]["TestCo"]["seen_jobs"][_jid(1)]
+        assert entry["alerted"] is True
+        assert "cap_suppressed" not in entry
+
+    def test_empty_list_is_noop(self):
+        state = _make_v2_state()
+        mark_alerted([], "TestCo", state)  # must not raise
+
+
+class TestMarkCapSuppressed:
+    def test_sets_cap_suppressed(self):
+        job = make_job(_jid(1))
+        state = _make_v2_state(seen_jobs={
+            _jid(1): {"first_seen": _NOW_V3.isoformat(), "last_seen": _NOW_V3.isoformat(), "alerted": False}
+        })
+        mark_cap_suppressed([job], "TestCo", state)
+        entry = state["companies"]["TestCo"]["seen_jobs"][_jid(1)]
+        assert entry.get("cap_suppressed") is True
+        assert entry["alerted"] is False  # NOT marked as alerted
+
+    def test_empty_list_is_noop(self):
+        state = _make_v2_state()
+        mark_cap_suppressed([], "TestCo", state)  # must not raise
+
+
 class TestLoadStateMigration:
     def test_v1_file_migrated_and_saved(self, tmp_path):
         state_file = tmp_path / "seen_jobs.json"

@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from src.models import Job
 
@@ -110,6 +110,78 @@ def mark_seen(jobs: list[Job], company: str, state: dict) -> None:
 
     company_state["seen_ids"] = existing_ids
     company_state["last_checked_at"] = datetime.now(timezone.utc).isoformat()
+
+
+# ---------------------------------------------------------------------------
+# v2 state functions — replace get_new_jobs / mark_seen
+# ---------------------------------------------------------------------------
+
+def classify_jobs(
+    jobs: list[Job],
+    company: str,
+    state: dict,
+    freshness_hours: float,
+    now: datetime,
+    verbose: bool = False,
+) -> list[Job]:
+    """Classify jobs for alerting. Updates seen_jobs entries in state (in-memory).
+
+    Returns only jobs that should proceed to Discord alerting.
+    """
+    company_state = state["companies"].setdefault(
+        company, {"last_checked_at": None, "seen_jobs": {}}
+    )
+    seen_jobs = company_state.setdefault("seen_jobs", {})
+
+    candidates = []
+    for job in jobs:
+        entry = seen_jobs.get(job.id)
+
+        if entry is None:
+            seen_jobs[job.id] = {
+                "first_seen": now.isoformat(),
+                "last_seen": now.isoformat(),
+                "alerted": False,
+            }
+            candidates.append(job)
+        else:
+            entry["last_seen"] = now.isoformat()
+
+            if entry.get("alerted"):
+                if verbose:
+                    logger.debug("%s job %s suppressed: already alerted", company, job.id)
+            else:
+                first_seen_dt = datetime.fromisoformat(entry["first_seen"])
+                age_hours = (now - first_seen_dt).total_seconds() / 3600
+                if age_hours > freshness_hours:
+                    entry["stale_suppressed"] = True
+                    if verbose:
+                        logger.debug(
+                            "%s job %s suppressed: stale_suppressed "
+                            "(first_seen %.0fh ago, limit %.0fh)",
+                            company, job.id, age_hours, freshness_hours,
+                        )
+                else:
+                    candidates.append(job)
+
+    return candidates
+
+
+def mark_alerted(jobs: list[Job], company: str, state: dict) -> None:
+    """Set alerted=True for jobs successfully sent to Discord."""
+    seen_jobs = state["companies"].get(company, {}).get("seen_jobs", {})
+    for job in jobs:
+        if job.id in seen_jobs:
+            seen_jobs[job.id]["alerted"] = True
+            seen_jobs[job.id].pop("cap_suppressed", None)
+
+
+def mark_cap_suppressed(jobs: list[Job], company: str, state: dict) -> None:
+    """Mark jobs silenced by max_alerts_per_run cap. They will retry next run."""
+    seen_jobs = state["companies"].get(company, {}).get("seen_jobs", {})
+    for job in jobs:
+        if job.id in seen_jobs:
+            seen_jobs[job.id]["cap_suppressed"] = True
 
 
 def is_first_run(state: dict) -> bool:
