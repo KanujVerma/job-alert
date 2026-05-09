@@ -150,17 +150,75 @@ GitHub Actions free-tier cron runs are queued at the scheduled time but may star
 
 ---
 
-## 11. Adding Playwright (future)
+## 11. Playwright — JavaScript-Rendered Career Sites (v2)
 
-If a career site starts blocking static scraping and requires JavaScript rendering:
+Some career sites are JavaScript-rendered SPAs that the plain `requests`-based
+pipeline cannot authenticate. The **hybrid approach** boots the SPA once with
+a headless Chromium browser to capture session cookies, then uses the normal
+HTTP client for all subsequent JSON pagination.
 
-1. `pip install playwright && playwright install chromium`
-2. Add `playwright` to `requirements.txt`
-3. Write a new adapter in `src/adapters/playwright_site.py` that uses `sync_playwright`
-4. Register it in `src/adapters/__init__.py`
-5. Update `companies.yaml` for that company
+**Currently enabled:** Snowflake only (`adapter: eightfold_playwright`).
+Microsoft Research, Applied Digital, and Oracle are disabled pending separate plans.
 
-Not needed for v1 — all current adapters use public JSON endpoints or static HTML.
+### Local setup
+
+```bash
+# Step 1: Python package (already in requirements.txt)
+pip install -r requirements.txt
+
+# Step 2: Chromium binary (only needed to run browser-enabled adapters)
+python -m playwright install chromium
+```
+
+The Python package is always installed. The Chromium binary is only needed
+in environments where a browser-enabled adapter is active. If Snowflake is
+disabled (`enabled: false` in `companies.yaml`), no browser is ever started.
+
+### Running Snowflake locally
+
+```bash
+# Single-company dry run with verbose output
+python main.py run --company Snowflake --dry-run --verbose
+```
+
+On success you will see output like:
+```
+Snowflake: fetched=40 matched=12 new=12 alerted=0
+```
+
+### Debug artifacts
+
+If the browser bootstrap fails (timeout, anti-bot block, network error),
+artifacts are saved to:
+
+```
+debug_artifacts/Snowflake/<timestamp>/
+├── screenshot.png     # page state at failure
+├── page.html          # DOM dump (capped at 1 MB)
+└── error.txt          # exception type + message
+```
+
+The `debug_artifacts/` directory is gitignored and never committed.
+
+### Disabling Snowflake
+
+Set `enabled: false` in `companies.yaml`:
+
+```yaml
+- name: Snowflake
+  adapter: eightfold_playwright
+  enabled: false          # ← disable here; Chromium will not start
+  config:
+    ...
+```
+
+### Adding more Playwright adapters (future)
+
+1. Set `use_playwright: true` in the company's `config` block.
+2. Create `src/adapters/<name>_playwright.py`, extending `BaseAdapter` with
+   `self.browser` for the bootstrap session and `self.http` for API calls.
+3. Register in `src/adapters/__init__.py`.
+4. See `src/adapters/eightfold_playwright.py` as the reference implementation.
 
 ---
 
