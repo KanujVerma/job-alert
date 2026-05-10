@@ -288,6 +288,67 @@ class TestBootstrapSessionXHRInterception:
         mock_page.close.assert_called_once()
         assert client._page is None
 
+    def test_captures_request_method_url_body(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        captured_handler = None
+
+        def fake_on(event, handler):
+            nonlocal captured_handler
+            if event == "response":
+                captured_handler = handler
+
+        mock_page.on.side_effect = fake_on
+
+        def fake_goto(*args, **kwargs):
+            if captured_handler:
+                mock_resp = MagicMock()
+                mock_resp.url = "https://content-us.phenompeople.com/api/SNCOUS/searchJobs"
+                mock_resp.status = 200
+                mock_resp.request.method = "POST"
+                mock_resp.request.headers = {"Content-Type": "application/json"}
+                mock_resp.request.post_data = '{"from":0,"size":20}'
+                mock_resp.text.return_value = '{"jobs":[],"total":0}'
+                captured_handler(mock_resp)
+
+        mock_page.goto.side_effect = fake_goto
+        mock_page.wait_for_load_state = MagicMock()
+
+        session = client.bootstrap_session(
+            "https://careers.snowflake.com/us/en/search",
+            wait_for_response_url="**/api/SNCOUS/searchJobs**",
+        )
+
+        assert session.captured_request_method == "POST"
+        assert session.captured_request_url == "https://content-us.phenompeople.com/api/SNCOUS/searchJobs"
+        assert session.captured_request_body == '{"from":0,"size":20}'
+
+
+class TestBrowserSessionContextPhenom:
+    def test_new_fields_have_defaults(self):
+        ctx = BrowserSessionContext(
+            cookies={},
+            headers={},
+            final_url="https://example.com",
+            captured_urls=(),
+        )
+        assert ctx.captured_request_method == "GET"
+        assert ctx.captured_request_url == ""
+        assert ctx.captured_request_body is None
+
+    def test_new_fields_can_be_set(self):
+        ctx = BrowserSessionContext(
+            cookies={},
+            headers={},
+            final_url="https://example.com",
+            captured_urls=(),
+            captured_request_method="POST",
+            captured_request_url="https://content-us.phenompeople.com/api/SNCOUS/searchJobs",
+            captured_request_body='{"from":0,"size":20}',
+        )
+        assert ctx.captured_request_method == "POST"
+        assert ctx.captured_request_url == "https://content-us.phenompeople.com/api/SNCOUS/searchJobs"
+        assert ctx.captured_request_body == '{"from":0,"size":20}'
+
 
 class TestEvaluateFetch:
     def test_raises_without_active_page(self):
@@ -311,6 +372,56 @@ class TestEvaluateFetch:
         assert "fetch" in call_args[0][0]  # JS code contains fetch
         assert call_args[0][1]["url"] == "https://careers.snowflake.com/api/apply/v2/jobs"
         assert call_args[0][1]["params"]["limit"] == "20"
+
+
+class TestEvaluateFetchGetPost:
+    def test_evaluate_fetch_post_calls_correct_js(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        client._page = mock_page
+        mock_page.evaluate.return_value = {"jobs": [], "total": 0}
+
+        client.evaluate_fetch(
+            "https://content-us.phenompeople.com/api/SNCOUS/searchJobs",
+            {},
+            method="POST",
+            body={"from": 0, "size": 20},
+        )
+
+        call_args = mock_page.evaluate.call_args
+        js = call_args[0][0]
+        passed = call_args[0][1]
+        assert "POST" in js
+        assert "JSON.stringify" in js
+        assert passed["method"] == "POST"
+        assert passed["body"] == {"from": 0, "size": 20}
+
+    def test_evaluate_fetch_get_uses_query_params(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        client._page = mock_page
+        mock_page.evaluate.return_value = {"jobs": [], "total": 0}
+
+        client.evaluate_fetch(
+            "https://content-us.phenompeople.com/api/SNCOUS/searchJobs",
+            {"from": "0", "size": "20"},
+        )
+
+        call_args = mock_page.evaluate.call_args
+        js = call_args[0][0]
+        passed = call_args[0][1]
+        assert "URLSearchParams" in js
+        assert passed["params"]["from"] == "0"
+
+    def test_evaluate_fetch_includes_cors_and_credentials(self):
+        client, mock_page = _make_mock_browser_for_intercept()
+        client._page = mock_page
+        mock_page.evaluate.return_value = {}
+
+        client.evaluate_fetch("https://example.com/api", {})
+
+        js = mock_page.evaluate.call_args[0][0]
+        assert "cors" in js
+        assert "credentials" in js
+        assert "include" in js
 
 
 class TestHeaderFiltering:

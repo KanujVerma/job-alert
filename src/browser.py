@@ -42,6 +42,9 @@ class BrowserSessionContext:
     captured_urls: tuple[str, ...]
     captured_request_headers: dict[str, str] = field(default_factory=dict)
     captured_first_response: str | None = None
+    captured_request_method: str = "GET"
+    captured_request_url: str = ""
+    captured_request_body: str | None = None
 
 
 class BrowserClient:
@@ -110,6 +113,9 @@ class BrowserClient:
         captured_urls: list[str] = []
         captured_request_headers: dict[str, str] = {}
         captured_first_response: str | None = None
+        captured_request_method: str = "GET"
+        captured_request_url: str = ""
+        captured_request_body: str | None = None
 
         page = self._context.new_page()
         try:
@@ -122,6 +128,7 @@ class BrowserClient:
 
                 def handle_response(resp) -> None:
                     nonlocal captured_request_headers, captured_first_response
+                    nonlocal captured_request_method, captured_request_url, captured_request_body
                     # Log all non-asset responses at DEBUG for adapter development
                     if not resp.url.lower().split("?")[0].endswith(_ASSET_EXTS):
                         logger.debug(
@@ -134,6 +141,9 @@ class BrowserClient:
                             captured_request_headers = _filter_request_headers(
                                 dict(resp.request.headers)
                             )
+                            captured_request_method = resp.request.method
+                            captured_request_url = resp.url
+                            captured_request_body = resp.request.post_data
                             try:
                                 captured_first_response = resp.text()
                             except Exception:
@@ -178,6 +188,9 @@ class BrowserClient:
                 captured_urls=tuple(captured_urls),
                 captured_request_headers=captured_request_headers,
                 captured_first_response=captured_first_response,
+                captured_request_method=captured_request_method,
+                captured_request_url=captured_request_url,
+                captured_request_body=captured_request_body,
             )
 
         except Exception as exc:
@@ -187,11 +200,19 @@ class BrowserClient:
             raise
         # No finally: page.close() — success path keeps the page alive
 
-    def evaluate_fetch(self, url: str, params: dict) -> dict:
+    def evaluate_fetch(
+        self,
+        url: str,
+        params: dict,
+        *,
+        method: str = "GET",
+        body: dict | None = None,
+    ) -> dict:
         """Run a fetch() call inside the live Playwright page. Returns parsed JSON.
 
+        Supports GET (query params) and POST (JSON body).
+        Uses mode: 'cors', credentials: 'include' for cross-origin SPA APIs.
         Requires bootstrap_session to have been called first.
-        Uses credentials: 'include' so localStorage/sessionStorage tokens apply.
         """
         if self._page is None:
             raise RuntimeError(
@@ -199,16 +220,36 @@ class BrowserClient:
             )
         js = """
         async (args) => {
-            const p = new URLSearchParams(args.params);
-            const resp = await fetch(args.url + '?' + p.toString(), {credentials: 'include'});
+            let resp;
+            if (args.method === "POST") {
+                resp = await fetch(args.url, {
+                    method: "POST",
+                    mode: "cors",
+                    credentials: "include",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(args.body)
+                });
+            } else {
+                const p = new URLSearchParams(args.params);
+                resp = await fetch(args.url + "?" + p.toString(), {
+                    mode: "cors",
+                    credentials: "include"
+                });
+            }
             if (!resp.ok) {
-                throw new Error('fetch failed: ' + resp.status + ' ' + resp.statusText);
+                throw new Error("fetch failed: " + resp.status + " " + resp.statusText);
             }
             return resp.json();
         }
         """
         return self._page.evaluate(
-            js, {"url": url, "params": {k: str(v) for k, v in params.items()}}
+            js,
+            {
+                "url": url,
+                "params": {k: str(v) for k, v in params.items()},
+                "method": method,
+                "body": body,
+            },
         )
 
     def capture_debug_artifacts(self, company: str, error: Exception) -> None:
