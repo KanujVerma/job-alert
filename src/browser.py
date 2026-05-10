@@ -212,6 +212,7 @@ class BrowserClient:
 
         Supports GET (query params) and POST (JSON body).
         Uses mode: 'cors', credentials: 'include' for cross-origin SPA APIs.
+        mode:'cors' is safe for same-origin requests too (browsers treat it identically).
         Requires bootstrap_session to have been called first.
         """
         if self._page is None:
