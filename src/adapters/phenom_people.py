@@ -39,7 +39,7 @@ def _is_auth_failure(payload: dict) -> bool:
 def _set_nested(d: dict, path: list[str], value: object) -> dict:
     """Return a shallow-copy of d with path set to value (no mutation)."""
     if not path:
-        return d
+        return dict(d)
     result = dict(d)
     if len(path) == 1:
         result[path[0]] = value
