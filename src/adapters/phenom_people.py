@@ -1,9 +1,11 @@
 # src/adapters/phenom_people.py
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Iterator
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from src.adapters.base import BaseAdapter
 from src.filtering import make_job_id
@@ -163,4 +165,143 @@ class PhenomPeopleAdapter(BaseAdapter):
     source_platform = "phenom_people"
 
     def fetch(self) -> Iterator[Job]:
-        yield from ()  # stub — implemented in Task 4
+        if self.browser is None or not self.browser.available:
+            logger.warning(
+                "PhenomPeopleAdapter[%s]: no BrowserClient available — skipping",
+                self.company,
+            )
+            return
+
+        tenant = self.config["tenant"]
+        base_url = self.config["base_url"].rstrip("/")
+        search_url = self.config.get("search_url", base_url)
+        timeout_seconds = int(self.config.get("browser_timeout_seconds", 30))
+        wait_for_url = self.config.get(
+            "wait_for_response_url",
+            f"**/api/{tenant}/searchJobs**",
+        )
+
+        try:
+            session = self.browser.bootstrap_session(
+                search_url,
+                company=self.company,
+                wait_for_response_url=wait_for_url,
+                timeout_seconds=timeout_seconds,
+            )
+        except Exception as exc:
+            logger.warning(
+                "PhenomPeopleAdapter[%s]: browser bootstrap failed: %s",
+                self.company, exc,
+            )
+            self.browser.capture_debug_artifacts(self.company, exc)
+            return
+
+        # Prefer captured URL (strip query string)
+        if session.captured_request_url:
+            parsed = urlparse(session.captured_request_url)
+            api_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        else:
+            api_base = self.config.get(
+                "api_base_url", "https://content-us.phenompeople.com"
+            ).rstrip("/")
+            api_path = self.config.get(
+                "api_path", "/api/{tenant}/searchJobs"
+            ).format(tenant=tenant)
+            api_url = f"{api_base}{api_path}"
+
+        logger.info(
+            "PhenomPeopleAdapter[%s]: boot complete — api_url=%s method=%s has_response=%s",
+            self.company,
+            api_url,
+            session.captured_request_method,
+            session.captured_first_response is not None,
+        )
+
+        detected_at = datetime.now(tz=timezone.utc)
+        request_method = session.captured_request_method
+        body_template: dict | None = None
+        if session.captured_request_body:
+            try:
+                body_template = json.loads(session.captured_request_body)
+            except (ValueError, TypeError):
+                pass
+
+        offset = 0
+        total: int | None = None
+        use_intercept = bool(session.captured_first_response)
+
+        while True:
+            if use_intercept:
+                use_intercept = False
+                try:
+                    payload = json.loads(session.captured_first_response)  # type: ignore[arg-type]
+                except (ValueError, TypeError) as exc:
+                    logger.warning(
+                        "PhenomPeopleAdapter[%s]: bad captured response, falling to evaluate_fetch: %s",
+                        self.company, exc,
+                    )
+                    continue
+                if _is_auth_failure(payload):
+                    logger.warning(
+                        "PhenomPeopleAdapter[%s]: captured response is auth failure, falling to evaluate_fetch",
+                        self.company,
+                    )
+                    continue
+            else:
+                if request_method == "POST" and body_template is not None:
+                    body: dict | None = _set_nested(body_template, _PAGE_PATH, offset)
+                    params: dict = {}
+                else:
+                    body = None
+                    params = {_PAGE_PATH[-1]: offset, "size": _PAGE_SIZE}
+
+                try:
+                    payload = self.browser.evaluate_fetch(
+                        api_url,
+                        params,
+                        method=request_method,
+                        body=body,
+                    )
+                except Exception as exc:
+                    logger.error(
+                        "PhenomPeopleAdapter[%s]: evaluate_fetch failed at offset=%d: %s",
+                        self.company, offset, exc,
+                    )
+                    self.browser.capture_debug_artifacts(self.company, exc)
+                    return
+
+                if _is_auth_failure(payload):
+                    logger.error(
+                        "PhenomPeopleAdapter[%s]: evaluate_fetch auth failure at offset=%d",
+                        self.company, offset,
+                    )
+                    self.browser.capture_debug_artifacts(
+                        self.company,
+                        RuntimeError(f"evaluate_fetch auth failure: {payload}"),
+                    )
+                    return
+
+            jobs_list = _extract_jobs_list(payload)
+            count = _extract_total(payload)
+            if total is None and count is not None:
+                total = count
+
+            if not jobs_list:
+                break
+
+            for record in jobs_list:
+                try:
+                    job = _parse_phenom_job(
+                        record, self.company, self.source_platform, detected_at
+                    )
+                    if job is not None:
+                        yield job
+                except Exception as exc:
+                    logger.warning(
+                        "PhenomPeopleAdapter[%s]: skipping record %s: %s",
+                        self.company, record.get(_ID_KEY, "?"), exc,
+                    )
+
+            offset += len(jobs_list)
+            if total is not None and offset >= total:
+                break
