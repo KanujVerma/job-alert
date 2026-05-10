@@ -122,9 +122,9 @@ class BrowserClient:
 
                 def handle_response(resp) -> None:
                     nonlocal captured_request_headers, captured_first_response
-                    # Log all non-asset responses for diagnostic visibility in CI
+                    # Log all non-asset responses at DEBUG for adapter development
                     if not resp.url.lower().split("?")[0].endswith(_ASSET_EXTS):
-                        logger.info(
+                        logger.debug(
                             "bootstrap_session[%s]: %s %s",
                             company, resp.status, resp.url[:160],
                         )

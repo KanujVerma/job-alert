@@ -207,7 +207,7 @@ companies:
 
   - name: Snowflake
     adapter: eightfold_playwright
-    enabled: true
+    enabled: false  # Snowflake uses Phenom People ATS (SNCOUS), not Eightfold — needs phenom_people adapter
     config:
       base_url: https://careers.snowflake.com
       api_path: /api/apply/v2/jobs
