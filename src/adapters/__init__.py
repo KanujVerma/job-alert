@@ -31,5 +31,7 @@ ADAPTER_REGISTRY["microsoft_research"] = MicrosoftResearchAdapter
 ADAPTER_REGISTRY["generic_html"] = GenericHTMLAdapter
 
 from src.adapters.eightfold_playwright import EightfoldPlaywrightAdapter  # noqa: E402
+from src.adapters.phenom_people import PhenomPeopleAdapter  # noqa: E402
 
 ADAPTER_REGISTRY["eightfold_playwright"] = EightfoldPlaywrightAdapter
+ADAPTER_REGISTRY["phenom_people"] = PhenomPeopleAdapter

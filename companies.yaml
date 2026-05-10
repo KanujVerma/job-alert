@@ -206,11 +206,14 @@ companies:
           require_early_career: true
 
   - name: Snowflake
-    adapter: eightfold_playwright
-    enabled: false  # Snowflake uses Phenom People ATS (SNCOUS), not Eightfold — needs phenom_people adapter
+    adapter: phenom_people
+    enabled: true
     config:
+      tenant: SNCOUS
       base_url: https://careers.snowflake.com
-      api_path: /api/apply/v2/jobs
+      search_url: https://careers.snowflake.com/us/en/search
+      api_base_url: https://content-us.phenompeople.com
+      api_path: /api/{tenant}/searchJobs
       location_country: United States
       use_playwright: true
       browser_timeout_seconds: 30
