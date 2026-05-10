@@ -1,0 +1,18 @@
+{
+  "method": "GET",
+  "url": "https://content-us.phenompeople.com/api/SNCOUS/searchJobs",
+  "headers": {
+    "accept": "application/json, text/plain, */*",
+    "origin": "https://careers.snowflake.com",
+    "referer": "https://careers.snowflake.com/us/en/search-results"
+  },
+  "body": null,
+  "_note": "Phenom People API for Snowflake (SNCOUS). GET endpoint; pagination via 'from' and 'size' query params. The searchJobs XHR only fires on client-side interactions; initial page is SSR. Captured via DOM extraction.",
+  "_query_params": {
+    "locale": "en_us",
+    "siteType": "external",
+    "deviceType": "desktop",
+    "from": "0",
+    "size": "10"
+  }
+}

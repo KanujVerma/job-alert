@@ -1,0 +1,136 @@
+{
+  "searchJobs": {
+    "status": "success",
+    "errorCode": null,
+    "errorMsg": null,
+    "data": {
+      "totalHits": 12,
+      "from": 0,
+      "size": 10,
+      "jobs": [
+        {
+          "jobSeqNo": "SNCOUSBCF1373BEC2C4B5FBF23FC3DB9B070E3EXTERNALENUSF1EB6BA0D4E04062A2B7BE0FFCF4FD46",
+          "title": "Solutions Architect (EMEA North)",
+          "location": "Finland; Remote, Norway; Denmark; Remote, Sweden",
+          "multi_location": [
+            "Finland",
+            "Remote, Norway",
+            "Denmark",
+            "Remote, Sweden"
+          ],
+          "category": "Professional Services",
+          "reqId": "REQ18172",
+          "descriptionTeaser": "Join our team as a Senior Solutions Architect and help shape the future of data platforms at Snowflake. Leverage your expertise in cloud architecture, data engineering, and stakeholder management to deliver innovative solutions for leading enterprises. Be part of a dynamic, fast-growing team powering the next era of data-driven business.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUSBCF1373BEC2C4B5FBF23FC3DB9B070E3EXTERNALENUSF1EB6BA0D4E04062A2B7BE0FFCF4FD46/Solutions-Architect-EMEA-North"
+        },
+        {
+          "jobSeqNo": "SNCOUS51902EAC69E64999A2415FB8ABB5A0CDEXTERNALENUSCB7AF19F533E4765A5D3E88990D72ADC",
+          "title": "Senior Partner Marketing Manager, AWS",
+          "location": "London, United Kingdom",
+          "multi_location": null,
+          "category": "Marketing",
+          "reqId": "REQ19001",
+          "descriptionTeaser": "Join our team as a Senior Partner Marketing Manager, AWS, and drive impactful go-to-market strategies for leading cloud and partner alliances. Leverage your expertise in full-funnel marketing, campaign execution, and cross-functional collaboration to accelerate growth and shape the future of enterprise solutions at Snowflake. Make your mark in a dynamic, innovative environment.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUS51902EAC69E64999A2415FB8ABB5A0CDEXTERNALENUSCB7AF19F533E4765A5D3E88990D72ADC/Senior-Partner-Marketing-Manager-AWS"
+        },
+        {
+          "jobSeqNo": "SNCOUS52660D19A22B497ABE0062716FE56A5EEXTERNALENUSE31C32B807074BFB81A4FE9764F20686",
+          "title": "Senior Director of Engineering, Traffic and Networking",
+          "location": "Bellevue, Washington, United States; Menlo Park, California, United States",
+          "multi_location": [
+            "Bellevue, Washington, United States",
+            "Menlo Park, California, United States"
+          ],
+          "category": "Engineering",
+          "reqId": "REQ17555",
+          "descriptionTeaser": "Join our team as Senior Director of Engineering, Traffic and Networking, leading the design and scaling of global cloud infrastructure. Drive innovation in networking, cloud services, and distributed systems while mentoring a high-performing team. Shape the future of data and AI connectivity at Snowflake and make a lasting impact on our mission to power the next era of cloud.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUS52660D19A22B497ABE0062716FE56A5EEXTERNALENUSE31C32B807074BFB81A4FE9764F20686/Senior-Director-of-Engineering-Traffic-and-Networking"
+        },
+        {
+          "jobSeqNo": "SNCOUSDAD17304F669411A83285029BB65C4C2EXTERNALENUS2D5688ADB4C948879009DC6F84BD179A",
+          "title": "Services Delivery Manager",
+          "location": "Oslo, Norway; Denmark",
+          "multi_location": [
+            "Oslo, Norway",
+            "Denmark"
+          ],
+          "category": "Professional Services",
+          "reqId": "REQ17387",
+          "descriptionTeaser": "Embrace the role of a Services Delivery Manager and drive impactful client solutions at Snowflake. Lead technical implementations, manage key accounts, and collaborate with senior stakeholders to deliver high-quality service. Shape the future of data warehousing and business intelligence while advancing your career in a dynamic, innovative environment.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUSDAD17304F669411A83285029BB65C4C2EXTERNALENUS2D5688ADB4C948879009DC6F84BD179A/Services-Delivery-Manager"
+        },
+        {
+          "jobSeqNo": "SNCOUS6BC800BDF7AE45AA98F2A028197C278DEXTERNALENUS7023E78FA87B46B2A9C91BA6338AE293",
+          "title": "Senior Data Engineer",
+          "location": "Warsaw, Poland",
+          "multi_location": null,
+          "category": "Product",
+          "reqId": "REQ18485",
+          "descriptionTeaser": "Join our team as a Senior Data Engineer and help shape the future of enterprise data at Snowflake. Design, build, and optimize scalable data pipelines, collaborate with product and data scientists, and drive innovation using cutting-edge cloud and AI tools. Make a real impact in a dynamic, fast-paced environment.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUS6BC800BDF7AE45AA98F2A028197C278DEXTERNALENUS7023E78FA87B46B2A9C91BA6338AE293/Senior-Data-Engineer"
+        },
+        {
+          "jobSeqNo": "SNCOUS4D33559A79F44713BCC2199BE3357D03EXTERNALENUS38F79CB1C3664BC59965CC679EE730A4",
+          "title": "Software Engineer Intern (Backend) - Warsaw 2026",
+          "location": "Warsaw, Poland",
+          "multi_location": null,
+          "category": "Engineering",
+          "reqId": "ASHREQ-5077",
+          "descriptionTeaser": "Exciting opportunity for Snowflake as a Software Engineer Intern! Collaborate with experts on innovative cloud-based solutions, develop enterprise-grade software, and gain hands-on experience with AWS, Azure, and Google Cloud. Perfect for students passionate about technology, problem solving, and building impactful products in a dynamic, global environment.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUS4D33559A79F44713BCC2199BE3357D03EXTERNALENUS38F79CB1C3664BC59965CC679EE730A4/Software-Engineer-Intern-Backend-Warsaw-2026"
+        },
+        {
+          "jobSeqNo": "SNCOUS22941A2A520545C1ADE0F272E1A245A3EXTERNALENUS2A928B93A5D44285A92C032FB389FAA2",
+          "title": "Software Engineer - SnowConvert AI",
+          "location": "Menlo Park, California, United States",
+          "multi_location": null,
+          "category": "Engineering",
+          "reqId": "ASHREQ-5474",
+          "descriptionTeaser": "Exciting opportunity for a Software Engineer specializing in SnowConvert AI! Join our innovative team to design, build, and validate AI-driven data migrations using Python, distributed systems, and cutting-edge tools. Shape the future of AI data engineering at Snowflake and make a real impact on enterprise data transformation.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUS22941A2A520545C1ADE0F272E1A245A3EXTERNALENUS2A928B93A5D44285A92C032FB389FAA2/Software-Engineer-SnowConvert-AI"
+        },
+        {
+          "jobSeqNo": "SNCOUSA0F9FF12E0764189A87BECDBA4CD31EBEXTERNALENUSE190C6A116F348A0B3D3F44301E4A47B",
+          "title": "Sr. Partner Sales Manager",
+          "location": "Toronto, Ontario, Canada",
+          "multi_location": null,
+          "category": "Alliances and Channels",
+          "reqId": "REQ18927",
+          "descriptionTeaser": "Join our team as a Senior Partner Sales Manager and drive strategic growth by partnering with leading SI partners. Leverage your expertise in partner sales, Go-to-Market, and channel management to expand Snowflake\u2019s impact. Collaborate cross-functionally, manage key accounts, and shape the future of data-driven solutions in a dynamic, innovative environment.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUSA0F9FF12E0764189A87BECDBA4CD31EBEXTERNALENUSE190C6A116F348A0B3D3F44301E4A47B/Sr-Partner-Sales-Manager"
+        },
+        {
+          "jobSeqNo": "SNCOUSA6BF7983037B47C4B01BF6FC4F9F1B37EXTERNALENUSDA8298E6C9E14D128AF22405BA766602",
+          "title": "Solutions Engineer",
+          "location": "Remote, Mexico",
+          "multi_location": null,
+          "category": "Solution Engineering",
+          "reqId": "REQ18143",
+          "descriptionTeaser": "Embrace the role of a Solutions Engineer and help redefine the future of AI-driven enterprise platforms. Collaborate with sales and technical teams, deliver impactful demos, and drive customer success with Snowflake\u2019s innovative solutions. If you thrive in dynamic environments and excel at translating business needs into technical solutions, we want to hear from you!",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUSA6BF7983037B47C4B01BF6FC4F9F1B37EXTERNALENUSDA8298E6C9E14D128AF22405BA766602/Solutions-Engineer"
+        },
+        {
+          "jobSeqNo": "SNCOUS7346EAD46EDA48F69F73B71A07538225EXTERNALENUSE0624F1B136D4EACA5E58991EFA091E2",
+          "title": "Senior Director of Engineering and Product Recruiting",
+          "location": "Menlo Park, California, United States",
+          "multi_location": null,
+          "category": "People",
+          "reqId": "REQ18806",
+          "descriptionTeaser": "Join our team as Senior Director of Engineering and Product Recruiting at Snowflake. Lead a high-performing team of recruiters, partner with executive leadership, and drive innovative talent strategies for enterprise software and cloud platforms. Shape the future of technical recruiting in a fast-growing, AI-driven environment. Make a global impact at the forefront of enterprise technology.",
+          "postedDate": null,
+          "detailUrl": "https://careers.snowflake.com/us/en/job/SNCOUS7346EAD46EDA48F69F73B71A07538225EXTERNALENUSE0624F1B136D4EACA5E58991EFA091E2/Senior-Director-of-Engineering-and-Product-Recruiting"
+        }
+      ]
+    },
+    "reqData": null
+  }
+}
