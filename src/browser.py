@@ -118,8 +118,16 @@ class BrowserClient:
                 # e.g. "**/api/v2/jobs**" → "/api/v2/jobs"; single * in middle not supported
                 needle = wait_for_response_url.replace("**", "").replace("*", "")
 
+                _ASSET_EXTS = (".js", ".css", ".png", ".jpg", ".jpeg", ".woff", ".woff2", ".ico", ".svg", ".gif", ".map", ".ttf")
+
                 def handle_response(resp) -> None:
                     nonlocal captured_request_headers, captured_first_response
+                    # Log all non-asset responses for diagnostic visibility in CI
+                    if not resp.url.lower().split("?")[0].endswith(_ASSET_EXTS):
+                        logger.info(
+                            "bootstrap_session[%s]: %s %s",
+                            company, resp.status, resp.url[:160],
+                        )
                     if needle in resp.url:
                         captured_urls.append(resp.url)
                         if not captured_request_headers:  # first match only

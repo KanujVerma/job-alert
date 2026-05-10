@@ -73,6 +73,14 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
         # Prefer captured request headers; fall back to session headers if empty
         relay_headers = session.captured_request_headers or session.headers
 
+        logger.info(
+            "EightfoldPlaywrightAdapter[%s]: boot complete — captured_urls=%d, "
+            "has_first_response=%s, relay_header_keys=%s, domain=%s",
+            self.company, len(session.captured_urls),
+            session.captured_first_response is not None,
+            sorted(session.captured_request_headers.keys()), domain,
+        )
+
         # Step 2: Page-1 optimisation — use captured response if available
         if session.captured_first_response:
             try:
@@ -127,6 +135,22 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
                     )
                     self.browser.capture_debug_artifacts(self.company, exc)
                     return
+                if _is_auth_failure(payload):
+                    logger.error(
+                        "EightfoldPlaywrightAdapter[%s]: evaluate_fetch also returned auth failure "
+                        "'%s' — both relay and browser fallback exhausted",
+                        self.company, payload.get("errorMsg", payload.get("status", "unknown")),
+                    )
+                    self.browser.capture_debug_artifacts(
+                        self.company,
+                        RuntimeError(f"evaluate_fetch auth failure: {payload.get('errorMsg', '')}"),
+                    )
+                    return
+                logger.info(
+                    "EightfoldPlaywrightAdapter[%s]: evaluate_fetch offset=%d → positions=%d",
+                    self.company, offset,
+                    len((payload.get("data") or payload).get("positions", [])),
+                )
             else:
                 try:
                     resp = self.http.get(
