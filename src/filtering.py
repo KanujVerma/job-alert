@@ -161,11 +161,18 @@ def filter_exclude(job: Job, filters: dict) -> FilterResult:
     # Exclude-unless-intern — word-boundary match on the trigger keyword
     early_career_kws = [k.lower() for k in filters.get("early_career_keywords", [])]
     strong_kws = [k.lower() for k in filters.get("technical_role_keywords", [])]
+    title_kws = [k.lower() for k in filters.get("title_tech_keywords", [])]
 
     for kw in filters.get("exclude_unless_intern", []):
         if _word_in_text(kw.lower(), raw):
             has_early = any(_phrase_in_text(ek, raw) for ek in early_career_kws)
-            has_tech = any(_phrase_in_text(tk, raw) for tk in strong_kws)
+            title_corpus = " ".join(
+                filter(None, [job.title, job.category, job.department])
+            ).lower()
+            has_tech = (
+                any(_word_in_text(tk, raw) for tk in strong_kws)
+                or any(_word_in_text(tk, title_corpus) for tk in title_kws)
+            )
             if not (has_early and has_tech):
                 return FilterResult(False, f"conditional exclude (not intern+tech): {kw}")
 
@@ -187,12 +194,23 @@ def filter_early_career(job: Job, filters: dict) -> FilterResult:
 
 
 def filter_tech_role(job: Job, filters: dict) -> FilterResult:
-    """Step 4: Technical role filter."""
+    """Step 4: Technical role filter — two tiers.
+
+    Tier 1 (strong): technical_role_keywords matched anywhere in raw_text.
+    Tier 2 (title-required): title_tech_keywords matched only in title/category/department.
+    """
     raw = job.raw_text.lower() if job.raw_text else ""
 
+    # Tier 1: high-confidence keywords — match anywhere in raw_text
     for kw in filters.get("technical_role_keywords", []):
         if _word_in_text(kw.lower(), raw):
-            return FilterResult(True, f"tech keyword: {kw}")
+            return FilterResult(True, f"strong tech keyword in raw_text: {kw}")
+
+    # Tier 2: ambiguous keywords — only meaningful when naming the role itself
+    title_corpus = " ".join(filter(None, [job.title, job.category, job.department])).lower()
+    for kw in filters.get("title_tech_keywords", []):
+        if _word_in_text(kw.lower(), title_corpus):
+            return FilterResult(True, f"title tech keyword in title/category/dept: {kw}")
 
     return FilterResult(False, "no technical role signal")
 
@@ -246,9 +264,14 @@ def label_job(job: Job, filters: dict, location_ambiguous: bool) -> Job:
     # Matched keywords
     early_career_kws = [k.lower() for k in filters.get("early_career_keywords", [])]
     technical_kws = [k.lower() for k in filters.get("technical_role_keywords", [])]
+    title_tech_kws = [k.lower() for k in filters.get("title_tech_keywords", [])]
+    title_corpus = " ".join(filter(None, [job.title, job.category, job.department])).lower()
     matched = []
     for kw in early_career_kws + technical_kws:
         if _phrase_in_text(kw, raw) and kw not in matched:
+            matched.append(kw)
+    for kw in title_tech_kws:
+        if _word_in_text(kw, raw) and kw not in matched:
             matched.append(kw)
 
     # Return new frozen Job with updated fields

@@ -23,7 +23,7 @@ _NOW = datetime(2026, 5, 6, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def make_job(
-    title: str = "Software Engineering Intern",
+    title: str = "Intern",
     location: str = "San Francisco, CA",
     raw_text: str | None = None,
     role_type: str = "unknown",
@@ -64,21 +64,35 @@ _FILTERS = {
         "entry-level", "graduate", "campus", "recent graduate",
     ],
     "technical_role_keywords": [
-        "software", "software engineer", "software engineering", "swe", "developer",
-        "backend", "frontend", "full stack", "cloud", "infrastructure", "platform",
-        "systems", "security", "data", "data scientist", "data science", "data engineer",
-        "business intelligence", "bi engineer", "analytics", "ai", "ml", "machine learning",
-        "product manager", "program manager", "tpm",
+        "software engineer", "software engineering", "swe", "developer",
+        "backend", "frontend", "full stack",
+        "machine learning", "ml", "artificial intelligence", "ai",
+        "data science", "data scientist",
+        "applied scientist", "research scientist",
+        "cloud engineer", "platform engineer", "infrastructure engineer",
+        "security engineer", "systems engineer", "hardware engineer",
+    ],
+    "title_tech_keywords": [
+        "software", "data", "data engineer", "data engineering",
+        "analytics", "business intelligence", "bi", "bi engineer",
+        "program manager", "program management",
+        "product manager", "product management",
+        "technical program manager", "technical program management",
+        "technical product manager", "tpm", "tpm intern", "pm intern",
+        "solutions architect", "hardware", "hardware engineering",
+        "cloud", "platform", "infrastructure", "systems", "security",
     ],
     "exclude_keywords": [
         "warehouse", "fulfillment", "retail", "sales associate", "account executive",
         "customer support", "call center", "legal", "finance", "accounting",
         "human resources", "hr", "facilities", "maintenance", "security guard",
-        "manufacturing operator",
+        "manufacturing operator", "economics", "economist",
+        "sales", "sales development", "business development",
+        "support specialist", "recruiter", "recruiting", "talent acquisition",
     ],
     "exclude_unless_intern": [
         "marketing", "technician", "hardware", "manufacturing", "operations",
-        "business analyst",
+        "business analyst", "solutions consultant", "customer success", "support engineer",
     ],
     "preferred_locations": [
         "California", "CA", "Texas", "TX", "Chicago", "Illinois", "IL",
@@ -581,3 +595,95 @@ class TestFilterExcludeWordBoundary:
             raw_text="salesforce software engineering intern summer 2026",
         )
         assert filter_exclude(job, self._F).passes
+
+
+# ---------------------------------------------------------------------------
+# Two-tier tech keyword tests — Task 2
+# ---------------------------------------------------------------------------
+
+class TestFilterTechRoleTwoTier:
+    """Tier 1 (strong) matches raw_text; Tier 2 (title) matches title/category/dept only."""
+
+    _F = _FILTERS
+
+    # --- Tier 1: strong keywords pass from raw_text ---
+
+    def test_software_engineer_in_raw_passes(self):
+        job = make_job(title="Intern", raw_text="software engineer intern summer")
+        assert filter_tech_role(job, self._F).passes
+
+    def test_machine_learning_in_raw_passes(self):
+        job = make_job(title="Research Intern", raw_text="machine learning intern ai")
+        result = filter_tech_role(job, self._F)
+        assert result.passes
+        assert "raw_text" in result.reason
+
+    def test_data_scientist_in_raw_passes(self):
+        job = make_job(title="Intern", raw_text="data scientist new grad position")
+        result = filter_tech_role(job, self._F)
+        assert result.passes
+        assert "raw_text" in result.reason
+
+    # --- Tier 2: ambiguous keywords require title/category/dept match ---
+
+    def test_program_manager_in_raw_only_fails(self):
+        """'program manager' in description only must not pass."""
+        job = make_job(
+            title="Operations Coordinator",
+            raw_text="operations coordinator supporting program manager teams",
+        )
+        result = filter_tech_role(job, self._F)
+        assert not result.passes
+
+    def test_program_manager_in_title_passes(self):
+        job = make_job(
+            title="Program Manager Intern",
+            raw_text="program manager intern new grad",
+        )
+        result = filter_tech_role(job, self._F)
+        assert result.passes
+        assert "title/category/dept" in result.reason
+
+    def test_data_in_raw_only_fails(self):
+        """Standalone 'data' in raw_text only must not pass."""
+        job = make_job(
+            title="Operations Coordinator",
+            raw_text="operations coordinator handles data entry",
+        )
+        assert not filter_tech_role(job, self._F).passes
+
+    def test_data_in_category_passes(self):
+        job = make_job(title="Intern", category="Data Engineering")
+        result = filter_tech_role(job, self._F)
+        assert result.passes
+        assert "title/category/dept" in result.reason
+
+    def test_software_in_raw_only_fails(self):
+        """Standalone 'software' in raw_text must not pass (moved to title tier)."""
+        job = make_job(
+            title="Sales Coordinator",
+            raw_text="sales coordinator using proprietary software tools",
+        )
+        assert not filter_tech_role(job, self._F).passes
+
+    def test_software_in_title_passes(self):
+        job = make_job(
+            title="Software Engineering Intern",
+            raw_text="software engineering intern",
+        )
+        result = filter_tech_role(job, self._F)
+        assert result.passes
+
+    def test_tpm_in_title_passes(self):
+        job = make_job(
+            title="Technical Program Manager Intern",
+            raw_text="technical program manager intern new grad",
+        )
+        result = filter_tech_role(job, self._F)
+        assert result.passes
+        assert "title/category/dept" in result.reason
+
+    def test_no_signal_fails(self):
+        job = make_job(title="Operations Coordinator",
+                       raw_text="operations coordinator intern")
+        assert not filter_tech_role(job, self._F).passes
