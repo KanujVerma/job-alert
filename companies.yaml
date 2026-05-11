@@ -224,10 +224,7 @@ companies:
 
   - name: Applied Digital
     adapter: generic_html
-    enabled: true
+    enabled: false
+    notes: "Disabled: careers page uses ADP Workforce Now JS-rendered portal. No static job cards or public JSON endpoint found. Could be supported later with a dedicated adp_workforce_now Playwright adapter."
     config:
       url: https://www.applieddigital.com/careers
-      job_card_selector: ""
-      title_selector: ""
-      location_selector: ""
-      url_selector: ""

@@ -150,15 +150,14 @@ GitHub Actions free-tier cron runs are queued at the scheduled time but may star
 
 ---
 
-## 11. Playwright — JavaScript-Rendered Career Sites (v2)
+## 11. Playwright — JavaScript-Rendered Career Sites
 
-Some career sites are JavaScript-rendered SPAs that the plain `requests`-based
-pipeline cannot authenticate. The **hybrid approach** boots the SPA once with
-a headless Chromium browser to capture session cookies, then uses the normal
-HTTP client for all subsequent JSON pagination.
+Some career sites are JavaScript-rendered SPAs. The hybrid approach boots the SPA
+once with a headless Chromium browser to capture session cookies and/or XHR responses,
+then uses the normal HTTP client for pagination.
 
-**Currently enabled:** Snowflake only (`adapter: eightfold_playwright`).
-Microsoft Research, Applied Digital, and Oracle are disabled pending separate plans.
+**Currently enabled:** No browser-enabled adapters are active. Snowflake (`phenom_people`
+adapter) is disabled pending a solution for its headless-hostile SPA. See section 13.
 
 ### Local setup
 
@@ -170,21 +169,8 @@ pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-The Python package is always installed. The Chromium binary is only needed
-in environments where a browser-enabled adapter is active. If Snowflake is
-disabled (`enabled: false` in `companies.yaml`), no browser is ever started.
-
-### Running Snowflake locally
-
-```bash
-# Single-company dry run with verbose output
-python main.py run --company Snowflake --dry-run --verbose
-```
-
-On success you will see output like:
-```
-Snowflake: fetched=40 matched=12 new=12 alerted=0
-```
+The Chromium binary is only needed in environments where a browser-enabled adapter is
+active. When all browser adapters are disabled, no browser is ever started.
 
 ### Debug artifacts
 
@@ -192,7 +178,7 @@ If the browser bootstrap fails (timeout, anti-bot block, network error),
 artifacts are saved to:
 
 ```
-debug_artifacts/Snowflake/<timestamp>/
+debug_artifacts/<Company>/<timestamp>/
 ├── screenshot.png     # page state at failure
 ├── page.html          # DOM dump (capped at 1 MB)
 └── error.txt          # exception type + message
@@ -200,29 +186,28 @@ debug_artifacts/Snowflake/<timestamp>/
 
 The `debug_artifacts/` directory is gitignored and never committed.
 
-### Disabling Snowflake
-
-Set `enabled: false` in `companies.yaml`:
-
-```yaml
-- name: Snowflake
-  adapter: eightfold_playwright
-  enabled: false          # ← disable here; Chromium will not start
-  config:
-    ...
-```
-
 ### Adding more Playwright adapters (future)
 
-1. Set `use_playwright: true` in the company's `config` block.
-2. Create `src/adapters/<name>_playwright.py`, extending `BaseAdapter` with
-   `self.browser` for the bootstrap session and `self.http` for API calls.
-3. Register in `src/adapters/__init__.py`.
-4. See `src/adapters/eightfold_playwright.py` as the reference implementation.
+1. Extend `BaseAdapter` and use `BrowserClient` from `src/browser.py` for the
+   bootstrap session (`bootstrap_session`) and `evaluate_fetch` for in-page API calls.
+2. Register in `src/adapters/__init__.py`.
+3. Set `use_playwright: true` in the company's `config` block in `companies.yaml`.
 
 ---
 
-## 12. Troubleshooting
+## 12. Known disabled / limited companies
+
+| Company | Adapter | Status | Reason |
+|---|---|---|---|
+| Snowflake | `phenom_people` | Disabled | Phenom People SPA: headless automation can't trigger `searchJobs` API; `evaluate_fetch` is CORS-blocked; direct API calls require session cookies from browser handshake |
+| Applied Digital | `generic_html` | Disabled | Careers page embeds an ADP Workforce Now JS-rendered portal (`<recruitment-current-openings>`); no static job cards or public JSON endpoint available; could be re-enabled with a dedicated `adp_workforce_now` Playwright adapter |
+| Oracle | `oracle_careers` | Enabled (returns 0) | Oracle HCM API (`recruitingCEJobRequisitions`) is auth-gated; returns empty results for anonymous requests; needs a JS session handshake to return data |
+| Microsoft Research | `microsoft_research` | Enabled (returns 0) | Eightfold API returns HTTP 403 for unauthenticated requests; HTML fallback is a fully JS-rendered SPA; both paths blocked |
+| Plaid | `lever` | Enabled (returns 0) | Adapter is healthy; Plaid currently has no open roles listed on Lever (hiring freeze or slow period) |
+
+---
+
+## 13. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
