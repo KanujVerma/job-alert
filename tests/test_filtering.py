@@ -711,3 +711,114 @@ class TestFilterTechRoleTwoTier:
         job = make_job(title="Operations Coordinator",
                        raw_text="operations coordinator intern")
         assert not filter_tech_role(job, self._F).passes
+
+
+# ---------------------------------------------------------------------------
+# End-to-end pipeline precision tests
+# ---------------------------------------------------------------------------
+
+class TestFilterPrecisionPipeline:
+    """Full apply_filter_pipeline tests for the key pass/fail cases."""
+
+    _F = _FILTERS  # updated in Task 2 to include title_tech_keywords
+
+    def _run(self, title, raw_text=None, role_type="unknown",
+             department=None, category=None, location="San Francisco, CA"):
+        job = make_job(
+            title=title,
+            location=location,
+            raw_text=raw_text,
+            role_type=role_type,
+            department=department,
+            category=category,
+        )
+        filtered, reasons = apply_filter_pipeline(job, self._F, {})
+        return filtered, reasons
+
+    def test_software_engineer_intern_passes(self):
+        job, _ = self._run(
+            title="Software Engineering Intern",
+            raw_text="software engineering intern summer 2026",
+        )
+        assert job is not None
+
+    def test_technical_program_manager_intern_passes(self):
+        job, _ = self._run(
+            title="Technical Program Manager Intern",
+            raw_text="technical program manager intern new grad product",
+        )
+        assert job is not None
+
+    def test_product_manager_intern_passes(self):
+        job, _ = self._run(
+            title="Product Manager Intern",
+            raw_text="product manager intern summer new grad",
+        )
+        assert job is not None
+
+    def test_data_scientist_new_grad_passes(self):
+        job, _ = self._run(
+            title="Data Scientist, New Grad",
+            raw_text="data scientist new grad machine learning",
+        )
+        assert job is not None
+
+    def test_sales_program_manager_rejected(self):
+        """'sales' is a hard exclude — must reject regardless of other signals."""
+        job, reasons = self._run(
+            title="Sales Program Manager",
+            raw_text="sales program manager enterprise accounts",
+        )
+        assert job is None
+        assert any("hard exclude" in r for r in reasons)
+
+    def test_customer_success_program_manager_rejected(self):
+        """'customer success' is conditional — fails without intern+tech signal."""
+        job, reasons = self._run(
+            title="Customer Success Program Manager",
+            raw_text="customer success program manager senior",
+        )
+        assert job is None
+        assert any("conditional exclude" in r for r in reasons)
+
+    def test_customer_success_engineer_intern_passes(self):
+        """'customer success' with intern+tech (software engineer title) passes conditional."""
+        job, _ = self._run(
+            title="Customer Success Software Engineer Intern",
+            raw_text="customer success software engineer intern",
+        )
+        assert job is not None
+
+    def test_support_engineer_intern_with_tech_passes(self):
+        """'support engineer' with intern+tech signal passes conditional."""
+        job, _ = self._run(
+            title="Support Engineer Intern",
+            raw_text="support engineer intern software backend",
+        )
+        assert job is not None
+
+    def test_recruiter_rejected(self):
+        job, reasons = self._run(
+            title="University Recruiter Intern",
+            raw_text="university recruiter intern talent acquisition",
+        )
+        assert job is None
+        assert any("hard exclude" in r for r in reasons)
+
+    def test_program_manager_in_description_only_rejected(self):
+        """'program manager' only in description (not title/cat/dept) must not pass tech."""
+        job, reasons = self._run(
+            title="Operations Coordinator Intern",
+            raw_text="operations coordinator intern supporting program manager teams",
+        )
+        # 'operations' is conditional exclude; tech signal only from raw description → rejected
+        assert job is None
+
+    def test_data_in_category_new_grad_passes(self):
+        """'data' in category qualifies as title-tier tech signal."""
+        job, _ = self._run(
+            title="New Grad Analyst",
+            raw_text="new grad analyst new graduate",
+            category="Data Engineering",
+        )
+        assert job is not None
