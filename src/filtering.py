@@ -162,13 +162,11 @@ def filter_exclude(job: Job, filters: dict) -> FilterResult:
     early_career_kws = [k.lower() for k in filters.get("early_career_keywords", [])]
     strong_kws = [k.lower() for k in filters.get("technical_role_keywords", [])]
     title_kws = [k.lower() for k in filters.get("title_tech_keywords", [])]
+    title_corpus = " ".join(filter(None, [job.title, job.category, job.department])).lower()
 
     for kw in filters.get("exclude_unless_intern", []):
         if _word_in_text(kw.lower(), raw):
             has_early = any(_phrase_in_text(ek, raw) for ek in early_career_kws)
-            title_corpus = " ".join(
-                filter(None, [job.title, job.category, job.department])
-            ).lower()
             has_tech = (
                 any(_word_in_text(tk, raw) for tk in strong_kws)
                 or any(_word_in_text(tk, title_corpus) for tk in title_kws)

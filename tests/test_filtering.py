@@ -597,6 +597,29 @@ class TestFilterExcludeWordBoundary:
         assert filter_exclude(job, self._F).passes
 
 
+    def test_conditional_exclude_passes_via_title_tech_keyword(self):
+        """title_tech_keywords in title satisfies has_tech for exclude_unless_intern."""
+        # 'operations' triggers exclude_unless_intern; 'data' in title satisfies title-tier tech
+        job = make_job(
+            title="Data Operations Intern",
+            raw_text="data operations intern summer 2026",
+        )
+        # has_early: "intern" ✓; has_tech: "data" in title (title_tech_keywords) ✓
+        assert filter_exclude(job, _FILTERS).passes
+
+    def test_conditional_exclude_fails_when_title_tech_only_in_raw(self):
+        """title_tech_keywords in raw_text body only does NOT satisfy has_tech for exclude_unless_intern."""
+        # 'operations' triggers exclude_unless_intern; 'data' only in raw description, not title
+        job = make_job(
+            title="Operations Coordinator Intern",
+            raw_text="operations coordinator intern working with data pipelines",
+        )
+        # has_early: "intern" ✓; has_tech: "data" NOT in title, "data" in raw but raw isn't title_corpus
+        # strong_kws: no strong keyword in raw → has_tech = False → conditional exclude
+        result = filter_exclude(job, _FILTERS)
+        assert not result.passes
+
+
 # ---------------------------------------------------------------------------
 # Two-tier tech keyword tests — Task 2
 # ---------------------------------------------------------------------------
@@ -668,11 +691,12 @@ class TestFilterTechRoleTwoTier:
 
     def test_software_in_title_passes(self):
         job = make_job(
-            title="Software Engineering Intern",
-            raw_text="software engineering intern",
+            title="Software Intern",
+            raw_text="intern summer 2026 product team",
         )
         result = filter_tech_role(job, self._F)
         assert result.passes
+        assert "title/category/dept" in result.reason
 
     def test_tpm_in_title_passes(self):
         job = make_job(
