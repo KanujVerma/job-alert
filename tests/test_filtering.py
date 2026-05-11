@@ -359,7 +359,7 @@ class TestLabelJob:
         job = make_job(raw_text="software engineer intern")
         labelled = label_job(job, _FILTERS, location_ambiguous=False)
         assert "intern" in labelled.matched_keywords
-        assert "software" in labelled.matched_keywords
+        assert "software engineer" in labelled.matched_keywords
 
     def test_adapter_role_type_preserved(self):
         job = make_job(raw_text="software engineer", role_type="internship")

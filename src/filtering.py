@@ -264,14 +264,9 @@ def label_job(job: Job, filters: dict, location_ambiguous: bool) -> Job:
     # Matched keywords
     early_career_kws = [k.lower() for k in filters.get("early_career_keywords", [])]
     technical_kws = [k.lower() for k in filters.get("technical_role_keywords", [])]
-    title_tech_kws = [k.lower() for k in filters.get("title_tech_keywords", [])]
-    title_corpus = " ".join(filter(None, [job.title, job.category, job.department])).lower()
     matched = []
     for kw in early_career_kws + technical_kws:
         if _phrase_in_text(kw, raw) and kw not in matched:
-            matched.append(kw)
-    for kw in title_tech_kws:
-        if _word_in_text(kw, raw) and kw not in matched:
             matched.append(kw)
 
     # Return new frozen Job with updated fields
