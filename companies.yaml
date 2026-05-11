@@ -207,7 +207,11 @@ companies:
 
   - name: Snowflake
     adapter: phenom_people
-    enabled: true
+    # Disabled: searchJobs API requires authenticated browser session (session cookies).
+    # Headless Playwright does not trigger Aurelia rendering; evaluate_fetch is CORS-blocked;
+    # direct API calls return {"status":"failure"} without session cookies.
+    # Re-enable when headed browser support is available.
+    enabled: false
     config:
       tenant: SNCOUS
       base_url: https://careers.snowflake.com
