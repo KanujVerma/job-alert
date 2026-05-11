@@ -82,7 +82,6 @@ Replace current list with:
 
 ```yaml
 technical_role_keywords:
-  - software
   - software engineer
   - software engineering
   - swe
@@ -108,12 +107,13 @@ technical_role_keywords:
   - hardware engineer
 ```
 
-Terms removed from here (moved to `title_tech_keywords`): `data`, `analytics`, `business intelligence`, `bi engineer`, `cloud`, `infrastructure`, `platform`, `systems`, `security`, `product manager`, `product management`, `program manager`, `program management`, `technical program manager`, `technical program management`, `tpm`, `tpm intern`, `pm intern`, `solutions architect`, `hardware engineering`.
+Terms removed from here (moved to `title_tech_keywords`): `software` (standalone — appears in descriptions of non-technical roles), `data`, `analytics`, `business intelligence`, `bi engineer`, `cloud`, `infrastructure`, `platform`, `systems`, `security`, `product manager`, `product management`, `program manager`, `program management`, `technical program manager`, `technical program management`, `tpm`, `tpm intern`, `pm intern`, `solutions architect`, `hardware engineering`.
 
 ### New `title_tech_keywords` (title-required tier — match in title/category/dept)
 
 ```yaml
 title_tech_keywords:
+  - software
   - data
   - analytics
   - business intelligence
@@ -176,6 +176,17 @@ exclude_unless_intern:
 ---
 
 ## Code changes — `src/filtering.py`
+
+### `_word_in_text` — confirmed regex-safe (no changes needed)
+
+`_word_in_text` already uses `re.escape(word)` and word-boundary lookbehind/lookahead `(?<![a-z0-9])…(?![a-z0-9])`. Verified safe for all short tokens:
+
+- `"ai"` does not match `"maintain"`, `"paid"`, `"chair"` ✓
+- `"ml"` does not match `"html"`, `"xml"`, `"email"` ✓
+- `"pm"` does not match `"company"` ✓
+- `"hr"` does not match `"chrome"`, `"threshold"` ✓
+
+No changes to this function.
 
 ### `filter_exclude` (lines ~152–172)
 
