@@ -6,7 +6,7 @@
 
 **Architecture:** Three-change sequence: code fix in `filter_exclude` → new two-tier logic in `filter_tech_role` + `filter_exclude` has-tech check → config expansion in `companies.yaml`. Tests written before each code change. All changes are backward-compatible (new `title_tech_keywords` key gracefully absent → empty list).
 
-**Tech Stack:** Python 3.11, pytest, `re` (stdlib). No new dependencies.
+**Tech Stack:** Python 3.12, pytest, `re` (stdlib). No new dependencies.
 
 ---
 
@@ -91,6 +91,14 @@
           job = make_job(title="Marketing Manager", raw_text="marketing manager senior")
           result = filter_exclude(job, self._F)
           assert result.reason.startswith("conditional exclude")
+
+      def test_sales_does_not_match_salesforce(self):
+          """'sales' hard exclude must not match 'salesforce' — word boundary regression."""
+          job = make_job(
+              title="Salesforce Software Engineering Intern",
+              raw_text="salesforce software engineering intern summer 2026",
+          )
+          assert filter_exclude(job, self._F).passes
   ```
 
 - [ ] **Step 2: Run the new tests to confirm they fail**
@@ -344,7 +352,7 @@
   title_kws = [k.lower() for k in filters.get("title_tech_keywords", [])]
   title_corpus = " ".join(filter(None, [job.title, job.category, job.department])).lower()
   has_tech = (
-      any(_phrase_in_text(tk, raw) for tk in strong_kws)
+      any(_word_in_text(tk, raw) for tk in strong_kws)
       or any(_word_in_text(tk, title_corpus) for tk in title_kws)
   )
   ```
@@ -373,7 +381,7 @@
                   filter(None, [job.title, job.category, job.department])
               ).lower()
               has_tech = (
-                  any(_phrase_in_text(tk, raw) for tk in strong_kws)
+                  any(_word_in_text(tk, raw) for tk in strong_kws)
                   or any(_word_in_text(tk, title_corpus) for tk in title_kws)
               )
               if not (has_early and has_tech):
