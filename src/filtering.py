@@ -133,10 +133,10 @@ def filter_location(job: Job, filters: dict) -> FilterResult:
         if us_signal in combined:
             return FilterResult(True, f"US confirmed: {us_signal}")
 
-    # US state codes (2-letter word-boundary)
+    # US state codes (2-letter word-boundary, case-insensitive to match lowercased strings)
     for code in US_STATE_CODES:
         pattern = r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])"
-        if re.search(pattern, location_lower) or re.search(pattern, raw):
+        if re.search(pattern, location_lower, re.IGNORECASE) or re.search(pattern, raw, re.IGNORECASE):
             return FilterResult(True, f"US state code: {code}")
 
     # US tech cities

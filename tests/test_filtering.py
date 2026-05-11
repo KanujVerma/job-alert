@@ -153,6 +153,20 @@ class TestFilterLocation:
         result = filter_location(job, _FILTERS)
         assert not result.passes
 
+    def test_state_code_only_passes(self):
+        """State code in location with no city in US_TECH_CITIES must still pass."""
+        job = make_job(location="Peoria, IL", raw_text="software engineering intern")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "state code" in result.reason
+
+    def test_state_code_tx_passes(self):
+        """TX-only location (no known city) must match via state code."""
+        job = make_job(location="Round Rock, TX", raw_text="software engineer intern")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "state code" in result.reason
+
 
 # ---------------------------------------------------------------------------
 # filter_exclude tests

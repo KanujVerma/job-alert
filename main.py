@@ -189,11 +189,11 @@ def do_run(args) -> int:
                                     description=f"Max alerts per run ({max_alerts}) reached. Remaining jobs silenced.",
                                 )
                         else:
-                            if notifier:
-                                notifier.send_job_alert(job)
-                            alert_count += 1
-                            alerted += 1
-                            actually_alerted.append(job)
+                            sent = notifier.send_job_alert(job) if notifier else True
+                            if sent:
+                                alert_count += 1
+                                alerted += 1
+                                actually_alerted.append(job)
                     else:
                         cap_suppressed_jobs.append(job)
                 elif summary_mode:

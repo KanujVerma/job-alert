@@ -170,7 +170,7 @@ def prune_seen_jobs(state: dict, ttl_days: int, now: datetime) -> None:
         seen_jobs = company_state.get("seen_jobs", {})
         to_remove = [
             jid for jid, entry in seen_jobs.items()
-            if datetime.fromisoformat(entry["last_seen"]) < cutoff
+            if entry.get("last_seen") and datetime.fromisoformat(entry["last_seen"]) < cutoff
         ]
         for jid in to_remove:
             del seen_jobs[jid]
