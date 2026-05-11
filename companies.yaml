@@ -25,7 +25,6 @@ filters:
     - campus
     - recent graduate
   technical_role_keywords:
-    - software
     - software engineer
     - software engineering
     - swe
@@ -33,44 +32,57 @@ filters:
     - backend
     - frontend
     - full stack
-    - cloud
-    - infrastructure
-    - platform
-    - systems
-    - security
-    - data
-    - data scientist
-    - data science
-    - data engineer
-    - business intelligence
-    - bi engineer
-    - analytics
-    - artificial intelligence
-    - ml
     - machine learning
+    - ml
+    - artificial intelligence
+    - ai
+    - data science
+    - data scientist
+    - data engineer
+    - data engineering
     - applied scientist
     - research scientist
-    - product manager
-    - product management
+    - cloud engineer
+    - platform engineer
+    - infrastructure engineer
+    - security engineer
+    - systems engineer
+    - hardware engineer
+  title_tech_keywords:
+    - software
+    - data
+    - analytics
+    - business intelligence
+    - bi
+    - bi engineer
     - program manager
     - program management
-    - technical product manager
+    - product manager
+    - product management
     - technical program manager
     - technical program management
-    - program manager intern
-    - technical program manager intern
+    - technical product manager
     - tpm
     - tpm intern
     - pm intern
     - solutions architect
-    - hardware engineer
+    - hardware
     - hardware engineering
+    - cloud
+    - platform
+    - infrastructure
+    - systems
+    - security
+    - operations
   exclude_keywords:
     - warehouse
     - fulfillment
     - retail
     - sales associate
+    - sales
+    - sales development
     - account executive
+    - business development
     - customer support
     - call center
     - legal
@@ -84,6 +96,10 @@ filters:
     - manufacturing operator
     - economics
     - economist
+    - support specialist
+    - recruiter
+    - recruiting
+    - talent acquisition
   exclude_unless_intern:
     - marketing
     - technician
@@ -91,6 +107,9 @@ filters:
     - manufacturing
     - operations
     - business analyst
+    - solutions consultant
+    - customer success
+    - support engineer
   preferred_locations:
     - California
     - CA
