@@ -507,3 +507,77 @@ class TestWordBoundaryFiltering:
         else:
             result = filter_early_career(job, {"early_career_keywords": [kw]})
         assert result.passes, f"'{kw}' should match in '{raw_text}'"
+
+
+# ---------------------------------------------------------------------------
+# Word-boundary tests for filter_exclude — Task 1
+# ---------------------------------------------------------------------------
+
+class TestFilterExcludeWordBoundary:
+    """_word_in_text must prevent mid-word matches on short exclude keywords."""
+
+    _F = {
+        "exclude_keywords": ["hr", "legal", "retail", "sales", "finance"],
+        "exclude_unless_intern": ["operations", "marketing"],
+        "early_career_keywords": ["intern", "internship", "new grad"],
+        "technical_role_keywords": ["software engineer"],
+        "title_tech_keywords": [],
+    }
+
+    def test_hr_does_not_match_chrome(self):
+        job = make_job(title="Chrome Extensions Developer Intern",
+                       raw_text="chrome extensions developer intern")
+        assert filter_exclude(job, self._F).passes
+
+    def test_hr_does_not_match_threshold(self):
+        job = make_job(raw_text="threshold analytics engineer intern")
+        assert filter_exclude(job, self._F).passes
+
+    def test_hr_matches_hr_coordinator(self):
+        job = make_job(title="HR Coordinator", raw_text="hr coordinator human resources")
+        result = filter_exclude(job, self._F)
+        assert not result.passes
+        assert "hr" in result.reason
+
+    def test_legal_does_not_match_paralegal(self):
+        job = make_job(title="Paralegal Assistant Intern",
+                       raw_text="paralegal assistant intern")
+        assert filter_exclude(job, self._F).passes
+
+    def test_legal_matches_legal_counsel(self):
+        job = make_job(title="Legal Counsel", raw_text="legal counsel attorney")
+        result = filter_exclude(job, self._F)
+        assert not result.passes
+        assert "legal" in result.reason
+
+    def test_retail_does_not_match_retailer(self):
+        """'retail' must not match 'retailer' — 'er' suffix breaks the word boundary."""
+        job = make_job(title="Retailer Software Engineering Intern",
+                       raw_text="retailer software engineer intern")
+        assert filter_exclude(job, self._F).passes
+
+    def test_sales_matches_sales_manager(self):
+        job = make_job(title="Sales Manager", raw_text="sales manager revenue growth")
+        result = filter_exclude(job, self._F)
+        assert not result.passes
+        assert "sales" in result.reason
+
+    def test_hard_exclude_reason_format(self):
+        """Reason string must start with 'hard exclude:'."""
+        job = make_job(title="HR Analyst", raw_text="hr analyst")
+        result = filter_exclude(job, self._F)
+        assert result.reason.startswith("hard exclude:")
+
+    def test_conditional_exclude_reason_format(self):
+        """Reason string must start with 'conditional exclude'."""
+        job = make_job(title="Marketing Manager", raw_text="marketing manager senior")
+        result = filter_exclude(job, self._F)
+        assert result.reason.startswith("conditional exclude")
+
+    def test_sales_does_not_match_salesforce(self):
+        """'sales' hard exclude must not match 'salesforce' — word boundary regression."""
+        job = make_job(
+            title="Salesforce Software Engineering Intern",
+            raw_text="salesforce software engineering intern summer 2026",
+        )
+        assert filter_exclude(job, self._F).passes

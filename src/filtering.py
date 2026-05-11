@@ -153,21 +153,21 @@ def filter_exclude(job: Job, filters: dict) -> FilterResult:
     """Step 2: Exclude filter."""
     raw = job.raw_text.lower() if job.raw_text else ""
 
-    # Hard excludes
+    # Hard excludes — word-boundary match prevents "hr" hitting "chrome", etc.
     for kw in filters.get("exclude_keywords", []):
-        if _phrase_in_text(kw.lower(), raw):
-            return FilterResult(False, f"excluded keyword: {kw}")
+        if _word_in_text(kw.lower(), raw):
+            return FilterResult(False, f"hard exclude: {kw}")
 
-    # Exclude-unless-intern
+    # Exclude-unless-intern — word-boundary match on the trigger keyword
     early_career_kws = [k.lower() for k in filters.get("early_career_keywords", [])]
-    technical_kws = [k.lower() for k in filters.get("technical_role_keywords", [])]
+    strong_kws = [k.lower() for k in filters.get("technical_role_keywords", [])]
 
     for kw in filters.get("exclude_unless_intern", []):
-        if _phrase_in_text(kw.lower(), raw):
+        if _word_in_text(kw.lower(), raw):
             has_early = any(_phrase_in_text(ek, raw) for ek in early_career_kws)
-            has_tech = any(_phrase_in_text(tk, raw) for tk in technical_kws)
+            has_tech = any(_phrase_in_text(tk, raw) for tk in strong_kws)
             if not (has_early and has_tech):
-                return FilterResult(False, f"excluded unless intern: {kw}")
+                return FilterResult(False, f"conditional exclude (not intern+tech): {kw}")
 
     return FilterResult(True, "no excluded keywords")
 
