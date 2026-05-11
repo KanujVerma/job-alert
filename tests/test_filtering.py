@@ -89,6 +89,7 @@ _FILTERS = {
         "manufacturing operator", "economics", "economist",
         "sales", "sales development", "business development",
         "support specialist", "recruiter", "recruiting", "talent acquisition",
+        "phd", "ph.d", "master's", "masters",
     ],
     "exclude_unless_intern": [
         "marketing", "technician", "hardware", "manufacturing", "operations",
@@ -215,6 +216,33 @@ class TestFilterExclude:
         job = make_job(raw_text="customer support representative")
         result = filter_exclude(job, _FILTERS)
         assert not result.passes
+
+    def test_phd_intern_excluded(self):
+        """PhD-targeted internships must be hard-excluded."""
+        job = make_job(
+            title="Computer Vision ML Intern - Master's/PhD",
+            raw_text="computer vision ml intern master's/phd santa clara ca",
+        )
+        result = filter_exclude(job, _FILTERS)
+        assert not result.passes
+        assert "hard exclude" in result.reason
+
+    def test_masters_intern_excluded(self):
+        """Masters-only internships must be hard-excluded."""
+        job = make_job(
+            title="Software Engineering Intern (Masters)",
+            raw_text="software engineering intern masters degree required",
+        )
+        result = filter_exclude(job, _FILTERS)
+        assert not result.passes
+
+    def test_undergrad_intern_not_excluded(self):
+        """Regular undergrad intern roles must not be affected by grad-degree excludes."""
+        job = make_job(
+            title="Software Engineering Intern",
+            raw_text="software engineering intern summer 2026 bs degree",
+        )
+        assert filter_exclude(job, _FILTERS).passes
 
 
 # ---------------------------------------------------------------------------
