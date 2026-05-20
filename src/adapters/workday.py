@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from src.adapters.base import BaseAdapter
 from src.filtering import make_job_id
@@ -22,18 +22,26 @@ logger = logging.getLogger(__name__)
 
 # Matches "Posting Date 01/06/2025"
 _POSTING_DATE_RE = re.compile(r"Posting Date\s+(\d{2}/\d{2}/\d{4})")
+# Matches "Posted Today"
+_POSTED_TODAY_RE = re.compile(r"Posted\s+Today", re.IGNORECASE)
+# Matches "Posted 3 Days Ago" or "Posted 30+ Days Ago"
+_POSTED_DAYS_AGO_RE = re.compile(r"Posted\s+(\d+)\+?\s+Days?\s+Ago", re.IGNORECASE)
 # Matches bullet field that looks like a req ID: starts with letters then digits
 _REQ_ID_RE = re.compile(r"^[A-Z]{1,4}\d{4,}$")
 
 _LIMIT = 20
 
 
-def _parse_posted_on(raw: str) -> datetime | None:
-    """Parse postedOn field to UTC datetime if possible."""
+def _parse_posted_on(raw: str, reference_dt: datetime | None = None) -> datetime | None:
+    """Parse postedOn field to UTC datetime if possible.
+
+    Handles absolute "Posting Date MM/DD/YYYY" and relative "Posted X Days Ago" / "Posted Today".
+    For relative strings, reference_dt anchors the calculation (typically the fetch start time).
+    """
     if not raw:
         return None
 
-    # Format: "Posting Date 01/06/2025"
+    # Absolute: "Posting Date 01/06/2025"
     m = _POSTING_DATE_RE.search(raw)
     if m:
         try:
@@ -41,7 +49,18 @@ def _parse_posted_on(raw: str) -> datetime | None:
         except ValueError:
             pass
 
-    # "Posted Today" / "Posted X Days Ago" — relative, skip
+    if reference_dt is not None:
+        ref = reference_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # "Posted Today"
+        if _POSTED_TODAY_RE.search(raw):
+            return ref
+
+        # "Posted X Days Ago" or "Posted 30+ Days Ago"
+        m = _POSTED_DAYS_AGO_RE.search(raw)
+        if m:
+            return ref - timedelta(days=int(m.group(1)))
+
     return None
 
 
@@ -122,7 +141,7 @@ class WorkdayAdapter(BaseAdapter):
                 else:
                     url = ""
                 official_id = _extract_official_id(bullet_fields)
-                posted_at = _parse_posted_on(posted_on)
+                posted_at = _parse_posted_on(posted_on, reference_dt=detected_at)
                 department = job_family_group if job_family_group else None
                 category = job_family if job_family else None
 

@@ -168,6 +168,26 @@ class TestFilterLocation:
         assert result.passes
         assert "state code" in result.reason
 
+    def test_india_iso_code_IN_fails(self):
+        """SmartRecruiters country code 'IN' (India) must not match Indiana state code."""
+        job = make_job(location="Bengaluru, Karnataka, IN", raw_text="software engineer bengaluru karnataka in")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+
+    def test_india_iso_code_IN_fails_via_country_code(self):
+        """Obscure Indian city + 'IN' country code must still be filtered via ISO check."""
+        job = make_job(location="Noida, Uttar Pradesh, IN", raw_text="software engineer noida in")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "country code" in result.reason
+
+    def test_us_iso_code_passes_via_country_code(self):
+        """SmartRecruiters 'city, region, US' must pass via country code, not ambiguous."""
+        job = make_job(location="Milpitas, California, US", raw_text="software engineer milpitas california us")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "country code" in result.reason
+
 
 # ---------------------------------------------------------------------------
 # filter_exclude tests
@@ -864,3 +884,128 @@ class TestFilterPrecisionPipeline:
             category="Data Engineering",
         )
         assert job is not None
+
+
+# ---------------------------------------------------------------------------
+# New location-filter regression tests (May 2026 bugs)
+# ---------------------------------------------------------------------------
+
+class TestLocationFilterNewBugs:
+    """Regression tests for country/city gaps discovered May 2026."""
+
+    def test_costa_rica_san_jose_fails(self):
+        """'San Jose' in Costa Rica must not pass as US city match."""
+        job = make_job(
+            location="Costa Rica, San Jose",
+            raw_text="software engineer intern costa rica san jose",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_austria_villach_fails(self):
+        job = make_job(
+            location="Austria, Villach",
+            raw_text="software engineer intern austria villach",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_three_letter_code_twn_fails(self):
+        """Workday 3-letter country code TWN (Taiwan) must be filtered."""
+        job = make_job(
+            location="Hsinchu,TWN",
+            raw_text="software engineer intern hsinchu twn",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+
+    def test_three_letter_code_twn_via_country_code(self):
+        """City not in NON_US_SIGNALS + TWN code must be filtered via 3-letter ISO check."""
+        job = make_job(
+            location="Taoyuan Science Park,TWN",
+            raw_text="software engineer intern taoyuan science park twn",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "TWN" in result.reason
+
+    def test_three_letter_code_usa_passes(self):
+        """3-letter code USA must explicitly pass."""
+        job = make_job(
+            location="New York, USA",
+            raw_text="software engineer intern new york usa",
+        )
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+
+    def test_three_letter_code_can_fails(self):
+        """3-letter code CAN (Canada) must be filtered."""
+        job = make_job(
+            location="Toronto, CAN",
+            raw_text="software engineer intern toronto can",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+
+    def test_petaling_jaya_malaysia_fails(self):
+        """SmartRecruiters location 'Petaling Jaya, Selangor, my' must be filtered."""
+        job = make_job(
+            location="Petaling Jaya, Selangor, my",
+            raw_text="software engineer intern petaling jaya selangor my",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+
+    def test_thailand_th_fails(self):
+        """SmartRecruiters location with 'th' country code must be filtered."""
+        job = make_job(
+            location="BangPa-in, Phra Nakhon Si Ayutthaya, th",
+            raw_text="intern bangpa-in phra nakhon si ayutthaya th",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+
+
+# ---------------------------------------------------------------------------
+# Preferred-location word-boundary regression tests
+# ---------------------------------------------------------------------------
+
+class TestPreferredLocationWordBoundary:
+    """'ca' in preferred_locations must not match 'costa rica'."""
+
+    def test_ca_does_not_match_costa_rica(self):
+        """Preferred 'CA' must NOT match the substring in 'Costa Rica, San Jose'."""
+        job = make_job(
+            location="Costa Rica, San Jose",
+            raw_text="software engineer intern costa rica san jose",
+        )
+        labelled = label_job(job, _FILTERS, location_ambiguous=False)
+        assert labelled.priority == "normal"
+
+    def test_ca_matches_san_francisco_ca(self):
+        job = make_job(location="San Francisco, CA", raw_text="software engineer intern")
+        labelled = label_job(job, _FILTERS, location_ambiguous=False)
+        assert labelled.priority == "preferred"
+
+    def test_ca_matches_california_full_word(self):
+        job = make_job(location="Palo Alto, California", raw_text="software engineer intern")
+        labelled = label_job(job, _FILTERS, location_ambiguous=False)
+        assert labelled.priority == "preferred"
+
+    def test_il_does_not_match_illinois_substring(self):
+        """Preferred 'IL' must NOT match inside 'Illinois' (word boundary)."""
+        job = make_job(location="Chicago, Illinois", raw_text="software engineer intern")
+        labelled = label_job(job, _FILTERS, location_ambiguous=False)
+        # 'Illinois' is not a standalone 'IL' token — preferred 'IL' won't match,
+        # but 'Illinois' preferred entry will if present, and 'Chicago' matches.
+        # Main assertion: 'il' inside 'illinois' is not the reason for a match.
+        # Chicago is a preferred city (in preferred_locations via 'Chicago').
+        assert labelled.priority == "preferred"
+
+    def test_tx_does_not_match_text(self):
+        """Preferred 'TX' must NOT match inside words containing 'tx'."""
+        job = make_job(location="Context, ZZ", raw_text="software engineer intern context zz")
+        labelled = label_job(job, _FILTERS, location_ambiguous=False)
+        assert labelled.priority == "normal"

@@ -79,7 +79,12 @@ class SmartRecruitersAdapter(BaseAdapter):
         emp_dict = item.get("typeOfEmployment") or {}
         category = emp_dict.get("label") or None
 
-        url = item.get("ref", "")
+        slug = self.config["slug"]
+        url = (
+            f"https://jobs.smartrecruiters.com/{slug}/{official_id}"
+            if official_id
+            else item.get("ref", "")
+        )
 
         released = item.get("releasedDate")
         posted_at: datetime | None = None

@@ -9,7 +9,9 @@ import pytest
 import responses as resp_lib
 from responses import matchers
 
-from src.adapters.workday import WorkdayAdapter
+from datetime import timedelta
+
+from src.adapters.workday import WorkdayAdapter, _parse_posted_on
 from src.http import HTTPClient
 
 # ---------------------------------------------------------------------------
@@ -187,3 +189,94 @@ def test_http_error_second_page_yields_first_20():
     adapter = _make_adapter()
     jobs = list(adapter.fetch())
     assert len(jobs) == 20
+
+
+# ---------------------------------------------------------------------------
+# _parse_posted_on — relative date parsing
+# ---------------------------------------------------------------------------
+
+_REF = datetime(2026, 5, 20, 14, 30, 0, tzinfo=timezone.utc)
+_TODAY = _REF.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def test_parse_posted_on_absolute_date():
+    """Absolute 'Posting Date MM/DD/YYYY' still works."""
+    result = _parse_posted_on("Posting Date 01/06/2025")
+    assert result == datetime(2025, 1, 6, tzinfo=timezone.utc)
+
+
+def test_parse_posted_on_posted_today():
+    result = _parse_posted_on("Posted Today", reference_dt=_REF)
+    assert result == _TODAY
+
+
+def test_parse_posted_on_posted_1_day_ago():
+    result = _parse_posted_on("Posted 1 Day Ago", reference_dt=_REF)
+    assert result == _TODAY - timedelta(days=1)
+
+
+def test_parse_posted_on_posted_3_days_ago():
+    result = _parse_posted_on("Posted 3 Days Ago", reference_dt=_REF)
+    assert result == _TODAY - timedelta(days=3)
+
+
+def test_parse_posted_on_posted_30_plus_days_ago():
+    """'Posted 30+ Days Ago' — the + is stripped, treated as exactly 30 days."""
+    result = _parse_posted_on("Posted 30+ Days Ago", reference_dt=_REF)
+    assert result == _TODAY - timedelta(days=30)
+
+
+def test_parse_posted_on_no_reference_returns_none_for_relative():
+    """Without reference_dt, relative strings return None."""
+    assert _parse_posted_on("Posted Today") is None
+    assert _parse_posted_on("Posted 3 Days Ago") is None
+
+
+def test_parse_posted_on_empty_returns_none():
+    assert _parse_posted_on("") is None
+    assert _parse_posted_on(None) is None
+
+
+def test_adapter_posted_today_sets_posted_at():
+    """Adapter: 'Posted Today' in fixture → posted_at is set to start of today."""
+    adapter = _make_adapter()
+    posting = {
+        "title": "Software Engineer Intern",
+        "externalPath": "/job/Boise-ID/Software-Engineer-Intern_JR99999",
+        "locationsText": "Boise, ID",
+        "postedOn": "Posted Today",
+        "bulletFields": ["JR99999"],
+    }
+    resp_lib.add(resp_lib.POST, _ENDPOINT, json=_page([posting], 1), status=200)
+
+    # decorate manually since not using decorator
+    with resp_lib.RequestsMock() as rsps:
+        rsps.add(resp_lib.POST, _ENDPOINT, json=_page([posting], 1), status=200)
+        jobs = list(adapter.fetch())
+
+    assert len(jobs) == 1
+    assert jobs[0].posted_at is not None
+    # posted_at should be today (start of day UTC)
+    today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    assert jobs[0].posted_at == today_utc
+
+
+def test_adapter_posted_days_ago_sets_posted_at():
+    """Adapter: 'Posted 2 Days Ago' → posted_at is 2 days before fetch start."""
+    adapter = _make_adapter()
+    posting = {
+        "title": "Software Engineer Intern",
+        "externalPath": "/job/Boise-ID/Software-Engineer-Intern_JR88888",
+        "locationsText": "Boise, ID",
+        "postedOn": "Posted 2 Days Ago",
+        "bulletFields": ["JR88888"],
+    }
+    with resp_lib.RequestsMock() as rsps:
+        rsps.add(resp_lib.POST, _ENDPOINT, json=_page([posting], 1), status=200)
+        before = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        jobs = list(adapter.fetch())
+
+    assert len(jobs) == 1
+    assert jobs[0].posted_at is not None
+    expected = before - timedelta(days=2)
+    assert jobs[0].posted_at == expected

@@ -32,8 +32,32 @@ US_TECH_CITIES = {
     "cincinnati", "cleveland", "milwaukee", "memphis", "new haven"
 }
 
+_NON_US_COUNTRY_CODES = {
+    "in", "ca", "gb", "de", "fr", "au", "jp", "cn", "tw", "sg", "kr",
+    "mx", "br", "ie", "nl", "se", "no", "dk", "fi", "ch", "es", "it",
+    "pl", "cz", "ro", "hu", "il", "tr", "ae", "sa", "pk", "ph", "id",
+    "my", "vn", "th", "hk", "nz", "ar", "co", "cl", "pe", "ng", "ke",
+    "za", "ua", "ru", "bd", "lk", "qa", "kw", "bh", "om", "eg",
+}
+
+_NON_US_COUNTRY_CODES_3 = {
+    # Asia Pacific
+    "twn", "jpn", "chn", "kor", "ind", "aus", "nzl", "sgp", "hkg",
+    "mys", "tha", "idn", "phl", "vnm",
+    # Europe
+    "gbr", "deu", "fra", "irl", "nld", "swe", "nor", "dnk", "fin",
+    "che", "esp", "ita", "pol", "cze", "rou", "hun", "bel", "prt",
+    "aut", "hrv", "svk", "grc", "srb",
+    # Americas (non-US)
+    "can", "mex", "bra", "arg", "col", "chl", "per", "cri", "pan",
+    "gtm", "hnd", "slv", "nic",
+    # Middle East / Africa / Other
+    "isr", "tur", "are", "sau", "qat", "kwt", "bhr", "omn", "egy",
+    "nga", "ken", "zaf", "ukr", "rus", "pak", "bgd", "lka",
+}
+
 NON_US_SIGNALS = {
-    # Countries
+    # Countries — major
     "india", "canada", "uk", "united kingdom", "germany", "france", "australia",
     "japan", "china", "singapore", "mexico", "brazil", "ireland", "netherlands",
     "sweden", "norway", "denmark", "finland", "switzerland", "spain", "italy",
@@ -46,21 +70,30 @@ NON_US_SIGNALS = {
     "egypt", "nigeria", "kenya", "south africa",
     "pakistan", "bangladesh", "sri lanka",
     "ukraine", "russia",
-    # Cities — Europe
+    # Countries — Central America / Caribbean
+    "costa rica", "panama", "guatemala", "honduras", "nicaragua", "el salvador",
+    # Countries — Europe (additions)
+    "austria", "belgium", "portugal", "croatia", "serbia", "greece", "slovakia",
+    # Cities — Europe (Western)
     "budapest", "london", "berlin", "paris", "amsterdam", "dublin", "stockholm",
     "oslo", "zurich", "madrid", "rome", "warsaw", "prague", "bucharest",
+    "brussels", "lisbon", "porto",
+    # Cities — Austria
+    "vienna", "graz", "villach", "linz", "salzburg",
+    # Cities — Southeast Europe
+    "athens", "zagreb", "belgrade",
     # Cities — India
-    "bangalore", "mumbai", "delhi", "hyderabad", "chennai", "pune", "kolkata",
+    "bangalore", "bengaluru", "mumbai", "delhi", "hyderabad", "chennai", "pune", "kolkata",
     # Cities — Canada
     "toronto", "vancouver", "montreal", "ottawa", "calgary",
     # Cities — Australia / NZ
     "sydney", "melbourne", "brisbane", "perth", "auckland", "wellington",
     # Cities — East Asia
     "tokyo", "osaka", "beijing", "shanghai", "guangzhou", "shenzhen",
-    "seoul", "busan", "taipei", "tainan", "taichung", "kaohsiung",
+    "seoul", "busan", "taipei", "tainan", "taichung", "kaohsiung", "hsinchu",
     "hong kong",
     # Cities — Southeast Asia
-    "manila", "jakarta", "kuala lumpur", "bangkok", "ho chi minh", "hanoi",
+    "manila", "jakarta", "kuala lumpur", "petaling jaya", "bangkok", "ho chi minh", "hanoi",
     # Cities — Middle East
     "dubai", "abu dhabi", "riyadh", "jeddah", "doha", "tel aviv", "jerusalem",
     "istanbul", "ankara",
@@ -127,6 +160,25 @@ def filter_location(job: Job, filters: dict) -> FilterResult:
         pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
         if re.search(pattern, combined):
             return FilterResult(False, f"non-US location: {signal}")
+
+    # ISO country code checks — parse comma-separated location parts
+    loc_parts = [p.strip() for p in location_lower.split(",")]
+
+    # 2-letter ISO code in "city, region, COUNTRY" (3+ parts, to avoid "Denver, CO" false match)
+    if len(loc_parts) >= 3 and len(loc_parts[-1]) == 2 and loc_parts[-1].isalpha():
+        last = loc_parts[-1]
+        if last == "us":
+            return FilterResult(True, "US country code")
+        if last in _NON_US_COUNTRY_CODES:
+            return FilterResult(False, f"non-US country code: {last.upper()}")
+
+    # 3-letter ISO code in "city, COUNTRY" (2+ parts — safe since no US state uses 3 letters)
+    if len(loc_parts) >= 2 and len(loc_parts[-1]) == 3 and loc_parts[-1].isalpha():
+        last3 = loc_parts[-1]
+        if last3 == "usa":
+            return FilterResult(True, "US country code USA")
+        if last3 in _NON_US_COUNTRY_CODES_3:
+            return FilterResult(False, f"non-US country code: {last3.upper()}")
 
     # Explicit US signals
     for us_signal in ("united states", "usa", "u.s.", "remote"):
@@ -254,7 +306,10 @@ def label_job(job: Job, filters: dict, location_ambiguous: bool) -> Job:
     else:
         loc_lower = (job.location or "").lower()
         preferred = filters.get("preferred_locations", [])
-        if any(pl.lower() in loc_lower for pl in preferred):
+        if any(
+            re.search(r"(?<![a-z0-9])" + re.escape(pl.lower()) + r"(?![a-z0-9])", loc_lower)
+            for pl in preferred
+        ):
             priority = "preferred"
         else:
             priority = "normal"

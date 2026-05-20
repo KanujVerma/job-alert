@@ -57,9 +57,18 @@ def test_field_mapping():
     assert first.source_platform == "smartrecruiters"
     assert first.title == "Intern - Environmental Specialist"
     assert first.company == "western_digital"
-    assert first.url == (
-        "https://api.smartrecruiters.com/v1/companies/WesternDigital/postings/744000125027538"
-    )
+    assert first.url == "https://jobs.smartrecruiters.com/WesternDigital/744000125027538"
+
+
+def test_url_is_job_posting_not_api():
+    """URL must point to the apply page, not the internal API endpoint."""
+    adapter = _make_adapter()
+    fixture = json.loads(FIXTURE_PATH.read_text())
+    fixture_single_page = dict(fixture, totalFound=2)
+    adapter.http.get.return_value = _mock_response(fixture_single_page)
+
+    jobs = list(adapter.fetch())
+    assert jobs[0].url == "https://jobs.smartrecruiters.com/WesternDigital/744000125027538"
 
 
 def test_source_platform_is_smartrecruiters():
