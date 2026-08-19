@@ -10,6 +10,12 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-19-adapter-health-reporting-design.md`
 
+**Status (2026-08-19 20:15 UTC):** Tasks 1 and 2 complete and live on `origin/main`
+(`851a4be`), 409 tests passing. Task 3 Step 2 verified in production — all 12 enabled
+companies carry a `health` block, `version` still 2, and Microsoft Research / Oracle /
+Plaid each show `last_nonempty_at: null` as predicted. Task 3 Step 3 is blocked on
+elapsed time only: the first notices cannot fire before ~2026-08-20 20:00 UTC.
+
 ## Global Constraints
 
 - Health is measured on `fetched` (pre-filter count), never `matched`. A healthy adapter routinely returns postings that all fail the filters; that must stay silent.
@@ -44,7 +50,7 @@
 - Consumes: nothing from earlier tasks.
 - Produces: `update_health(company_state: dict, fetched_count: int, now: datetime, stale_after_hours: float) -> str | None`, returning `"stale"`, `"recovered"`, or `None`. Also `HEALTH_STALE = "stale"` and `HEALTH_RECOVERED = "recovered"`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/test_health.py`:
 
@@ -127,12 +133,12 @@ class TestBoundary:
         assert update_health(cs, 0, at(24), _STALE_AFTER) is None
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `./.venv/bin/python -m pytest tests/test_health.py -v`
 Expected: collection error — `ModuleNotFoundError: No module named 'src.health'`.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 Create `src/health.py`:
 
@@ -196,17 +202,17 @@ def update_health(
     return None
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `./.venv/bin/python -m pytest tests/test_health.py -v`
 Expected: 9 passed.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `./.venv/bin/python -m pytest -q`
 Expected: 406 passed (397 baseline + 9 new).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/health.py tests/test_health.py
@@ -234,7 +240,7 @@ from, so a design keyed only on last_nonempty_at would never flag it."
 - Consumes: `update_health`, `HEALTH_STALE`, `HEALTH_RECOVERED` from `src/health.py` (Task 1).
 - Produces: nothing later tasks depend on.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/test_main_exit_code.py`:
 
@@ -358,12 +364,12 @@ def _make_job() -> Job:
     )
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `./.venv/bin/python -m pytest tests/test_main_exit_code.py -v -k Health`
 Expected: FAIL — `assert 0 == 1` on `send_summary.call_count`, because `do_run` does not yet consult health.
 
-- [ ] **Step 3: Add the config default**
+- [x] **Step 3: Add the config default**
 
 In `companies.yaml`, under `defaults:`, directly after `first_seen_ttl_days: 180`:
 
@@ -375,7 +381,7 @@ In `companies.yaml`, under `defaults:`, directly after `first_seen_ttl_days: 180
   adapter_stale_after_hours: 24
 ```
 
-- [ ] **Step 4: Write the minimal implementation**
+- [x] **Step 4: Write the minimal implementation**
 
 In `main.py`, add to the imports beside the other `src` imports:
 
@@ -423,17 +429,17 @@ Then in the company loop, immediately after the `try/except` fetch block (after 
                     )
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `./.venv/bin/python -m pytest tests/test_main_exit_code.py -v -k Health`
 Expected: 3 passed.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `./.venv/bin/python -m pytest -q`
 Expected: 409 passed (406 after Task 1 + 3 new).
 
-- [ ] **Step 7: Verify against the real config**
+- [x] **Step 7: Verify against the real config**
 
 Run: `./.venv/bin/python main.py run --dry-run --verbose 2>&1 | tail -20`
 Expected: exit 0, no Discord posts (dry-run suppresses them).
@@ -455,7 +461,7 @@ would be wrong for two of the three companies it fires on.
 Consequence for rollout: expect **three** notices on the first day past the threshold,
 not one. All three are edge-triggered, so each pings once and then stays quiet.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add main.py tests/test_main_exit_code.py companies.yaml
@@ -489,12 +495,14 @@ This exists as its own task because the feature's entire purpose is catching a c
 that unit tests can only simulate. A green suite does not prove the notice fires
 against real state and a really-broken adapter.
 
-- [ ] **Step 1: Confirm the state file has no health data yet**
+- [~] **Step 1: Confirm the state file has no health data yet** — NOT RUN AS WRITTEN.
+Pushed before running this exact command. Confirmed equivalently after the fact: the
+post-run state shows blocks freshly stamped 2026-08-19T20:0x, so none pre-existed.
 
 Run: `./.venv/bin/python -c "import json; d=json.load(open('state/seen_jobs.json')); print({k: 'health' in v for k, v in d['companies'].items()})"`
 Expected: all `False` before the first real run.
 
-- [ ] **Step 2: Push and let one scheduled run populate health**
+- [x] **Step 2: Push and let one scheduled run populate health**
 
 ```bash
 git push origin main
@@ -515,7 +523,7 @@ Note that on a fresh rollout every silent company has `last_nonempty_at: null`, 
 never-had-postings signal cannot yet separate the broken adapter from the merely quiet
 ones. That distinction only becomes informative once history accumulates.
 
-- [ ] **Step 3: Confirm the notice fires 24h later**
+- [ ] **Step 3: Confirm the notice fires 24h later** — PENDING, earliest 2026-08-20 ~20:00 UTC.
 
 Roughly 24h after the first run carrying this code, check Discord for a single
 "🔕 Adapter looks dead" notice naming Microsoft Research, and confirm it does not
