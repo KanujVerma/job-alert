@@ -2,7 +2,7 @@
 
 ## 1. What it does
 
-Monitors 14 company career sites every 15 minutes for U.S.-based internships, new-grad, and entry-level tech roles. Sends Discord webhook alerts when new postings are detected. Runs free on GitHub Actions with state committed back to the repo to avoid duplicates.
+Monitors 14 configured company career sites (12 currently enabled — see section 12) every 15 minutes for U.S.-based internships, new-grad, and entry-level tech roles. Sends Discord webhook alerts when new postings are detected. Runs free on GitHub Actions with state committed back to the repo to avoid duplicates.
 
 ---
 
@@ -26,7 +26,7 @@ python main.py run
 
 ## 3. GitHub Actions setup
 
-1. Push this repo to GitHub (create a new private repo)
+1. Push this repo to GitHub. **Use a public repo:** Actions minutes are unlimited and free on public repos, while a private repo bills every run against a 2,000 min/month allowance — at a 15-minute cron (~96 runs/day, ~6 min each) that allowance is gone in about three days.
 2. Go to repo **Settings → Secrets and variables → Actions → New repository secret**
 3. Name: `DISCORD_WEBHOOK_URL`, Value: your Discord webhook URL
 4. Go to **Actions** tab → enable workflows if prompted
@@ -57,7 +57,9 @@ python main.py test-discord                # send test embed to verify webhook
 
 Each company uses one adapter class in `src/adapters/`. The adapter's `fetch()` yields normalized `Job` objects. The filtering pipeline then decides which jobs match and which to alert on. To swap out a company's adapter, change the `adapter:` field in `companies.yaml` — no Python code changes needed.
 
-**Current adapters:** workday (5 companies), smartrecruiters (2), lever (1), oracle_careers (1), amazon_jobs (1), apple_jobs (1), eightfold (1), microsoft_research (1), generic_html (1).
+**Current adapters:** workday (5 companies), smartrecruiters (2), lever (1), oracle_careers (1), amazon_jobs (1), apple_jobs (1), microsoft_research (1) — all enabled; plus phenom_people (1) and generic_html (1), both currently disabled (section 12).
+
+`eightfold` and `eightfold_playwright` adapters are implemented, registered and tested, but no company currently uses them.
 
 > **Note:** Snowflake, Microsoft Research, and Applied Digital use SPA-based sites that are difficult to scrape without a browser. These adapters return empty results until the sites expose a stable public API. The bot will not error out for these — it logs a warning and continues.
 
@@ -217,4 +219,5 @@ The `debug_artifacts/` directory is gitignored and never committed.
 | Discord 429 errors | Too many alerts at once | Bot throttles to 4/sec; cap is 25/run |
 | GitHub Actions fails with auth error | Missing `permissions: contents: write` | Check `.github/workflows/job-alerts.yml` |
 | State file merge conflict on Actions | Two concurrent runs | `concurrency: group: job-alerts` prevents this |
-| `validate-config` shows no adapter warnings | Normal in Phase 1; should resolve after Phase 2+ | Check `src/adapters/__init__.py` imports |
+| `validate-config` shows no adapter warnings | Expected when every configured adapter resolves | Check `src/adapters/__init__.py` imports |
+| Run killed at 20 minutes | A step hung — usually `playwright install` stalling on an apt mirror | Expected safety behaviour; the job caps at `timeout-minutes: 20` and the install retries 3× before failing |
