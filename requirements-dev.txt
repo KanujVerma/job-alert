@@ -1,0 +1,6 @@
+# Development and test dependencies. Runtime deps live in requirements.txt.
+-r requirements.txt
+
+pytest>=8.0
+pytest-mock>=3.12
+responses>=0.25

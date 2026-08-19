@@ -13,7 +13,8 @@ git clone <your-repo-url>
 cd job-alert
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt          # runtime only
+# pip install -r requirements-dev.txt    # + pytest, for running the test suite
 cp .env.example .env
 # Edit .env: set DISCORD_WEBHOOK_URL to your webhook
 python main.py validate-config
@@ -21,6 +22,9 @@ python main.py test-discord
 python main.py run --dry-run --verbose
 python main.py run
 ```
+
+Run the tests with `pip install -r requirements-dev.txt && pytest`. CI installs
+`requirements.txt` only, since the workflow runs the bot rather than the suite.
 
 ---
 
