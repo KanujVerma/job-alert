@@ -436,8 +436,24 @@ Expected: 409 passed (406 after Task 1 + 3 new).
 - [ ] **Step 7: Verify against the real config**
 
 Run: `./.venv/bin/python main.py run --dry-run --verbose 2>&1 | tail -20`
-Expected: exit 0. `Microsoft Research` shows `fetched=0`; every other enabled company
-shows `fetched>0`. No Discord posts (dry-run suppresses them).
+Expected: exit 0, no Discord posts (dry-run suppresses them).
+
+**Corrected 2026-08-19 against a real run.** This step originally predicted that only
+`Microsoft Research` would show `fetched=0`. Three companies do:
+
+| Company | fetched | Cause |
+|---|---|---|
+| Microsoft Research | 0 | broken — 403 then an SPA with no static data |
+| Plaid | 0 | healthy — Lever returns `[]`, no open postings |
+| Oracle | 0 | healthy — API returns `{"items":[],"count":0}` |
+
+Both Plaid and Oracle answer 200 with a well-formed empty result, so their adapters
+are fine and the sites genuinely have nothing open. This is why the notice copy states
+the observation rather than diagnosing "the adapter is probably broken" — that wording
+would be wrong for two of the three companies it fires on.
+
+Consequence for rollout: expect **three** notices on the first day past the threshold,
+not one. All three are edge-triggered, so each pings once and then stays quiet.
 
 - [ ] **Step 8: Commit**
 
@@ -491,9 +507,13 @@ git pull --rebase origin main
 ./.venv/bin/python -c "import json; d=json.load(open('state/seen_jobs.json')); print(json.dumps({k: v.get('health') for k, v in d['companies'].items()}, indent=2))"
 ```
 
-Expected: every enabled company now has a `health` block. `Microsoft Research` has
-`last_nonempty_at: null`; the others have a timestamp. No company is `alerted` yet —
-`first_tracked_at` is only minutes old.
+Expected: every enabled company now has a `health` block. `Microsoft Research`,
+`Plaid` and `Oracle` have `last_nonempty_at: null`; the others have a timestamp. No
+company is `alerted` yet — `first_tracked_at` is only minutes old.
+
+Note that on a fresh rollout every silent company has `last_nonempty_at: null`, so the
+never-had-postings signal cannot yet separate the broken adapter from the merely quiet
+ones. That distinction only becomes informative once history accumulates.
 
 - [ ] **Step 3: Confirm the notice fires 24h later**
 
