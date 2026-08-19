@@ -8,3 +8,4 @@ __pycache__/
 dist/
 debug_artifacts/
 .claude-flow/
+tests/fixtures/dom_discovery/
