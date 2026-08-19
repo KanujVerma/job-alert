@@ -14,6 +14,10 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # Backstop. Without this the job inherits GitHub's 6h default: on 2026-08-18 an
+    # apt mirror stall inside `playwright install --with-deps` burned 360 billed
+    # minutes in a single run before being killed.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,6 +25,7 @@ jobs:
           python-version: '3.12'
           cache: pip
       - name: Install dependencies
+        timeout-minutes: 5
         run: pip install -r requirements.txt
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -28,12 +33,27 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
       - name: Install Chromium
-        run: python -m playwright install --with-deps chromium
+        # `--with-deps` shells out to apt, which can hang indefinitely when an
+        # Ubuntu mirror goes unreachable. `timeout` kills the stuck process so the
+        # retry can actually make progress.
+        timeout-minutes: 10
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 180 python -m playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "::warning::playwright install attempt $attempt stalled or failed; retrying"
+            sleep 10
+          done
+          echo "::error::playwright install failed after 3 attempts"
+          exit 1
       - name: Run job alerts
+        timeout-minutes: 8
         run: python main.py run
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       - name: Commit state
+        timeout-minutes: 3
         run: |
           git config user.name  "job-alerts-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
