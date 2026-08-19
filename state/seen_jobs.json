@@ -1,0 +1,2436 @@
+{
+  "version": 2,
+  "first_run_completed_at": "2026-05-07T16:53:59.639660+00:00",
+  "companies": {
+    "Micron": {
+      "last_checked_at": "2026-08-19T04:53:33.107562+00:00",
+      "seen_jobs": {
+        "Micron::workday::JR97659": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91995": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR93792": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR99823": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR99830": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR89754": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR96181": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92473": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR96292": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR96293": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR98324": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR98327": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR86891": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92463": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR98328": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR98329": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR98330": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92620": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR95805": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR95473": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR95459": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92923": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR88943": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR96306": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92626": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR86293": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR95839": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR96740": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91500": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR96794": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR95420": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR93439": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91340": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92682": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91293": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91938": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92395": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR94751": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR88941": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91326": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92570": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92628": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92191": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92872": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92132": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92346": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92581": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91586": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92028": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92098": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92068": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR93743": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91982": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91911": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92810": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92614": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92279": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91940": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91931": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91934": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91466": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91996": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92629": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92804": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92733": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92713": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92920": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR92937": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR83798": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR82737": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR63075": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Micron::workday::JR91328": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Salesforce": {
+      "last_checked_at": "2026-08-19T04:54:18.605723+00:00",
+      "seen_jobs": {
+        "Salesforce::workday::JR337715": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-07-30T04:22:11.599311+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR340208": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR236329": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR313214": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-12T16:08:53.007966+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR334969": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR334968": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR336428": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR336319": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR340771": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:53:37.240432+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR348039": {
+          "first_seen": "2026-07-13T22:10:59.582731+00:00",
+          "last_seen": "2026-07-18T01:07:08.815193+00:00",
+          "alerted": true
+        },
+        "Salesforce::workday::JR355842": {
+          "first_seen": "2026-08-11T23:05:17.368110+00:00",
+          "last_seen": "2026-08-12T16:38:07.273392+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "CrowdStrike": {
+      "last_checked_at": "2026-08-19T04:54:34.816143+00:00",
+      "seen_jobs": {
+        "CrowdStrike::workday::R26742": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Intel": {
+      "last_checked_at": "2026-08-19T04:54:56.565176+00:00",
+      "seen_jobs": {
+        "Intel::workday::JR0279646": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0282709": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0281363": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283662": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0281094": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0280609": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283244": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283619": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283575": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-13T04:17:42.634909+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283588": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-14T05:36:31.027878+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283576": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T00:20:46.245151+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283579": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:54:22.976077+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0282639": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-07-31T06:36:09.238861+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283183": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:54:22.976077+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283196": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:54:22.976077+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283194": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-19T01:31:47.371807+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283186": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T00:20:46.245151+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283188": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T00:20:46.245151+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283049": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283088": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283327": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283278": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283096": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:54:22.976077+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0282402": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0282114": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0279129": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0281605": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283962": {
+          "first_seen": "2026-05-18T14:22:37.227449+00:00",
+          "last_seen": "2026-05-19T12:13:26.289495+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0284123": {
+          "first_seen": "2026-05-19T01:31:47.371807+00:00",
+          "last_seen": "2026-05-20T11:29:42.235479+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0284120": {
+          "first_seen": "2026-05-19T01:31:47.371807+00:00",
+          "last_seen": "2026-05-20T22:54:22.976077+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0284143": {
+          "first_seen": "2026-05-19T01:31:47.371807+00:00",
+          "last_seen": "2026-05-20T11:29:42.235479+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0284117": {
+          "first_seen": "2026-05-19T01:31:47.371807+00:00",
+          "last_seen": "2026-05-20T22:54:22.976077+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283384": {
+          "first_seen": "2026-05-19T08:51:56.771956+00:00",
+          "last_seen": "2026-06-03T05:28:19.397710+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283839": {
+          "first_seen": "2026-05-29T17:48:23.649943+00:00",
+          "last_seen": "2026-06-04T05:07:32.762425+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0283939": {
+          "first_seen": "2026-06-03T10:22:54.433220+00:00",
+          "last_seen": "2026-06-04T09:02:42.898738+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0284462": {
+          "first_seen": "2026-06-03T19:04:33.762037+00:00",
+          "last_seen": "2026-06-04T09:02:42.898738+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0282641": {
+          "first_seen": "2026-06-11T20:39:39.422616+00:00",
+          "last_seen": "2026-07-31T06:36:09.238861+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0284960": {
+          "first_seen": "2026-06-24T20:58:52.517699+00:00",
+          "last_seen": "2026-06-25T21:13:36.306637+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285140": {
+          "first_seen": "2026-06-25T01:52:19.763657+00:00",
+          "last_seen": "2026-06-26T04:41:51.608016+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285167": {
+          "first_seen": "2026-06-26T11:24:49.284798+00:00",
+          "last_seen": "2026-06-28T04:56:44.297925+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285242": {
+          "first_seen": "2026-07-02T06:01:06.309814+00:00",
+          "last_seen": "2026-07-03T05:27:42.786137+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285341": {
+          "first_seen": "2026-07-02T18:04:23.235219+00:00",
+          "last_seen": "2026-07-09T06:46:05.875414+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285916": {
+          "first_seen": "2026-07-27T18:06:33.364172+00:00",
+          "last_seen": "2026-07-28T04:30:44.023312+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285989": {
+          "first_seen": "2026-07-31T17:56:33.465142+00:00",
+          "last_seen": "2026-08-06T06:48:07.800237+00:00",
+          "alerted": true
+        },
+        "Intel::workday::JR0285451": {
+          "first_seen": "2026-08-17T20:38:31.865110+00:00",
+          "last_seen": "2026-08-19T04:54:56.565176+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Applied Materials": {
+      "last_checked_at": "2026-08-19T04:56:03.271439+00:00",
+      "seen_jobs": {
+        "Applied Materials::workday::R2615108": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-14T20:56:41.401047+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2612521": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2618491": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2616144": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:55:33.029453+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2616095": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:55:33.029453+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2615062": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-15T14:40:20.961714+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2611911": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2611912": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2611570": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-20T22:55:33.029453+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2611499": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2611498": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2616484": {
+          "first_seen": "2026-05-11T18:01:16.602442+00:00",
+          "last_seen": "2026-05-11T19:02:56.040479+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2619341": {
+          "first_seen": "2026-05-11T19:02:56.040479+00:00",
+          "last_seen": "2026-05-11T19:02:56.040479+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2611924": {
+          "first_seen": "2026-05-19T05:48:54.481195+00:00",
+          "last_seen": "2026-05-20T22:55:33.029453+00:00",
+          "alerted": true
+        },
+        "Applied Materials::workday::R2619446": {
+          "first_seen": "2026-06-01T20:09:56.540388+00:00",
+          "last_seen": "2026-06-03T05:29:25.220276+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Western Digital": {
+      "last_checked_at": "2026-08-19T04:56:08.125293+00:00",
+      "seen_jobs": {
+        "Western Digital::smartrecruiters::744000124342235": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000119652262": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000118348453": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000117762538": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000125244732": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000126186312": {
+          "first_seen": "2026-05-13T04:19:04.438334+00:00",
+          "last_seen": "2026-05-15T00:15:12.071170+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000126431281": {
+          "first_seen": "2026-05-14T01:38:29.895997+00:00",
+          "last_seen": "2026-05-14T01:38:29.895997+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000126450213": {
+          "first_seen": "2026-05-14T05:37:45.234129+00:00",
+          "last_seen": "2026-05-15T07:45:45.395916+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000126904038": {
+          "first_seen": "2026-05-18T06:17:58.598797+00:00",
+          "last_seen": "2026-05-20T00:22:03.089588+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000126900638": {
+          "first_seen": "2026-05-18T06:17:58.598797+00:00",
+          "last_seen": "2026-05-20T00:22:03.089588+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000126937969": {
+          "first_seen": "2026-05-18T10:47:05.727650+00:00",
+          "last_seen": "2026-05-20T08:29:45.563594+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000131225179": {
+          "first_seen": "2026-06-09T21:17:55.796807+00:00",
+          "last_seen": "2026-06-11T14:58:40.421588+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000131726599": {
+          "first_seen": "2026-06-11T18:16:08.408777+00:00",
+          "last_seen": "2026-06-13T16:01:56.678180+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000134024481": {
+          "first_seen": "2026-06-24T21:00:12.673624+00:00",
+          "last_seen": "2026-06-26T15:44:51.253990+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000135313334": {
+          "first_seen": "2026-07-01T16:30:43.899469+00:00",
+          "last_seen": "2026-07-03T15:37:37.677900+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000138184309": {
+          "first_seen": "2026-07-16T19:11:13.207418+00:00",
+          "last_seen": "2026-07-18T18:02:14.732230+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000138727213": {
+          "first_seen": "2026-07-20T21:46:19.094397+00:00",
+          "last_seen": "2026-07-22T20:02:12.548724+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000140949875": {
+          "first_seen": "2026-07-31T16:16:22.787389+00:00",
+          "last_seen": "2026-08-02T15:34:04.983219+00:00",
+          "alerted": true
+        },
+        "Western Digital::smartrecruiters::744000143171017": {
+          "first_seen": "2026-08-12T19:51:30.630986+00:00",
+          "last_seen": "2026-08-14T18:55:51.810241+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "SanDisk": {
+      "last_checked_at": "2026-08-19T04:56:13.568391+00:00",
+      "seen_jobs": {
+        "SanDisk::smartrecruiters::744000124692433": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "SanDisk::smartrecruiters::744000103841505": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "SanDisk::smartrecruiters::744000093167465": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "SanDisk::smartrecruiters::744000093166991": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Plaid": {
+      "last_checked_at": "2026-08-19T04:56:16.079244+00:00",
+      "seen_jobs": {}
+    },
+    "Oracle": {
+      "last_checked_at": "2026-08-19T04:56:19.879876+00:00",
+      "seen_jobs": {}
+    },
+    "Microsoft Research": {
+      "last_checked_at": "2026-08-19T04:56:24.070785+00:00",
+      "seen_jobs": {}
+    },
+    "Amazon": {
+      "last_checked_at": "2026-08-19T04:57:05.990387+00:00",
+      "seen_jobs": {
+        "Amazon::amazon_jobs::10412347": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10411245": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10413621": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10395462": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10413484": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10413418": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3160500": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10413222": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10413113": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10413112": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10397515": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412992": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3116030": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10379629": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10399054": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412880": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412873": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412840": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398351": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10402063": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3137373": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3041976": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3144067": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412688": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412530": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10395339": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412241": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412211": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10412182": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3194785": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10411865": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10411819": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3194300": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3193128": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398088": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10405223": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10411700": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3202716": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10387496": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3195911": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407147": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3184221": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3142800": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10386076": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3177033": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10411149": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10411574": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10378626": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3188427": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10410795": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408600": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10410522": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10410497": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10403132": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10379715": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3105103": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3145352": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10403351": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10381495": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10410089": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10409459": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3174431": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10409447": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10409446": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10372912": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3182260": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3085897": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3141580": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408781": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3070236": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::2933886": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10404803": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408404": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408304": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408291": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408225": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3196386": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3158240": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3206077": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3138426": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408159": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408114": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10408109": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407930": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407902": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407144": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3181288": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10376702": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10374283": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10404192": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407319": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407301": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407295": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3156580": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3166642": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10407093": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10383449": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10382465": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10383137": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3179209": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3186325": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10395084": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10406225": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10406160": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3206892": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3191592": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10383415": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10402039": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10405846": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10372635": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3086798": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10405848": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3153885": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3200212": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10376578": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10402913": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3202547": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10405581": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10404805": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10404756": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3195101": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10404381": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3167057": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10383545": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398356": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398354": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398886": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394408": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10404109": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10403175": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10381886": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10377337": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10402499": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10402100": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10401909": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10400965": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10400153": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3145644": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3141000": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10373955": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3155387": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10393439": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3201317": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3157585": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3184459": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10387999": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3133398": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398968": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398737": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3157715": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3069068": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398392": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10383335": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10398344": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3136145": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10397965": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3193169": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3201597": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10391887": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3155855": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10371627": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3155533": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3152932": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3144153": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3127861": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394934": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3113781": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3082454": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3201476": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3201474": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3169670": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3177076": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394343": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394278": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394268": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10385467": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394230": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10394156": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10382725": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10393440": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10393376": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3198778": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::2827412": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10390504": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10392772": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10392673": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3166071": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3192468": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3170755": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3205560": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10391660": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10378306": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10386559": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10391855": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3108025": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10391774": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3204720": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10390297": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10390108": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10375015": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10389548": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10389240": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10389178": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10377553": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10388095": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10388005": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3200903": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10387501": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3204654": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10386685": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3154373": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3197266": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3191981": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10384480": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3145651": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3195017": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3088035": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3157347": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3160573": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10380711": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10376602": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10385031": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3208181": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10383316": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3179205": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3188438": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3176626": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3189496": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3164688": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3154601": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3102492": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10377096": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3199517": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3183393": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3183389": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3166631": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3077913": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10378205": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10377738": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10378182": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3198595": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3205601": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3177240": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3171632": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3171621": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3078059": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3040057": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3156476": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3139964": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3112329": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3158276": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3174463": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3174464": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10372911": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3061425": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3115024": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3207720": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3206895": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3119409": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3206075": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3141308": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3201600": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3201503": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3200127": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3197545": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3160845": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3196097": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3188771": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3175246": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3193698": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3122543": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3136036": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3190444": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3115707": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3179845": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3184921": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3157459": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3180074": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3165931": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3175965": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3173054": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3170493": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3144155": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3071340": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3131315": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3131316": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3131317": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::3132414": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10414036": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10414966": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10419265": {
+          "first_seen": "2026-05-13T22:43:26.644523+00:00",
+          "last_seen": "2026-05-14T23:17:14.601438+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10421947": {
+          "first_seen": "2026-05-17T21:43:32.998404+00:00",
+          "last_seen": "2026-05-18T23:24:33.126430+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10491935": {
+          "first_seen": "2026-08-04T18:48:30.078345+00:00",
+          "last_seen": "2026-08-05T14:59:14.121656+00:00",
+          "alerted": true
+        },
+        "Amazon::amazon_jobs::10491603": {
+          "first_seen": "2026-08-05T18:16:11.776192+00:00",
+          "last_seen": "2026-08-05T18:16:11.776192+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Apple": {
+      "last_checked_at": "2026-08-19T04:57:28.146986+00:00",
+      "seen_jobs": {
+        "Apple::apple_jobs::200606475-3810": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200606141-3810": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200606469-3810": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200606145-3810": {
+          "first_seen": "2026-05-09T21:03:23.930181+00:00",
+          "last_seen": "2026-05-09T21:03:23.930181+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200664307-3810": {
+          "first_seen": "2026-05-20T21:30:51.857391+00:00",
+          "last_seen": "2026-05-21T17:42:44.356616+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200664204-3810": {
+          "first_seen": "2026-05-20T21:30:51.857391+00:00",
+          "last_seen": "2026-05-21T17:42:44.356616+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200663981-3810": {
+          "first_seen": "2026-05-21T19:36:24.609500+00:00",
+          "last_seen": "2026-05-22T23:24:33.121601+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200663968-3810": {
+          "first_seen": "2026-05-21T19:36:24.609500+00:00",
+          "last_seen": "2026-05-22T23:24:33.121601+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200664330-3810": {
+          "first_seen": "2026-05-21T19:36:24.609500+00:00",
+          "last_seen": "2026-05-22T23:24:33.121601+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200664785-3810": {
+          "first_seen": "2026-05-21T19:36:24.609500+00:00",
+          "last_seen": "2026-05-22T23:24:33.121601+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200664780-3810": {
+          "first_seen": "2026-05-21T19:36:24.609500+00:00",
+          "last_seen": "2026-05-22T23:24:33.121601+00:00",
+          "alerted": true
+        },
+        "Apple::apple_jobs::200664002-3810": {
+          "first_seen": "2026-05-21T19:36:24.609500+00:00",
+          "last_seen": "2026-05-22T23:24:33.121601+00:00",
+          "alerted": true
+        }
+      }
+    },
+    "Snowflake": {
+      "last_checked_at": "2026-05-10T01:35:23.065613+00:00",
+      "seen_jobs": {}
+    },
+    "Applied Digital": {
+      "last_checked_at": "2026-05-11T16:52:52.885776+00:00",
+      "seen_jobs": {}
+    }
+  }
+}
