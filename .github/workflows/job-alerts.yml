@@ -33,20 +33,43 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
       - name: Install Chromium
-        # `--with-deps` shells out to apt, which can hang indefinitely when an
-        # Ubuntu mirror goes unreachable. `timeout` kills the stuck process so the
-        # retry can actually make progress.
-        timeout-minutes: 10
+        # Browser binary only. `--with-deps` was removed on 2026-08-19: it shells
+        # out to `sudo apt-get`, and when the 180s timeout fired mid-download the
+        # killed python left an orphaned apt-get holding /var/lib/dpkg/lock-frontend,
+        # so retries 2 and 3 failed instantly on the lock and could never have
+        # succeeded. apt also has no cache here, so it ran on every 15-minute job.
+        # The runner image ships Google Chrome, so the shared libraries headless
+        # Chromium needs are already present; the only packages apt ever added were
+        # CJK/Thai/Cyrillic glyph fonts, and this bot reads DOM text rather than
+        # rendering it. The smoke check below is what proves that assumption per-run.
+        timeout-minutes: 7
         run: |
           for attempt in 1 2 3; do
-            if timeout 180 python -m playwright install --with-deps chromium; then
+            if timeout --kill-after=30 120 python -m playwright install chromium; then
               exit 0
             fi
-            echo "::warning::playwright install attempt $attempt stalled or failed; retrying"
+            echo "::warning::playwright install attempt $attempt failed; retrying"
             sleep 10
           done
           echo "::error::playwright install failed after 3 attempts"
           exit 1
+      - name: Verify Chromium launches
+        # Turns "the runner image already has the deps" from an assumption into a
+        # checked fact. If a future image drops a shared library this fails here
+        # with the loader error, instead of surfacing as a confusing scrape failure.
+        timeout-minutes: 2
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+
+          with sync_playwright() as pw:
+              browser = pw.chromium.launch(headless=True)
+              page = browser.new_page()
+              page.set_content("<h1>ok</h1>")
+              assert page.inner_text("h1") == "ok"
+              browser.close()
+          print("chromium launched and rendered DOM text")
+          PY
       - name: Run job alerts
         timeout-minutes: 8
         run: python main.py run
