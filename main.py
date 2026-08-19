@@ -117,6 +117,7 @@ def do_run(args) -> int:
     cap_hit = False
     summary_jobs = []
     any_company_succeeded = False
+    companies_attempted = 0
 
     # Determine which companies to process
     companies = config.companies
@@ -149,6 +150,7 @@ def do_run(args) -> int:
             adapter = adapter_cls(cname, company_cfg.get("config", {}), http, browser=browser)
 
             fetched = []
+            companies_attempted += 1
             try:
                 fetched = list(adapter.fetch())
                 any_company_succeeded = True
@@ -236,6 +238,26 @@ def do_run(args) -> int:
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
             return 1
+
+    # Backstop against silent death. Without this the run exits 0 even when every
+    # site was unreachable, so a totally broken bot looks identical to a quiet one
+    # and nobody finds out until they notice the alerts stopped.
+    #
+    # Deliberately narrow: it fires only when NOTHING worked. An adapter that
+    # degrades gracefully to [] still counts as a success here, so this does not
+    # catch a single dead adapter — per-company health reporting is that fix, and
+    # it belongs on Discord rather than in a red cron that runs 96 times a day.
+    if not any_company_succeeded:
+        if companies_attempted == 0:
+            logger.error(
+                "No companies were processed. Check the config and any --company filter."
+            )
+        else:
+            logger.error(
+                "All %d companies failed to fetch. Treating this run as failed.",
+                companies_attempted,
+            )
+        return 1
 
     return 0
 
