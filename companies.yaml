@@ -6,6 +6,11 @@ defaults:
   timezone: America/Los_Angeles
   max_alerts_per_run: 25
   first_seen_ttl_days: 180
+  # How long a company may return zero postings before the bot reports it as dead.
+  # A patience window, not a schedule — the cron cadence is unchanged. Any single
+  # empty fetch has boring explanations; requiring it to persist is what separates
+  # "quiet" from "broken".
+  adapter_stale_after_hours: 24
 
 filters:
   internship_only: true   # only alert on confirmed internship postings

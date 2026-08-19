@@ -20,6 +20,7 @@ from src.storage import (
     update_last_checked,
     prune_seen_jobs,
 )
+from src.health import update_health, HEALTH_STALE, HEALTH_RECOVERED
 from src.http import HTTPClient
 from src.browser import BrowserClient
 from src.notifier import Notifier
@@ -113,6 +114,7 @@ def do_run(args) -> int:
     )
 
     max_alerts = config.defaults.get("max_alerts_per_run", 25)
+    stale_after_hours = float(config.defaults.get("adapter_stale_after_hours", 24))
     alert_count = 0
     cap_hit = False
     summary_jobs = []
@@ -156,6 +158,41 @@ def do_run(args) -> int:
                 any_company_succeeded = True
             except Exception as e:
                 logger.error(f"{cname}: fetch failed: {e}", exc_info=True)
+
+            # Adapter health. Deliberately keyed on the pre-filter count: a healthy
+            # adapter routinely returns postings that all fail the filters, and that
+            # must stay silent. An adapter that raises leaves fetched empty too, so
+            # this one signal covers both a crashing adapter and a silently-empty one.
+            company_state = state["companies"].setdefault(
+                cname, {"last_checked_at": None, "seen_jobs": {}}
+            )
+            verdict = update_health(
+                company_state, len(fetched), datetime.now(timezone.utc), stale_after_hours
+            )
+            if verdict and notifier and not getattr(args, "dry_run", False):
+                if verdict == HEALTH_STALE:
+                    # State the observation, not a diagnosis. Verified 2026-08-19:
+                    # Plaid and Oracle both return a well-formed empty result (`[]`
+                    # and `{"items":[],"count":0}`) because they genuinely have no
+                    # open postings — their adapters are fine. Only the silence is a
+                    # fact; "broken" would be a guess, and wrong for those two.
+                    sent = notifier.send_summary(
+                        title="🔕 No postings",
+                        description=(
+                            f"**{cname}** has returned no job postings for over "
+                            f"{stale_after_hours:.0f}h. Either the site has nothing "
+                            f"open, or the adapter is broken — worth a look."
+                        ),
+                    )
+                    # Only keep the flag if the notice actually landed, so a failed
+                    # send retries next run instead of burning the single alert.
+                    if not sent:
+                        company_state["health"]["alerted"] = False
+                elif verdict == HEALTH_RECOVERED:
+                    notifier.send_summary(
+                        title="✅ Adapter recovered",
+                        description=f"**{cname}** is returning postings again.",
+                    )
 
             # Apply filter pipeline
             source_config = company_cfg.get("config", {})
