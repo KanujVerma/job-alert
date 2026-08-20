@@ -155,7 +155,15 @@ class MicrosoftResearchAdapter(BaseAdapter):
                 total_pages = 1
 
             page += 1
-            if page <= min(total_pages, _MAX_PAGES):
+            if page > _MAX_PAGES and total_pages > _MAX_PAGES:
+                # Never truncate quietly: a short result that looks complete is
+                # worse than a loud partial one.
+                logger.warning(
+                    "MicrosoftResearchAdapter: stopped at the %d page cap; the API "
+                    "reports %d pages, so some postings were not read.",
+                    _MAX_PAGES, total_pages,
+                )
+            elif page <= min(total_pages, _MAX_PAGES):
                 self.http.polite_delay(1.0, 2.0)
 
     def _parse(self, item: dict, detected_at: datetime) -> Job | None:

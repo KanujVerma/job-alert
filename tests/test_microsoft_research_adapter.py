@@ -18,6 +18,7 @@ The adapter NEVER raises; every failure path yields nothing and logs.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -60,6 +61,8 @@ def _fetch_with_fixture() -> list[Job]:
     adapter = _make_adapter()
     adapter.http.get.return_value = _mock_response(_fixture())
     return list(adapter.fetch())
+
+
 
 
 def _by_title(jobs: list[Job], fragment: str) -> Job:
@@ -356,3 +359,16 @@ def test_failure_on_a_later_page_keeps_the_earlier_results():
     jobs = list(adapter.fetch())
 
     assert len(jobs) == 2
+
+
+def test_hitting_the_page_cap_is_logged_not_silent(caplog):
+    """Truncating at the cap must say so. A silent stop reads as 'we got
+    everything', which is the failure mode this bot exists to avoid."""
+    adapter = _make_adapter()
+    adapter.http.get.return_value = _page(1, 9999, _fixture()["items"][:1])
+
+    with caplog.at_level(logging.WARNING):
+        list(adapter.fetch())
+
+    assert "cap" in caplog.text.lower()
+    assert "9999" in caplog.text
