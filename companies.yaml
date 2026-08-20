@@ -209,6 +209,28 @@ companies:
     config:
       base_url: https://www.microsoft.com/en-us/research/careers/open-positions/
 
+  # The whole of Microsoft, via the Eightfold "PCSX" search API on
+  # apply.careers.microsoft.com. Deliberately a SECOND Microsoft entry: the
+  # Microsoft Research listings above live on a different site, on a different
+  # platform, and do not appear in these results — neither entry covers the other.
+  #
+  # robots.txt on that host is `Disallow: /` with an explicit `Allow: /api/pcsx`,
+  # so this path is permitted. It is rate limited with no Retry-After header and
+  # 429s after roughly 5 rapid requests, which is why the adapter spaces pages
+  # by 3-5s.
+  - name: Microsoft
+    adapter: eightfold_pcsx
+    enabled: true
+    config:
+      base_url: https://apply.careers.microsoft.com
+      domain: microsoft.com
+      location: United States
+      # Results are sorted newest-first, so the adapter stops paging once a page
+      # falls outside this window rather than walking all 114 pages. Keep it at
+      # or above filters.freshness_hours (48) — below it, fresh postings go
+      # unread. The adapter cannot see the filters section to check for itself.
+      stop_after_hours: 48
+
   - name: Amazon
     adapter: amazon_jobs
     enabled: true

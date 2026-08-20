@@ -38,6 +38,12 @@ from src.adapters.phenom_people import PhenomPeopleAdapter  # noqa: E402
 ADAPTER_REGISTRY["eightfold_playwright"] = EightfoldPlaywrightAdapter
 ADAPTER_REGISTRY["phenom_people"] = PhenomPeopleAdapter
 
+# Plain HTTP, no session cookie — deliberately NOT requires_browser. See
+# eightfold.py for the older /api/apply/v2/jobs route this one supersedes.
+from src.adapters.eightfold_pcsx import EightfoldPCSXAdapter  # noqa: E402
+
+ADAPTER_REGISTRY["eightfold_pcsx"] = EightfoldPCSXAdapter
+
 
 def browser_required(
     companies: Iterable[Mapping], registry: Mapping[str, type[BaseAdapter]]

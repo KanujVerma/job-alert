@@ -1,0 +1,101 @@
+{
+  "status": 200,
+  "error": {
+    "message": "",
+    "body": ""
+  },
+  "data": {
+    "positions": [
+      {
+        "id": 1970393556962891,
+        "displayJobId": "200049019",
+        "name": "AI Software Engineering Intern",
+        "locations": [
+          "United States, Washington, Redmond",
+          "United States, California, Mountain View"
+        ],
+        "standardizedLocations": [
+          "Redmond, WA, US",
+          "Mountain View, CA, US"
+        ],
+        "postedTs": 1787122800,
+        "solrScore": null,
+        "stars": 0,
+        "department": "Software Engineering",
+        "creationTs": 1786654978,
+        "isHot": 0,
+        "workLocationOption": "onsite",
+        "locationFlexibility": null,
+        "atsJobId": "200049019",
+        "positionUrl": "/careers/job/1970393556962891"
+      },
+      {
+        "id": 1970393556978114,
+        "displayJobId": "200050006",
+        "name": "Principal Software Engineer - AI Experiences, Copilot",
+        "locations": [
+          "United States, California, Mountain View",
+          "United States, Washington, Redmond"
+        ],
+        "standardizedLocations": [
+          "Mountain View, CA, US",
+          "Redmond, WA, US"
+        ],
+        "postedTs": 1787183448,
+        "solrScore": null,
+        "stars": 0,
+        "department": "Software Engineering",
+        "creationTs": 1787173096,
+        "isHot": 0,
+        "workLocationOption": "onsite",
+        "locationFlexibility": null,
+        "atsJobId": "200050006",
+        "positionUrl": "/careers/job/1970393556978114"
+      },
+      {
+        "id": 1970393556962749,
+        "displayJobId": "200048982",
+        "name": "Program Manager",
+        "locations": [
+          "United States, Washington, Redmond"
+        ],
+        "standardizedLocations": [
+          "Redmond, WA, US"
+        ],
+        "postedTs": 1787191917,
+        "solrScore": null,
+        "stars": 0,
+        "department": "Technical Program Management",
+        "creationTs": 1786645616,
+        "isHot": 0,
+        "workLocationOption": "onsite",
+        "locationFlexibility": null,
+        "atsJobId": "200048982",
+        "positionUrl": "/careers/job/1970393556962749"
+      },
+      {
+        "id": 1970393556972527,
+        "displayJobId": "200049633",
+        "name": "Strategic Operations Director",
+        "locations": [
+          "United States, Multiple Locations, Multiple Locations"
+        ],
+        "standardizedLocations": [
+          "US"
+        ],
+        "postedTs": 1787190805,
+        "solrScore": null,
+        "stars": 0,
+        "department": "Business Management",
+        "creationTs": 1787075319,
+        "isHot": 0,
+        "workLocationOption": "onsite",
+        "locationFlexibility": null,
+        "atsJobId": "200049633",
+        "positionUrl": "/careers/job/1970393556972527"
+      }
+    ],
+    "count": 1140,
+    "sortBy": "timestamp"
+  }
+}
