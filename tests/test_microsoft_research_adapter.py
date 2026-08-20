@@ -262,15 +262,20 @@ def test_stops_at_a_single_page():
 
 
 def test_pagination_is_capped_against_a_runaway_response():
-    """A totalPages the server reports wrong must not spin the run forever."""
+    """A totalPages the server reports wrong must not spin the run forever.
+
+    Only the request count is asserted here. This test previously also asserted
+    len(jobs) == call_count — i.e. that ten copies of one posting was correct.
+    That was pinning a bug: deduplication is covered by
+    test_the_same_posting_is_never_yielded_twice.
+    """
     adapter = _make_adapter()
     items = _fixture()["items"][:1]
     adapter.http.get.return_value = _page(1, 9999, items)
 
-    jobs = list(adapter.fetch())
+    list(adapter.fetch())
 
     assert adapter.http.get.call_count <= 10
-    assert len(jobs) == adapter.http.get.call_count
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +344,12 @@ def test_a_malformed_subfield_degrades_that_field_not_the_posting():
     nothing else. Dropping a real job over one bad field is the worse failure."""
     adapter = _make_adapter()
     payload = _fixture()
-    payload["items"].insert(0, {"id": 2, "name": "Broken Cities", "cities": "not-a-list"})
+    payload["items"].insert(0, {
+        "id": 2,
+        "name": "Broken Cities",
+        "url": "https://apply.careers.microsoft.com/careers/job/2",
+        "cities": "not-a-list",
+    })
     adapter.http.get.return_value = _mock_response(payload)
 
     jobs = list(adapter.fetch())
@@ -372,3 +382,96 @@ def test_hitting_the_page_cap_is_logged_not_silent(caplog):
 
     assert "cap" in caplog.text.lower()
     assert "9999" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# Hardening — defects found by adversarial review, 2026-08-20
+# ---------------------------------------------------------------------------
+
+def test_non_dict_pagination_does_not_raise():
+    """`_pagination` arriving as a string/int/list must degrade to one page.
+
+    `.get` on a non-dict raises AttributeError, which is NOT a RequestException
+    or ValueError, so it escapes the generator. It escapes AFTER page 1 has
+    yielded, so main.py's `list(adapter.fetch())` discards the postings it
+    already produced and records the company as fetched=0 — which makes a
+    healthy adapter look silent to the health tracking.
+    """
+    for bad in ("1", 7, [1, 2], True):
+        adapter = _make_adapter()
+        payload = _fixture()
+        payload["_pagination"] = bad
+        adapter.http.get.return_value = _mock_response(payload)
+
+        jobs = list(adapter.fetch())  # must not raise
+
+        assert len(jobs) == 3, f"_pagination={bad!r} lost the page's postings"
+
+
+def test_naive_date_published_is_made_utc_aware():
+    """A naive posted_at would abort the ENTIRE run, not just this adapter.
+
+    filter_freshness subtracts it from an aware now(), raising TypeError, and
+    main.py runs the filter pipeline outside any try/except — so one such
+    posting kills every company after it and state is never saved.
+    smartrecruiters.py already guards this way.
+    """
+    adapter = _make_adapter()
+    payload = _fixture()
+    payload["items"][0]["datePublished"] = "2026-05-18T16:20:11"  # no offset
+    adapter.http.get.return_value = _mock_response(payload)
+
+    jobs = list(adapter.fetch())
+
+    stamped = [j for j in jobs if j.posted_at is not None]
+    assert stamped, "expected at least one posting with a timestamp"
+    for job in stamped:
+        assert job.posted_at.tzinfo is not None
+        assert job.posted_at.utcoffset() is not None
+
+
+def test_the_same_posting_is_never_yielded_twice():
+    """One posting must become one Discord alert.
+
+    Nothing downstream deduplicates within a run, so if the API ever ignores or
+    clamps `page`, repeated postings become repeated embeds for one job.
+    """
+    adapter = _make_adapter()
+    adapter.http.get.return_value = _page(1, 9999, _fixture()["items"][:1])
+
+    jobs = list(adapter.fetch())
+
+    assert len(jobs) == 1, f"yielded {len(jobs)} copies of one posting"
+    assert len({j.id for j in jobs}) == len(jobs)
+
+
+def test_an_empty_middle_page_is_logged(caplog):
+    """A short result that looks complete is worse than a loud partial one —
+    the same argument the page-cap warning was added for."""
+    adapter = _make_adapter()
+    adapter.http.get.side_effect = [
+        _page(1, 5, _fixture()["items"][:2]),
+        _page(2, 5, []),
+    ]
+
+    with caplog.at_level(logging.WARNING):
+        jobs = list(adapter.fetch())
+
+    assert len(jobs) == 2
+    assert "page 2" in caplog.text.lower()
+
+
+def test_posting_without_a_url_is_skipped():
+    """notifier.py puts job.url straight into an embed field value; Discord
+    rejects an empty value with 400, so the send fails, mark_alerted never
+    runs, and the job retries every run until it ages out — ~192 failed
+    sends. A posting with no link cannot be applied to anyway."""
+    adapter = _make_adapter()
+    payload = _fixture()
+    payload["items"].insert(0, {"id": 99, "name": "No Link Here", "url": ""})
+    adapter.http.get.return_value = _mock_response(payload)
+
+    jobs = list(adapter.fetch())
+
+    assert "No Link Here" not in [j.title for j in jobs]
+    assert all(j.url for j in jobs)
