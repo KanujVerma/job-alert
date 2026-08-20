@@ -13,7 +13,13 @@ defaults:
   adapter_stale_after_hours: 24
 
 filters:
-  internship_only: true   # only alert on confirmed internship postings
+  # false since 2026-08-20: also alert on new-grad and early-career full-time
+  # roles, not just confirmed internships. Measured before flipping, over the
+  # whole ~9,000-posting corpus with freshness disabled: this lets through 3
+  # additional postings, all genuinely early-career, none senior. The exclude,
+  # tech-role, location and freshness layers are unchanged and still do the
+  # filtering — only the final internship gate moved.
+  internship_only: false
   freshness_hours: 48     # drop jobs posted more than 48h ago (skipped if posted_at unknown)
   early_career_keywords:
     - intern
