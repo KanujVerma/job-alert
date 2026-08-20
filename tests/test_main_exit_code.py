@@ -178,3 +178,100 @@ class TestHealthNotifications:
         )
 
         assert notifier.send_summary.call_count == 0
+
+
+class TestCrossCompanyDuplicateAlerts:
+    """One posting must produce one Discord alert, even when two companies carry it.
+
+    companies.yaml has both `Microsoft` (eightfold_pcsx) and `Microsoft Research`
+    (microsoft_research). They are NOT disjoint: 75 of the 99 MSR postings have
+    an apply URL of https://apply.careers.microsoft.com/careers/job/<id> — the
+    exact ids the PCSX adapter enumerates.
+
+    Nothing downstream can collapse them. seen_jobs is keyed per company
+    (src/storage.py) and make_job_id namespaces by company + platform, so the
+    two get different ids by construction and both alert. The apply URL is the
+    only thing that identifies the underlying posting.
+    """
+
+    SHARED_URL = "https://apply.careers.microsoft.com/careers/job/1970393556867858"
+
+    def _adapter_yielding(self, company_label: str, platform: str, url: str):
+        outer = self
+
+        class _Adapter:
+            def __init__(self, name, cfg, http, browser=None):
+                self.name = name
+
+            def fetch(self):
+                now = datetime.now(timezone.utc)
+                return [Job(
+                    id=f"{company_label}::{platform}::x", company=company_label,
+                    title="AI Software Engineering Intern", location="Redmond, WA",
+                    department="Software Engineering", category=None, url=url,
+                    source_platform=platform, posted_at=now, detected_at=now,
+                    raw_text="ai software engineering intern redmond wa",
+                    role_type="internship", priority="preferred",
+                    matched_keywords=("intern",),
+                )]
+        return _Adapter
+
+    def _run(self, config, registry, notifier):
+        args = types.SimpleNamespace(
+            config="unused.yaml", company=None, dry_run=False,
+            verbose=False, firehose_first_run=False, summary_first_run=False,
+        )
+        # make_config's filters are minimal; without a tech keyword the pipeline
+        # drops the job before it can ever reach the alerting path.
+        config.filters = {
+            "freshness_hours": 48,
+            "early_career_keywords": ["intern"],
+            "technical_role_keywords": ["software engineer", "software engineering"],
+        }
+        state = {"version": 2, "first_run_completed_at":
+                 (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+                 "companies": {}}
+        with patch.object(m, "load_config", return_value=config), \
+             patch.dict(m.ADAPTER_REGISTRY, registry, clear=True), \
+             patch.object(m, "Notifier", return_value=notifier), \
+             patch.object(m, "load_state", return_value=state), \
+             patch.object(m, "save_state"), \
+             patch.dict(m.os.environ, {"DISCORD_WEBHOOK_URL": "https://example.com/hook"}):
+            m.do_run(args)
+
+    def test_same_apply_url_alerts_once_across_two_companies(self):
+        notifier = MagicMock()
+        notifier.send_job_alert.return_value = True
+        notifier.send_summary.return_value = True
+
+        config = make_config("Microsoft", "Microsoft Research")
+        config.companies[0]["adapter"] = "pcsx"
+        config.companies[1]["adapter"] = "msr"
+        registry = {
+            "pcsx": self._adapter_yielding("Microsoft", "eightfold_pcsx", self.SHARED_URL),
+            "msr": self._adapter_yielding("Microsoft Research", "microsoft_research", self.SHARED_URL),
+        }
+        self._run(config, registry, notifier)
+
+        assert notifier.send_job_alert.call_count == 1, (
+            f"one posting produced {notifier.send_job_alert.call_count} Discord alerts"
+        )
+
+    def test_different_urls_both_still_alert(self):
+        """The guard must not collapse genuinely distinct postings."""
+        notifier = MagicMock()
+        notifier.send_job_alert.return_value = True
+        notifier.send_summary.return_value = True
+
+        config = make_config("Microsoft", "Microsoft Research")
+        config.companies[0]["adapter"] = "pcsx"
+        config.companies[1]["adapter"] = "msr"
+        registry = {
+            "pcsx": self._adapter_yielding("Microsoft", "eightfold_pcsx", self.SHARED_URL),
+            "msr": self._adapter_yielding(
+                "Microsoft Research", "microsoft_research",
+                "https://www.microsoft.com/en-us/research/job/999"),
+        }
+        self._run(config, registry, notifier)
+
+        assert notifier.send_job_alert.call_count == 2

@@ -16,6 +16,9 @@ ROLE_TYPE_EMOJI = {
     "unknown": "❓",
 }
 
+# Discord's hard limit on an embed title; a longer one is rejected with 400.
+_DISCORD_TITLE_MAX = 256
+
 _PT_FORMAT = "PT"
 _UTC_FORMAT = "UTC"
 
@@ -74,7 +77,19 @@ class Notifier:
         emoji = ROLE_TYPE_EMOJI.get(job.role_type, "❓")
         title = f"🆕 {emoji} {job.role_type.title()} · {job.company}"
         if job.priority == "preferred":
-            title += f" [PRIORITY: {job.location}]"
+            # Discord rejects an embed title over 256 chars with HTTP 400, and a
+            # 400 is not a one-off: the send fails, mark_alerted never runs, and
+            # the job re-fires every run for the whole freshness window. The
+            # PCSX adapter joins up to 8 sites with "; ", and 9 of 207 live
+            # Microsoft postings already exceed the limit this way.
+            #
+            # Trim the LOCATION rather than the finished title, so the company
+            # and role — the part the reader needs first — always survive.
+            budget = _DISCORD_TITLE_MAX - len(title) - len(" [PRIORITY: ]")
+            location = job.location
+            if len(location) > budget:
+                location = location[: max(budget - 1, 0)].rstrip(" ;,") + "…"
+            title += f" [PRIORITY: {location}]"
 
         # Format timestamps in PT
         try:

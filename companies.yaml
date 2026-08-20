@@ -210,9 +210,17 @@ companies:
       base_url: https://www.microsoft.com/en-us/research/careers/open-positions/
 
   # The whole of Microsoft, via the Eightfold "PCSX" search API on
-  # apply.careers.microsoft.com. Deliberately a SECOND Microsoft entry: the
-  # Microsoft Research listings above live on a different site, on a different
-  # platform, and do not appear in these results — neither entry covers the other.
+  # apply.careers.microsoft.com. Deliberately a SECOND Microsoft entry.
+  #
+  # CORRECTED 2026-08-20: an earlier version of this comment claimed the two
+  # entries do not overlap. That was wrong. 75 of Microsoft Research's 99
+  # listings have an apply URL of apply.careers.microsoft.com/careers/job/<id>
+  # — the very ids this adapter enumerates — so the same posting reaches both.
+  # Their job ids differ by construction (make_job_id namespaces by company and
+  # platform, and seen_jobs is keyed per company), so nothing downstream can
+  # collapse them; main.py dedupes on the apply URL within a run instead.
+  # Both entries are still needed: MSR carries ~24 listings that are not on
+  # PCSX, and PCSX carries the ~1140 US roles MSR has never had.
   #
   # robots.txt on that host is `Disallow: /` with an explicit `Allow: /api/pcsx`,
   # so this path is permitted. It is rate limited with no Retry-After header and

@@ -708,3 +708,19 @@ def test_a_duplicate_posting_says_it_was_a_duplicate(caplog):
 
     assert len(jobs) == 1
     assert "duplicate" in caplog.text.lower()
+
+
+def test_absurd_stop_after_hours_does_not_raise():
+    """The never-raises contract must hold against CONFIG too, not just payloads.
+
+    timedelta(hours=1e400) raises OverflowError and timedelta(hours=nan) raises
+    ValueError, and both were built outside the guard that parses the value, so
+    they escaped fetch(). main.py happens to catch it, but the contract is the
+    adapter's to keep — and the failure looks identical to a dead site, so it
+    would be reported as a broken adapter rather than a bad config.
+    """
+    for absurd in (1.0e12, 1.0e308, float("inf"), float("nan"), "1e400", -1):
+        adapter = _make_adapter({**_CONFIG, "stop_after_hours": absurd})
+        adapter.http.get.return_value = _mock_response(_fixture())
+        jobs = list(adapter.fetch())  # must not raise
+        assert isinstance(jobs, list), f"stop_after_hours={absurd!r}"

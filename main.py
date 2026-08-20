@@ -140,6 +140,20 @@ def do_run(args) -> int:
     any_company_succeeded = False
     companies_attempted = 0
 
+    # Apply URLs already alerted in THIS run. Two companies can legitimately
+    # carry the same posting: `Microsoft` (eightfold_pcsx) and `Microsoft
+    # Research` overlap on 75 of MSR's 99 listings, which share the PCSX apply
+    # URL. Nothing downstream can collapse them — seen_jobs is keyed per company
+    # and make_job_id namespaces by company + platform, so the two ids differ by
+    # construction and both would alert. The apply URL is the only thing that
+    # identifies the underlying posting, so dedupe on that.
+    #
+    # Run-scoped deliberately: both adapters run in the same pass, so this
+    # catches the real case without adding cross-run state. A posting that
+    # reaches the two adapters on different runs can still double-fire; that is
+    # a narrower window and is noted in docs rather than solved with new state.
+    alerted_urls: set[str] = set()
+
     # Determine which companies to process
     companies = config.companies
     if getattr(args, "company", None):
@@ -243,11 +257,24 @@ def do_run(args) -> int:
                                     description=f"Max alerts per run ({max_alerts}) reached. Remaining jobs silenced.",
                                 )
                         else:
-                            sent = notifier.send_job_alert(job) if notifier else True
-                            if sent:
-                                alert_count += 1
-                                alerted += 1
+                            url_key = (job.url or "").strip().rstrip("/").lower()
+                            if url_key and url_key in alerted_urls:
+                                logger.info(
+                                    "%s: %r already alerted this run under another "
+                                    "company (%s) — not sending twice.",
+                                    cname, job.title, job.url,
+                                )
+                                # Recorded as alerted so it is not retried next
+                                # run; the posting genuinely did reach Discord.
                                 actually_alerted.append(job)
+                            else:
+                                sent = notifier.send_job_alert(job) if notifier else True
+                                if sent:
+                                    if url_key:
+                                        alerted_urls.add(url_key)
+                                    alert_count += 1
+                                    alerted += 1
+                                    actually_alerted.append(job)
                     else:
                         cap_suppressed_jobs.append(job)
                 elif summary_mode:

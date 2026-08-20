@@ -307,3 +307,67 @@ class TestTwelveHourTimestamps:
         for name, value in fields.items():
             if "Posted" in name or "Detected" in name:
                 assert "AM" in value or "PM" in value, f"{name}={value!r}"
+
+
+class TestEmbedTitleLength:
+    """Discord rejects an embed title over 256 characters with HTTP 400.
+
+    The title appends the full location for preferred-priority jobs, and the
+    Microsoft PCSX adapter joins up to 8 sites with "; " — measured max 290
+    chars on the live corpus, with 9 of 207 postings producing a title over the
+    limit. A 400 means the send fails, mark_alerted never runs, and the job
+    re-fires every 15 minutes for the whole 48h freshness window (~192 failed
+    sends). Same failure mode the adapter already guards for an empty URL.
+    """
+
+    DISCORD_TITLE_MAX = 256
+
+    @staticmethod
+    def _title_for(job) -> str:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 204
+        mock_resp.ok = True
+        captured = {}
+
+        def capture_post(url, json=None, **kwargs):
+            captured["payload"] = json
+            return mock_resp
+
+        with patch("src.notifier.requests.post", side_effect=capture_post):
+            Notifier("https://discord.com/api/webhooks/test/token").send_job_alert(job)
+        return captured["payload"]["embeds"][0]["title"]
+
+    def test_long_location_does_not_overflow_the_title(self):
+        """A real 8-site Microsoft posting shape."""
+        location = "; ".join(
+            f"United States, {state}, {city}" for state, city in [
+                ("Washington", "Redmond"), ("California", "Mountain View"),
+                ("New York", "New York City"), ("Georgia", "Atlanta"),
+                ("Texas", "Austin"), ("Massachusetts", "Cambridge"),
+                ("Illinois", "Chicago"), ("North Carolina", "Charlotte"),
+            ]
+        )
+        assert len(location) > 256, "test fixture must actually be long"
+        title = self._title_for(make_job(location=location, priority="preferred"))
+        assert len(title) <= self.DISCORD_TITLE_MAX, f"{len(title)} chars: {title!r}"
+
+    def test_truncated_title_still_names_the_company(self):
+        """Truncation must not eat the information the reader needs first."""
+        location = "; ".join(["United States, Washington, Redmond"] * 12)
+        title = self._title_for(
+            make_job(company="Microsoft", location=location, priority="preferred")
+        )
+        assert "Microsoft" in title
+        assert len(title) <= self.DISCORD_TITLE_MAX
+
+    def test_truncation_is_visible_not_silent(self):
+        location = "; ".join(["United States, Washington, Redmond"] * 12)
+        title = self._title_for(make_job(location=location, priority="preferred"))
+        assert title.endswith("]"), title
+        assert "…" in title or "..." in title, title
+
+    def test_short_location_is_left_exactly_alone(self):
+        title = self._title_for(
+            make_job(company="Acme", location="Redmond, WA", priority="preferred")
+        )
+        assert title.endswith("[PRIORITY: Redmond, WA]")

@@ -38,14 +38,20 @@ logger = logging.getLogger(__name__)
 _DEFAULT_API_PATH = "/api/pcsx/search"
 _DEFAULT_LOCATION = "United States"
 _DEFAULT_STOP_AFTER_HOURS = 48.0
+# A freshness window is hours, not geological time. Anything past this is a
+# config error, and clamping keeps timedelta() from raising out of fetch().
+_MAX_STOP_AFTER_HOURS = 24 * 365  # one year
 
 # The API hard-fixes its page size at 10. `num`, `limit` and `page_size` are all
 # accepted and all ignored — verified 2026-08-20. Paging is by `start` only.
 PAGE_SIZE = 10
 
 # Runaway guard. 30 pages is 300 postings; at the observed posting rate (~10 US
-# postings every 3 hours) the 48h window is roughly 17 pages, so this is headroom
-# rather than a routine limit. Hitting it is logged, never silent.
+# postings every 3 hours) the 48h window measured 21 pages on an ordinary
+    # weekday (2026-08-20), so the cap is only ~30% clear — one busy recruiting
+    # week could reach it. Because results are newest-first a cap-hit truncates
+    # only the oldest end of the window, which prior runs have already seen, so
+    # the practical loss is near zero; it is logged loudly regardless. Hitting it is logged, never silent.
 MAX_PAGES = 30
 
 
@@ -268,8 +274,17 @@ class EightfoldPCSXAdapter(BaseAdapter):
         """
         raw = self.config.get("stop_after_hours", _DEFAULT_STOP_AFTER_HOURS)
         try:
-            return float(raw)
-        except (TypeError, ValueError):
+            hours = float(raw)
+            # timedelta(hours=...) raises OverflowError on a huge value and
+            # ValueError on NaN, and that happened OUTSIDE this guard, so an
+            # absurd config escaped fetch() and broke the never-raises contract.
+            # Worse, the escape looks exactly like a dead site, so a typo in
+            # companies.yaml would have been reported as a broken adapter.
+            # A window is hours, not geological time: clamp to a sane range.
+            if hours != hours or hours <= 0 or hours > _MAX_STOP_AFTER_HOURS:
+                raise ValueError(f"out of range: {hours!r}")
+            return hours
+        except (TypeError, ValueError, OverflowError):
             logger.warning(
                 "EightfoldPCSXAdapter[%s]: stop_after_hours=%r is not a number; "
                 "falling back to %.0fh.",
