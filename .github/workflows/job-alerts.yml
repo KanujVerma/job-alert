@@ -15,8 +15,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     # Backstop. Without this the job inherits GitHub's 6h default: on 2026-08-18 an
-    # apt mirror stall inside `playwright install --with-deps` burned 360 billed
-    # minutes in a single run before being killed.
+    # apt mirror stall inside `playwright install --with-deps` ran 360 minutes in a
+    # single run before being killed. Corrected 2026-08-20: this repo is PUBLIC, so
+    # Actions minutes are free and unlimited and none of that was billed. The real
+    # cost was a dead run holding the concurrency group, which is reason enough to
+    # keep the cap — but do not cite money as the reason, because there is none.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
