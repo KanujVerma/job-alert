@@ -1009,3 +1009,59 @@ class TestPreferredLocationWordBoundary:
         job = make_job(location="Context, ZZ", raw_text="software engineer intern context zz")
         labelled = label_job(job, _FILTERS, location_ambiguous=False)
         assert labelled.priority == "normal"
+
+
+# ---------------------------------------------------------------------------
+# Ambiguous two-letter codes: US state vs foreign country (found 2026-08-20)
+# ---------------------------------------------------------------------------
+
+class TestAmbiguousStateCountryCodes:
+    """Seven 2-letter codes are BOTH a US state and a foreign country:
+    CA California/Canada, CO Colorado/Colombia, DE Delaware/Germany,
+    IL Illinois/Israel, IN Indiana/India, ID Idaho/Indonesia, AR Arkansas/Argentina.
+
+    filter_location checked country codes BEFORE state codes, so any location
+    string with 3+ comma-separated parts ending in one of them was read as
+    foreign. Multi-location postings are exactly that shape, which meant
+    California jobs — the largest US tech market — were rejected as Canadian.
+
+    The cause is not the codes, it is that a ";"-joined multi-location string was
+    comma-split as though it were one address. The fix splits on ";" first so each
+    real address is judged alone — "Mountain View, CA" stays a 2-part US city,
+    while "Noida, Uttar Pradesh, IN" stays a 3-part foreign one.
+
+    Exempting the ambiguous codes from the country table instead was tried and is
+    WRONG: it passes genuine Noida and Bogota postings as Indiana and Colorado.
+    test_genuine_india_still_rejected_by_name below is what catches that.
+    """
+
+    def test_multi_location_ending_in_california_is_us(self):
+        """The live case: a real Microsoft internship posted 21h before this was
+        written, rejected as Canadian."""
+        job = make_job(title="AI Software Engineer Intern",
+                       location="Redmond, WA; Mountain View, CA")
+        assert filter_location(job, _FILTERS).passes
+
+    def test_multi_location_ending_in_colorado_is_us(self):
+        job = make_job(title="Software Engineer Intern",
+                       location="Austin, TX; Denver, CO")
+        assert filter_location(job, _FILTERS).passes
+
+    def test_genuine_canada_still_rejected_by_name(self):
+        """The country name, not the code, is what must carry the rejection."""
+        job = make_job(title="Software Engineer Intern",
+                       location="Toronto, Ontario, CA")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+
+    def test_genuine_india_still_rejected_by_name(self):
+        job = make_job(title="Software Engineer Intern",
+                       location="Bangalore, Karnataka, IN")
+        assert not filter_location(job, _FILTERS).passes
+
+    def test_unambiguous_foreign_code_still_rejected(self):
+        """Only the seven ambiguous codes are dropped from the check; a code
+        that is not also a US state must still reject."""
+        job = make_job(title="Software Engineer Intern",
+                       location="Paris, Ile-de-France, FR")
+        assert not filter_location(job, _FILTERS).passes

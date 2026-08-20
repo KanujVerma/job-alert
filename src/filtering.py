@@ -161,24 +161,39 @@ def filter_location(job: Job, filters: dict) -> FilterResult:
         if re.search(pattern, combined):
             return FilterResult(False, f"non-US location: {signal}")
 
-    # ISO country code checks — parse comma-separated location parts
-    loc_parts = [p.strip() for p in location_lower.split(",")]
+    # ISO country code checks, applied to each location SEPARATELY.
+    #
+    # A posting open in several places arrives as one ";"-joined string, and
+    # splitting that on commas treats the whole thing as a single address. Seven
+    # 2-letter codes are both a US state and a foreign country — CA California/
+    # Canada, CO Colorado/Colombia, DE Delaware/Germany, IL Illinois/Israel,
+    # IN Indiana/India, ID Idaho/Indonesia, AR Arkansas/Argentina — so
+    # "Redmond, WA; Mountain View, CA" split into three comma-parts ended in
+    # "ca" and California, the largest US tech market, was rejected as Canadian.
+    #
+    # Splitting on ";" first is what makes the "3+ parts" guard mean what it
+    # says. Each real address is judged on its own, so "Mountain View, CA" stays
+    # a 2-part US city while "Noida, Uttar Pradesh, IN" stays a 3-part foreign
+    # one. Do NOT instead exempt the ambiguous codes from the country table —
+    # that lets genuine Noida/Bogota postings through as Indiana and Colorado.
+    for sub_location in [s.strip() for s in location_lower.split(";") if s.strip()]:
+        loc_parts = [p.strip() for p in sub_location.split(",")]
 
-    # 2-letter ISO code in "city, region, COUNTRY" (3+ parts, to avoid "Denver, CO" false match)
-    if len(loc_parts) >= 3 and len(loc_parts[-1]) == 2 and loc_parts[-1].isalpha():
-        last = loc_parts[-1]
-        if last == "us":
-            return FilterResult(True, "US country code")
-        if last in _NON_US_COUNTRY_CODES:
-            return FilterResult(False, f"non-US country code: {last.upper()}")
+        # 2-letter ISO code in "city, region, COUNTRY" (3+ parts, to avoid "Denver, CO")
+        if len(loc_parts) >= 3 and len(loc_parts[-1]) == 2 and loc_parts[-1].isalpha():
+            last = loc_parts[-1]
+            if last == "us":
+                return FilterResult(True, "US country code")
+            if last in _NON_US_COUNTRY_CODES:
+                return FilterResult(False, f"non-US country code: {last.upper()}")
 
-    # 3-letter ISO code in "city, COUNTRY" (2+ parts — safe since no US state uses 3 letters)
-    if len(loc_parts) >= 2 and len(loc_parts[-1]) == 3 and loc_parts[-1].isalpha():
-        last3 = loc_parts[-1]
-        if last3 == "usa":
-            return FilterResult(True, "US country code USA")
-        if last3 in _NON_US_COUNTRY_CODES_3:
-            return FilterResult(False, f"non-US country code: {last3.upper()}")
+        # 3-letter ISO code in "city, COUNTRY" (2+ parts — no US state uses 3 letters)
+        if len(loc_parts) >= 2 and len(loc_parts[-1]) == 3 and loc_parts[-1].isalpha():
+            last3 = loc_parts[-1]
+            if last3 == "usa":
+                return FilterResult(True, "US country code USA")
+            if last3 in _NON_US_COUNTRY_CODES_3:
+                return FilterResult(False, f"non-US country code: {last3.upper()}")
 
     # Explicit US signals
     for us_signal in ("united states", "usa", "u.s.", "remote"):
