@@ -13,6 +13,12 @@ if TYPE_CHECKING:
 class BaseAdapter(ABC):
     source_platform: str  # class-level constant, e.g. "workday"
 
+    # Declared by the adapter class, not by per-company config. An adapter that
+    # touches self.browser must set this True: the config flag it replaces
+    # (config.use_playwright) is opt-in per company, so an adapter needing a
+    # browser whose config omits the flag silently receives browser=None.
+    requires_browser: bool = False
+
     def __init__(self, company: str, config: dict, http: HTTPClient, browser: "BrowserClient | None" = None):
         self.company = company
         self.config = config

@@ -27,12 +27,32 @@ jobs:
       - name: Install dependencies
         timeout-minutes: 5
         run: pip install -r requirements.txt
+      - name: Check whether any enabled company needs a browser
+        # Only phenom_people and eightfold_playwright touch the browser, and both
+        # belong to companies that are currently disabled — so the three Chromium
+        # steps below did nothing on all 96 runs a day. Skipping them also removes
+        # the failure mode that broke CI on 2026-08-18, rather than hardening it.
+        # Driven by the config, not hardcoded: enabling Snowflake turns them back on.
+        id: browser
+        timeout-minutes: 2
+        run: |
+          # Fail safe. If the probe itself breaks, install the browser anyway —
+          # an unnecessary install costs 20s, a missing one silently guts a scrape.
+          needed="$(python main.py needs-browser 2>/dev/null || echo true)"
+          case "$needed" in
+            true|false) ;;
+            *) needed=true ;;
+          esac
+          echo "needed=$needed" >> "$GITHUB_OUTPUT"
+          echo "browser needed: $needed"
       - name: Cache Playwright browsers
+        if: steps.browser.outputs.needed == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
       - name: Install Chromium
+        if: steps.browser.outputs.needed == 'true'
         # Browser binary only. `--with-deps` was removed on 2026-08-19: it shells
         # out to `sudo apt-get`, and when the 180s timeout fired mid-download the
         # killed python left an orphaned apt-get holding /var/lib/dpkg/lock-frontend,
@@ -54,6 +74,7 @@ jobs:
           echo "::error::playwright install failed after 3 attempts"
           exit 1
       - name: Verify Chromium launches
+        if: steps.browser.outputs.needed == 'true'
         # Turns "the runner image already has the deps" from an assumption into a
         # checked fact. If a future image drops a shared library this fails here
         # with the loader error, instead of surfacing as a confusing scrape failure.

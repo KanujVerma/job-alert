@@ -34,6 +34,7 @@ class EightfoldPlaywrightAdapter(BaseAdapter):
     """Eightfold adapter that bootstraps the SPA via Playwright to obtain auth."""
 
     source_platform = "eightfold_playwright"
+    requires_browser = True
 
     def fetch(self) -> Iterator[Job]:
         if self.browser is None or not self.browser.available:

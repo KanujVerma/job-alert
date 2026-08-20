@@ -163,6 +163,7 @@ def _parse_phenom_job(
 
 class PhenomPeopleAdapter(BaseAdapter):
     source_platform = "phenom_people"
+    requires_browser = True
 
     def fetch(self) -> Iterator[Job]:
         if self.browser is None or not self.browser.available:

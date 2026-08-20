@@ -1,3 +1,5 @@
+from collections.abc import Iterable, Mapping
+
 from src.adapters.base import BaseAdapter
 
 # Registry populated by each adapter module when imported.
@@ -35,3 +37,28 @@ from src.adapters.phenom_people import PhenomPeopleAdapter  # noqa: E402
 
 ADAPTER_REGISTRY["eightfold_playwright"] = EightfoldPlaywrightAdapter
 ADAPTER_REGISTRY["phenom_people"] = PhenomPeopleAdapter
+
+
+def browser_required(
+    companies: Iterable[Mapping], registry: Mapping[str, type[BaseAdapter]]
+) -> bool:
+    """Does any *enabled* company need a real browser?
+
+    Two sources, because one of them is not trustworthy on its own:
+      1. The adapter class declares `requires_browser = True`. Authoritative —
+         an adapter that touches self.browser says so once, in its own class.
+      2. The company config sets `use_playwright`. Kept for backward
+         compatibility; it is opt-in per company and easy to omit.
+
+    A company whose adapter key is not registered is not an error here — do_run
+    already skips it — so it simply does not require a browser.
+    """
+    for company in companies:
+        if not company.get("enabled", True):
+            continue
+        if (company.get("config") or {}).get("use_playwright", False):
+            return True
+        adapter_cls = registry.get(company.get("adapter"))
+        if adapter_cls is not None and getattr(adapter_cls, "requires_browser", False):
+            return True
+    return False

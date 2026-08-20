@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from src.config import load_config, validate_config
-from src.adapters import ADAPTER_REGISTRY
+from src.adapters import ADAPTER_REGISTRY, browser_required
 from src.storage import (
     load_state,
     save_state,
@@ -50,6 +50,25 @@ def cmd_validate_config(args) -> int:
             print(f"ERROR: {err}")
         return 1
     print("Config is valid.")
+    return 0
+
+
+def cmd_needs_browser(args) -> int:
+    """Print `true` or `false` — does this config need Chromium installed?
+
+    stdout is a machine-readable answer consumed by the CI workflow, so it stays
+    exactly one lowercase word. Diagnostics go to stderr; a config that cannot be
+    loaded exits non-zero rather than printing a guess, and the workflow treats
+    that as `true` so a broken probe never silently guts a scrape.
+    """
+    load_dotenv()
+    try:
+        config = load_config(args.config)
+    except Exception as e:
+        print(f"ERROR: Failed to load config: {e}", file=sys.stderr)
+        return 1
+
+    print("true" if browser_required(config.companies, ADAPTER_REGISTRY) else "false")
     return 0
 
 
@@ -130,11 +149,7 @@ def do_run(args) -> int:
     min_delay = float(delay_range[0]) if isinstance(delay_range, list) else 2.0
     max_delay = float(delay_range[1]) if isinstance(delay_range, (list, tuple)) and len(delay_range) > 1 else 4.0
 
-    needs_browser = any(
-        c.get("enabled", True) and c.get("config", {}).get("use_playwright", False)
-        for c in companies
-    )
-    browser = BrowserClient() if needs_browser else None
+    browser = BrowserClient() if browser_required(companies, ADAPTER_REGISTRY) else None
 
     try:
         for company_cfg in companies:
@@ -336,6 +351,12 @@ def main():
     # validate-config
     subparsers.add_parser("validate-config", help="Validate the YAML config")
 
+    # needs-browser
+    subparsers.add_parser(
+        "needs-browser",
+        help="Print true/false: does any enabled company require a browser?",
+    )
+
     # test-discord
     subparsers.add_parser("test-discord", help="Send a test Discord webhook message")
 
@@ -377,6 +398,8 @@ def main():
 
     if args.command == "validate-config":
         sys.exit(cmd_validate_config(args))
+    elif args.command == "needs-browser":
+        sys.exit(cmd_needs_browser(args))
     elif args.command == "test-discord":
         sys.exit(cmd_test_discord(args))
     elif args.command == "run":
