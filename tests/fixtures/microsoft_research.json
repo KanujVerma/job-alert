@@ -1,26 +1,177 @@
 {
-  "status": "success",
-  "data": {
-    "count": 2,
-    "positions": [
-      {
-        "id": "MSR-001",
-        "name": "Research Intern - Machine Learning",
-        "location": "Redmond, Washington",
-        "department": "Microsoft Research",
-        "canonicalPositionUrl": "https://jobs.careers.microsoft.com/global/en/job/MSR-001/Research-Intern-Machine-Learning",
-        "t_create": "2025-03-01T00:00:00Z",
-        "description": "<p>Microsoft Research is seeking Research Interns for our machine learning group. You will work on cutting-edge AI research projects and publish papers.</p>"
-      },
-      {
-        "id": "MSR-002",
-        "name": "Research Intern - Systems",
-        "location": "Redmond, Washington",
-        "department": "Microsoft Research",
-        "canonicalPositionUrl": "https://jobs.careers.microsoft.com/global/en/job/MSR-002/Research-Intern-Systems",
-        "t_create": "2025-03-10T00:00:00Z",
-        "description": "<p>Join the systems research group at Microsoft Research for a summer internship. You will collaborate with world-class researchers on distributed systems problems.</p>"
+  "_meta": {
+    "apiVersion": "2.0",
+    "generatedAt": "2026-08-20T00:22:39+00:00"
+  },
+  "_pagination": {
+    "total": 3,
+    "perPage": 100,
+    "currentPage": 1,
+    "totalPages": 1
+  },
+  "items": [
+    {
+      "id": 1173006,
+      "name": "Research Intern - Self-Improving AI",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556867858",
+      "datePublished": "2026-05-18T16:20:11-07:00",
+      "excerpt": "The Machine Learning/Artificial Intelligence (ML/AI) group at Microsoft Research NYC is looking for a Research Intern candidate with a background in language modeling and reinforcement learning, for a project on self-improving AI systems.",
+      "opportunityTypes": [
+        {
+          "id": 234821,
+          "slug": "internship",
+          "name": "Internship"
+        }
+      ],
+      "regions": [
+        {
+          "id": 197900,
+          "slug": "north-america",
+          "name": "North America"
+        }
+      ],
+      "cities": [
+        {
+          "id": 243646,
+          "slug": "cambridge-ma-us",
+          "name": "Cambridge, MA, US"
+        },
+        {
+          "id": 243655,
+          "slug": "new-york-ny-us",
+          "name": "New York, NY, US"
+        }
+      ],
+      "researchAreas": [
+        {
+          "id": "330032",
+          "term_id": 13556,
+          "slug": "artificial-intelligence",
+          "name": "Artificial intelligence",
+          "url": "https://www.microsoft.com/en-us/research/research-area/artificial-intelligence/",
+          "_links": {
+            "self": {
+              "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/research-areas/artificial-intelligence"
+            }
+          }
+        }
+      ],
+      "_links": {
+        "self": {
+          "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers/1173006"
+        }
       }
-    ]
-  }
+    },
+    {
+      "id": 1059609,
+      "name": "Research Intern for Media Computing Group (Video)",
+      "url": "https://www.microsoft.com/en-us/research/opportunity/research-intern-for-media-computing-group-video/",
+      "datePublished": "2025-07-01T00:49:32-07:00",
+      "excerpt": "Number of Openings: 1-2Location: Beijing Group Introduction: The Multimedia Computing Group at Microsoft Research Asia focuses on various technologies in real-time multimedia communication, encompassing low-level video and audio processing, compression, encoding/decoding, as well as high-level computer vision and speech processing and understanding. The group leverages artificial intelligence and other technologies to enhance user experience in [&hellip;]",
+      "opportunityTypes": [
+        {
+          "id": 234821,
+          "slug": "internship",
+          "name": "Internship"
+        }
+      ],
+      "regions": [
+        {
+          "id": 197903,
+          "slug": "asia-pacific",
+          "name": "Asia-Pacific"
+        },
+        {
+          "id": 256048,
+          "slug": "global",
+          "name": "Global"
+        }
+      ],
+      "cities": [
+        {
+          "id": 243628,
+          "slug": "beijing-china",
+          "name": "Beijing, China"
+        }
+      ],
+      "researchAreas": [
+        {
+          "id": "330032",
+          "term_id": 13556,
+          "slug": "artificial-intelligence",
+          "name": "Artificial intelligence",
+          "url": "https://www.microsoft.com/en-us/research/research-area/artificial-intelligence/",
+          "_links": {
+            "self": {
+              "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/research-areas/artificial-intelligence"
+            }
+          }
+        }
+      ],
+      "_links": {
+        "self": {
+          "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers/1059609"
+        }
+      }
+    },
+    {
+      "id": 1184279,
+      "name": "UK Residency Programme - Optoelectronics Device Engineer",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556962583",
+      "datePublished": "2026-08-19T14:36:58-07:00",
+      "excerpt": "Join Microsoft Research Cambridge to invent optical interconnects that deliver power efficient and reliable with optical IO links. Current mainstream interconnect technologies face a fundamental trade-off: copper links are power-efficient and reliable but limited in reach, while optical links extend reach but often increase power and reduce reliability. Our program explores a new approach based [&hellip;]",
+      "opportunityTypes": [
+        {
+          "id": 234824,
+          "slug": "post-doc-researcher",
+          "name": "Post-doc researcher"
+        }
+      ],
+      "regions": [
+        {
+          "id": 239178,
+          "slug": "europe",
+          "name": "Europe"
+        }
+      ],
+      "cities": [
+        {
+          "id": 243637,
+          "slug": "cambridge-uk",
+          "name": "Cambridge, UK"
+        }
+      ],
+      "researchAreas": [
+        {
+          "id": "330032",
+          "term_id": 13556,
+          "slug": "artificial-intelligence",
+          "name": "Artificial intelligence",
+          "url": "https://www.microsoft.com/en-us/research/research-area/artificial-intelligence/",
+          "_links": {
+            "self": {
+              "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/research-areas/artificial-intelligence"
+            }
+          }
+        },
+        {
+          "id": "420507",
+          "term_id": 13547,
+          "slug": "systems-and-networking",
+          "name": "Systems and networking",
+          "url": "https://www.microsoft.com/en-us/research/research-area/systems-and-networking/",
+          "_links": {
+            "self": {
+              "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/research-areas/systems-and-networking"
+            }
+          }
+        }
+      ],
+      "_links": {
+        "self": {
+          "href": "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers/1184279"
+        }
+      }
+    }
+  ]
 }

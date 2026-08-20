@@ -1,28 +1,47 @@
-"""Microsoft Research careers adapter.
+"""Microsoft Research careers adapter — WordPress REST API.
 
-Strategy (tested 2026-05-07):
-  1. Attempt Eightfold AI API at apply.careers.microsoft.com with domain=microsoft.com.
-     The Microsoft careers site (jobs.careers.microsoft.com) uses Eightfold (vscdn.net).
-     The API endpoint apply.careers.microsoft.com/api/apply/v2/jobs returns HTTP 403
-     {"message": "Not authorized for PCSX"} — requires session auth from the SPA.
-  2. Fallback: fetch https://jobs.careers.microsoft.com/global/en/search?q=research+intern
-     and look for __NEXT_DATA__ embedded JSON. The page returns HTML (JS-rendered SPA
-     from Eightfold) with no embedded job data in static HTML.
+Endpoint:
+    GET https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers
 
-  Result: Both strategies return no usable job data without browser execution.
-  The adapter logs a warning and returns []. It NEVER raises.
+Public, unauthenticated, and self-describing: GET the namespace root
+(`/wp-json/microsoft-research/v2/`) and it returns the arg schema for every route,
+including this one. Verified live 2026-08-19: 99 postings, one page at per_page=100.
 
-  If Microsoft exposes a public API in the future, update the _try_eightfold method
-  with the correct domain/auth approach.
+History (why this file was rewritten):
+    Until 2026-08-19 this adapter chased two endpoints that do not work — the
+    Eightfold API at apply.careers.microsoft.com (HTTP 403, "Not authorized for
+    PCSX") and jobs.careers.microsoft.com (a JS-rendered SPA with no static job
+    data). It therefore returned [] on every run for months, silently, which is
+    what motivated the per-company health tracking in src/health.py.
+
+    The working endpoint was one level below the `base_url` already sitting in this
+    company's own config: that careers page is WordPress-backed, and its REST API
+    was public the whole time.
+
+Query shape, and why it is deliberately broad:
+    No server-side `type=internship` or `region=north-america` filter, even though
+    the API supports both. A narrow query makes an empty response ambiguous — it
+    could mean "nothing matched today" or "the adapter is broken" — and the
+    adapter-health design (docs/superpowers/specs/2026-08-19-adapter-health-reporting-design.md)
+    depends on `fetched == 0` meaning the site gave us nothing. The bot's own
+    filter pipeline does the selecting.
+
+    `fields` trims the response from ~970KB to ~164KB. `researchAreas` is worth its
+    share of that: the area names ("Artificial intelligence", "Computer vision")
+    are the strongest technical signal the list response carries, and a terse title
+    can fail the tech-role filter without them.
+
+Note on the WAF: microsoft.com 403s a bare "Mozilla/5.0" user agent, consistently.
+This bot's real UA (job-alert-bot/0.1) and no UA at all both return 200. If that
+ever changes the adapter degrades to [] and health tracking reports it.
 
 Config keys:
-  base_url: https://www.microsoft.com/en-us/research/careers/open-positions/
-  (no other required keys)
+    base_url: informational only — the human-facing careers page. The API URL is
+              a module constant below.
 """
 
 from __future__ import annotations
 
-import json
 import logging
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -36,17 +55,28 @@ from src.models import Job
 
 logger = logging.getLogger(__name__)
 
+_API_URL = (
+    "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers"
+)
+_FIELDS = (
+    "id,name,url,datePublished,cities,regions,opportunityTypes,researchAreas,excerpt"
+)
+_PER_PAGE = 100  # the route's documented maximum
 _DESCRIPTION_MAX = 500
-_LIMIT = 20
-_EIGHTFOLD_API = "https://apply.careers.microsoft.com/api/apply/v2/jobs"
-_SEARCH_URL = "https://jobs.careers.microsoft.com/global/en/search"
+_INTERNSHIP_SLUG = "internship"
+
+# The response tells us how many pages there are, but a server that reports that
+# wrong must not park the run. 10 pages is 1000 postings against a real total of 99.
+_MAX_PAGES = 10
 
 
 def _strip_html(html: str) -> str:
+    """Strip tags and decode entities. Excerpts end in a literal '[&hellip;]'."""
     return BeautifulSoup(html, "html.parser").get_text(separator=" ").strip()
 
 
 def _parse_iso(ts: str | None) -> datetime | None:
+    """Parse an ISO-8601 timestamp. datePublished carries an offset, not a Z."""
     if not ts:
         return None
     try:
@@ -55,190 +85,123 @@ def _parse_iso(ts: str | None) -> datetime | None:
         return None
 
 
-class MicrosoftResearchAdapter(BaseAdapter):
-    """Adapter for Microsoft Research job listings.
+def _names(terms: object) -> list[str]:
+    """Collect the `name` of each taxonomy term, tolerating a missing list."""
+    if not isinstance(terms, list):
+        return []
+    return [str(t["name"]).strip() for t in terms if isinstance(t, dict) and t.get("name")]
 
-    Attempts Eightfold API first, then falls back to HTML __NEXT_DATA__ scrape.
-    Both currently blocked by auth/JS requirements; returns [] with a log warning.
-    """
+
+class MicrosoftResearchAdapter(BaseAdapter):
+    """Adapter for Microsoft Research job listings via the MSR WordPress REST API."""
 
     source_platform = "microsoft_research"
 
     def fetch(self) -> Iterator[Job]:
         detected_at = datetime.now(tz=timezone.utc)
+        page = 1
+        total_pages = 1
 
-        # Strategy 1: try Eightfold API
-        yield from self._try_eightfold(detected_at)
-
-    def _try_eightfold(self, detected_at: datetime) -> Iterator[Job]:
-        """Attempt Eightfold API at apply.careers.microsoft.com."""
-        offset = 0
-        total: int | None = None
-
-        while True:
+        while page <= min(total_pages, _MAX_PAGES):
             params = {
-                "domain": "microsoft.com",
-                "limit": _LIMIT,
-                "offset": offset,
-                "json": "true",
-                "q": "research intern",
+                "page": page,
+                "per_page": _PER_PAGE,
+                "fields": _FIELDS,
+                "links": "minimal",
             }
             try:
-                resp = self.http.get(_EIGHTFOLD_API, params=params)
-            except requests.RequestException as exc:
-                logger.warning(
-                    "MicrosoftResearchAdapter: Eightfold API request failed: %s. "
-                    "Falling back to HTML scrape.",
-                    exc,
-                )
-                yield from self._try_html_scrape(detected_at)
-                return
-
-            if not resp.ok:
-                logger.warning(
-                    "MicrosoftResearchAdapter: Eightfold API returned HTTP %d "
-                    "(url=%s). Falling back to HTML scrape.",
-                    resp.status_code, _EIGHTFOLD_API,
-                )
-                yield from self._try_html_scrape(detected_at)
-                return
-
-            try:
+                resp = self.http.get(_API_URL, params=params)
                 payload = resp.json()
-            except ValueError as exc:
-                logger.warning(
-                    "MicrosoftResearchAdapter: Eightfold API JSON parse error: %s. "
-                    "Falling back to HTML scrape.",
-                    exc,
+            except (requests.RequestException, ValueError) as exc:
+                # Page 1 failing means no jobs at all; a later page failing keeps
+                # whatever the earlier pages already yielded.
+                logger.error(
+                    "MicrosoftResearchAdapter: careers API page %d failed: %s", page, exc
                 )
-                yield from self._try_html_scrape(detected_at)
                 return
 
-            # Detect Eightfold failure / auth required
-            status = payload.get("status")
-            if status == "failure":
-                logger.warning(
-                    "MicrosoftResearchAdapter: Eightfold API failure: %s. "
-                    "Falling back to HTML scrape.",
-                    payload.get("errorMsg", "unknown"),
+            if not isinstance(payload, dict):
+                logger.error(
+                    "MicrosoftResearchAdapter: expected a JSON object, got %s",
+                    type(payload).__name__,
                 )
-                yield from self._try_html_scrape(detected_at)
                 return
 
-            if "message" in payload and "authorized" in payload.get("message", "").lower():
-                logger.warning(
-                    "MicrosoftResearchAdapter: Eightfold API not authorized: %s. "
-                    "Falling back to HTML scrape.",
-                    payload.get("message"),
-                )
-                yield from self._try_html_scrape(detected_at)
+            items = payload.get("items")
+            if not isinstance(items, list) or not items:
+                if page == 1:
+                    logger.warning(
+                        "MicrosoftResearchAdapter: careers API returned no items."
+                    )
                 return
 
-            data = payload.get("data") or payload
-            positions = data.get("positions", [])
-            count = data.get("count", len(positions))
-
-            if total is None:
-                total = count
-
-            if not positions:
-                break
-
-            for pos in positions:
+            for item in items:
                 try:
-                    job = self._parse_position(pos, detected_at)
-                    if job is not None:
-                        yield job
+                    job = self._parse(item, detected_at)
                 except Exception as exc:  # noqa: BLE001
                     logger.warning(
-                        "MicrosoftResearchAdapter: skipping position %s: %s",
-                        pos.get("id"), exc,
+                        "MicrosoftResearchAdapter: skipping posting %s: %s",
+                        (item or {}).get("id") if isinstance(item, dict) else "?",
+                        exc,
                     )
+                    continue
+                if job is not None:
+                    yield job
 
-            offset += _LIMIT
-            if total is not None and offset >= total:
-                break
-
-            self.http.polite_delay(1.0, 2.0)
-
-    def _try_html_scrape(self, detected_at: datetime) -> Iterator[Job]:
-        """Fallback: fetch search page and look for __NEXT_DATA__ JSON."""
-        params = {
-            "q": "research intern",
-            "l": "en_us",
-            "pg": 1,
-            "pgSz": 20,
-            "o": "Relevance",
-            "flt": "true",
-        }
-        try:
-            resp = self.http.get(_SEARCH_URL, params=params)
-        except requests.RequestException as exc:
-            logger.warning(
-                "MicrosoftResearchAdapter: HTML scrape request failed: %s. "
-                "Returning empty result.",
-                exc,
-            )
-            return
-
-        if not resp.ok:
-            logger.warning(
-                "MicrosoftResearchAdapter: HTML scrape returned HTTP %d. "
-                "Returning empty result.",
-                resp.status_code,
-            )
-            return
-
-        soup = BeautifulSoup(resp.text, "html.parser")
-        script_tag = soup.find("script", {"id": "__NEXT_DATA__"})
-        if script_tag and script_tag.string:
+            pagination = payload.get("_pagination") or {}
             try:
-                page_data = json.loads(script_tag.string)
-                jobs_data = (
-                    page_data.get("props", {})
-                    .get("pageProps", {})
-                    .get("jobs", [])
-                )
-                if not jobs_data:
-                    # Try alternate nesting
-                    jobs_data = (
-                        page_data.get("props", {})
-                        .get("pageProps", {})
-                        .get("searchResults", [])
-                    )
-                for raw_job in jobs_data:
-                    job = self._parse_next_data_job(raw_job, detected_at)
-                    if job is not None:
-                        yield job
-                return
-            except (ValueError, KeyError) as exc:
-                logger.warning(
-                    "MicrosoftResearchAdapter: __NEXT_DATA__ parse error: %s",
-                    exc,
-                )
+                total_pages = int(pagination.get("totalPages", 1))
+            except (TypeError, ValueError):
+                total_pages = 1
 
-        # No usable data found
-        logger.warning(
-            "MicrosoftResearchAdapter: page at %s appears to be a JS-rendered SPA "
-            "(Eightfold) with no static job data. Returning empty result.",
-            _SEARCH_URL,
-        )
+            page += 1
+            if page <= min(total_pages, _MAX_PAGES):
+                self.http.polite_delay(1.0, 2.0)
 
-    def _parse_position(self, pos: dict, detected_at: datetime) -> Job | None:
-        """Parse an Eightfold-style position dict."""
-        official_id = str(pos.get("id") or "").strip()
-        title = (pos.get("name") or "").strip()
+    def _parse(self, item: dict, detected_at: datetime) -> Job | None:
+        title = str(item.get("name") or "").strip()
         if not title:
             return None
 
-        location = (pos.get("location") or "Redmond, Washington").strip()
-        department = (pos.get("department") or "Microsoft Research").strip() or None
-        job_url = (pos.get("canonicalPositionUrl") or "").strip()
-        posted_at = _parse_iso(pos.get("t_create"))
+        official_id = str(item.get("id") or "").strip()
+        job_url = str(item.get("url") or "").strip()
+        posted_at = _parse_iso(item.get("datePublished"))
 
-        raw_desc = _strip_html(pos.get("description") or "")[:_DESCRIPTION_MAX]
+        # Every city, not just the first: a posting open in both Cambridge MA and
+        # New York must not lose one, and a US option must not be hidden behind a
+        # non-US one that happened to be listed first.
+        cities = _names(item.get("cities"))
+        location = "; ".join(cities)
+
+        research_areas = _names(item.get("researchAreas"))
+        department = ", ".join(research_areas) or None
+
+        opportunity_types = _names(item.get("opportunityTypes"))
+        category = opportunity_types[0] if opportunity_types else None
+
+        # The source states the role type outright, so don't make the filters
+        # re-derive it from the title.
+        slugs = {
+            str(t.get("slug", "")).lower()
+            for t in (item.get("opportunityTypes") or [])
+            if isinstance(t, dict)
+        }
+        role_type = "internship" if _INTERNSHIP_SLUG in slugs else "unknown"
+
+        excerpt = _strip_html(str(item.get("excerpt") or ""))[:_DESCRIPTION_MAX]
+        regions = _names(item.get("regions"))
         raw_text = " ".join(
-            filter(None, [title, location, department, raw_desc])
+            filter(
+                None,
+                [
+                    title,
+                    location,
+                    " ".join(regions),
+                    " ".join(research_areas),
+                    " ".join(opportunity_types),
+                    excerpt,
+                ],
+            )
         ).lower()
 
         job_id = make_job_id(
@@ -246,7 +209,7 @@ class MicrosoftResearchAdapter(BaseAdapter):
             source_platform=self.source_platform,
             title=title,
             location=location,
-            official_id=official_id if official_id else None,
+            official_id=official_id or None,
         )
 
         return Job(
@@ -255,70 +218,13 @@ class MicrosoftResearchAdapter(BaseAdapter):
             title=title,
             location=location,
             department=department,
-            category=None,
+            category=category,
             url=job_url,
             source_platform=self.source_platform,
             posted_at=posted_at,
             detected_at=detected_at,
             raw_text=raw_text,
-            role_type="unknown",
-            priority="normal",
-            matched_keywords=(),
-        )
-
-    def _parse_next_data_job(self, raw: dict, detected_at: datetime) -> Job | None:
-        """Parse a job from __NEXT_DATA__ props (flexible field mapping)."""
-        title = (
-            raw.get("title")
-            or raw.get("jobTitle")
-            or raw.get("name")
-            or ""
-        ).strip()
-        if not title:
-            return None
-
-        official_id = str(
-            raw.get("jobId") or raw.get("id") or raw.get("jobNumber") or ""
-        ).strip()
-        location = (
-            raw.get("location")
-            or raw.get("primaryLocation")
-            or "Redmond, Washington"
-        ).strip()
-        department = (
-            raw.get("department")
-            or raw.get("researchArea")
-            or raw.get("discipline")
-            or "Microsoft Research"
-        )
-        job_url = (raw.get("url") or raw.get("jobDetailsUrl") or "").strip()
-
-        raw_desc = _strip_html(raw.get("description") or "")[:_DESCRIPTION_MAX]
-        raw_text = " ".join(
-            filter(None, [title, location, str(department), raw_desc])
-        ).lower()
-
-        job_id = make_job_id(
-            company=self.company,
-            source_platform=self.source_platform,
-            title=title,
-            location=location,
-            official_id=official_id if official_id else None,
-        )
-
-        return Job(
-            id=job_id,
-            company=self.company,
-            title=title,
-            location=location,
-            department=str(department) if department else None,
-            category=None,
-            url=job_url,
-            source_platform=self.source_platform,
-            posted_at=None,
-            detected_at=detected_at,
-            raw_text=raw_text,
-            role_type="unknown",
+            role_type=role_type,
             priority="normal",
             matched_keywords=(),
         )

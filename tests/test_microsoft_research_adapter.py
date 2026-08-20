@@ -1,29 +1,27 @@
-"""Tests for MicrosoftResearchAdapter.
+"""Tests for MicrosoftResearchAdapter — Microsoft Research WordPress REST API.
 
-Strategy used (tested 2026-05-07):
-  1. Attempt Eightfold API at apply.careers.microsoft.com with domain=microsoft.com.
-     Live result: HTTP 403 {"message": "Not authorized for PCSX"} — requires SPA auth.
-  2. Fallback: HTML scrape of jobs.careers.microsoft.com/global/en/search with
-     __NEXT_DATA__ JSON extraction. Live result: page is JS-rendered SPA (Eightfold),
-     no __NEXT_DATA__ in static HTML, no job data accessible.
+Endpoint (verified live 2026-08-19):
+    GET https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers
 
-  The adapter returns [] with a log warning when both strategies fail. It NEVER raises.
-  Tests verify:
-    - Correct field mapping when API returns valid data (using fixture JSON)
-    - Empty list returned on HTTP error without exception
-    - Empty list returned on Eightfold failure status
-    - Fallback to HTML scrape when Eightfold API fails
-    - __NEXT_DATA__ parsing when present
-    - No exception on any failure path
+Public, unauthenticated, and self-describing: the namespace root documents its own
+query args. 99 postings, one page at per_page=100.
+
+The fixture is a real three-item slice captured verbatim from that endpoint on
+2026-08-19 (only `_pagination.total` was adjusted to match the slice). The three
+were chosen because they exercise the cases that differ:
+    - "Research Intern - Self-Improving AI"  — US internship, two cities
+    - "Research Intern for Media Computing Group (Video)" — China internship
+    - "UK Residency Programme - ..." — non-US, non-internship
+
+The adapter NEVER raises; every failure path yields nothing and logs.
 """
 from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
-import pytest
 import requests
 
 from src.adapters.microsoft_research import MicrosoftResearchAdapter
@@ -46,254 +44,315 @@ def _make_adapter(config: dict | None = None) -> MicrosoftResearchAdapter:
     )
 
 
-def _mock_response(data=None, status: int = 200) -> MagicMock:
+def _mock_response(payload: dict) -> MagicMock:
     resp = MagicMock()
-    resp.ok = (status < 400)
-    resp.status_code = status
-    if data is not None:
-        if isinstance(data, str):
-            resp.text = data
-            try:
-                resp.json.return_value = json.loads(data)
-            except ValueError:
-                resp.json.side_effect = ValueError("not json")
-        elif isinstance(data, dict):
-            resp.json.return_value = data
-            resp.text = json.dumps(data)
-        else:
-            resp.json.return_value = data
-            resp.text = str(data)
-    else:
-        resp.json.side_effect = ValueError("no content")
-        resp.text = ""
+    resp.ok = True
+    resp.status_code = 200
+    resp.json.return_value = payload
     return resp
 
 
+def _fixture() -> dict:
+    return json.loads(FIXTURE_PATH.read_text())
+
+
+def _fetch_with_fixture() -> list[Job]:
+    adapter = _make_adapter()
+    adapter.http.get.return_value = _mock_response(_fixture())
+    return list(adapter.fetch())
+
+
+def _by_title(jobs: list[Job], fragment: str) -> Job:
+    matches = [j for j in jobs if fragment in j.title]
+    assert len(matches) == 1, f"expected exactly one job matching {fragment!r}"
+    return matches[0]
+
+
 # ---------------------------------------------------------------------------
-# Successful Eightfold API response
+# Field mapping
 # ---------------------------------------------------------------------------
-
-def test_field_mapping_with_fixture():
-    """When Eightfold API returns valid data, jobs are yielded with correct fields."""
-    adapter = _make_adapter()
-    payload = json.loads(FIXTURE_PATH.read_text())
-    # First call: Eightfold API succeeds
-    adapter.http.get.return_value = _mock_response(payload)
-
-    jobs = list(adapter.fetch())
-
-    assert len(jobs) == 2
-    first: Job = jobs[0]
-    assert first.source_platform == "microsoft_research"
-    assert first.company == "microsoft research"
-    assert first.title == "Research Intern - Machine Learning"
-    assert "Redmond" in first.location
-    assert first.department == "Microsoft Research"
-    assert "careers.microsoft.com" in first.url
-
-
-def test_official_id_in_job_id():
-    adapter = _make_adapter()
-    payload = json.loads(FIXTURE_PATH.read_text())
-    adapter.http.get.return_value = _mock_response(payload)
-
-    jobs = list(adapter.fetch())
-
-    assert jobs[0].id == "microsoft research::microsoft_research::MSR-001"
-    assert jobs[1].id == "microsoft research::microsoft_research::MSR-002"
-
-
-def test_posted_at_parsed():
-    adapter = _make_adapter()
-    payload = json.loads(FIXTURE_PATH.read_text())
-    adapter.http.get.return_value = _mock_response(payload)
-
-    jobs = list(adapter.fetch())
-
-    assert isinstance(jobs[0].posted_at, datetime)
-    assert jobs[0].posted_at == datetime(2025, 3, 1, 0, 0, 0, tzinfo=timezone.utc)
-
 
 def test_source_platform_constant():
     assert MicrosoftResearchAdapter.source_platform == "microsoft_research"
 
 
-def test_role_type_defaults_to_unknown():
-    adapter = _make_adapter()
-    payload = json.loads(FIXTURE_PATH.read_text())
-    adapter.http.get.return_value = _mock_response(payload)
+def test_yields_every_item_in_the_payload():
+    assert len(_fetch_with_fixture()) == 3
 
-    for job in adapter.fetch():
-        assert job.role_type == "unknown"
+
+def test_title_comes_from_name_not_title():
+    """The API field is `name`. There is no `title` key — reading one yields nothing."""
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.title == "Research Intern - Self-Improving AI"
+
+
+def test_url_is_the_application_link():
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.url == "https://apply.careers.microsoft.com/careers/job/1970393556867858"
+
+
+def test_official_id_is_used_for_the_job_id():
+    """A stable numeric id from the source beats a title/location hash."""
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.id == "microsoft research::microsoft_research::1173006"
+
+
+def test_location_joins_every_city():
+    """A posting open in two cities must say so — dropping one hides a US option."""
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.location == "Cambridge, MA, US; New York, NY, US"
+
+
+def test_posted_at_honours_the_utc_offset():
+    """datePublished carries a -07:00 offset, not a Z suffix. Compared as a UTC
+    instant: an adapter that drops the offset lands on 16:20Z instead of 23:20Z."""
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.posted_at == datetime(2026, 5, 18, 23, 20, 11, tzinfo=timezone.utc)
+
+
+def test_department_comes_from_research_areas():
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.department == "Artificial intelligence"
+
+
+def test_company_is_passed_through():
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.company == "microsoft research"
+    assert job.source_platform == "microsoft_research"
 
 
 # ---------------------------------------------------------------------------
-# HTTP error — yields nothing, no exception
+# role_type — a real signal from the source, not a guess from the title
 # ---------------------------------------------------------------------------
 
-def test_http_error_returns_empty():
-    """RequestException on Eightfold call → fallback to HTML → also fails → []."""
+def test_internship_opportunity_type_sets_role_type():
+    """opportunityTypes carries slug 'internship'. base.py asks adapters to set
+    role_type when the source knows it — here it does, so don't leave it unknown."""
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert job.role_type == "internship"
+
+
+def test_non_internship_opportunity_type_stays_unknown():
+    """'Post-doc researcher' is not an internship and must not be labelled one."""
+    job = _by_title(_fetch_with_fixture(), "UK Residency Programme")
+    assert job.role_type == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# raw_text — what the filter pipeline actually reads
+# ---------------------------------------------------------------------------
+
+def test_raw_text_carries_the_excerpt():
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert "self-improving" in job.raw_text
+
+
+def test_raw_text_decodes_html_entities():
+    """The excerpt ends in a literal '[&hellip;]'. Leaving it encoded puts the
+    string 'hellip' into text the keyword filters match against."""
+    job = _by_title(_fetch_with_fixture(), "UK Residency Programme")
+    assert "hellip" not in job.raw_text
+
+
+def test_raw_text_carries_research_areas():
+    """Research area names are the strongest technical signal the list response
+    has; without them a terse title can fail the tech-role filter on its own."""
+    job = _by_title(_fetch_with_fixture(), "Self-Improving AI")
+    assert "artificial intelligence" in job.raw_text
+
+
+def test_raw_text_carries_the_location():
+    """The location filter reads location AND raw_text; a China posting must be
+    identifiable from either."""
+    job = _by_title(_fetch_with_fixture(), "Media Computing Group")
+    assert "china" in job.raw_text
+
+
+def test_raw_text_is_lowercased():
+    for job in _fetch_with_fixture():
+        assert job.raw_text == job.raw_text.lower()
+
+
+# ---------------------------------------------------------------------------
+# The request itself
+# ---------------------------------------------------------------------------
+
+def test_requests_the_wordpress_api_not_the_eightfold_endpoint():
+    """The Eightfold API answers 403 and jobs.careers.microsoft.com is a JS SPA.
+    Neither may be called."""
     adapter = _make_adapter()
-    adapter.http.get.side_effect = requests.RequestException("timeout")
+    adapter.http.get.return_value = _mock_response(_fixture())
 
-    jobs = list(adapter.fetch())
-    assert jobs == []
+    list(adapter.fetch())
 
-
-def test_non_ok_status_returns_empty():
-    """HTTP 403 on Eightfold → fallback to HTML → 403 → []."""
-    adapter = _make_adapter()
-    # Both Eightfold and HTML scrape return 403
-    adapter.http.get.return_value = _mock_response(
-        {"message": "Not authorized for PCSX"}, status=403
+    url = adapter.http.get.call_args.args[0]
+    assert url == (
+        "https://www.microsoft.com/en-us/research/wp-json/microsoft-research/v2/careers"
     )
 
-    jobs = list(adapter.fetch())
-    assert jobs == []
 
-
-# ---------------------------------------------------------------------------
-# Eightfold failure status → fallback to HTML scrape
-# ---------------------------------------------------------------------------
-
-def test_eightfold_failure_triggers_html_fallback():
-    """Eightfold 'failure' status → attempts HTML scrape as fallback."""
+def test_query_is_deliberately_unfiltered():
+    """No server-side type/region filter. A narrow query makes fetched==0 an
+    ambiguous signal, which is exactly what the adapter-health design warned
+    about — the bot's own filter pipeline does the selecting."""
     adapter = _make_adapter()
+    adapter.http.get.return_value = _mock_response(_fixture())
 
-    eightfold_fail = _mock_response({
-        "status": "failure",
-        "errorCode": None,
-        "errorMsg": "Tenant not identified",
-        "data": None,
+    list(adapter.fetch())
+
+    params = adapter.http.get.call_args.kwargs["params"]
+    assert "type" not in params
+    assert "region" not in params
+    assert "search" not in params
+
+
+def test_requests_the_fields_it_parses():
+    adapter = _make_adapter()
+    adapter.http.get.return_value = _mock_response(_fixture())
+
+    list(adapter.fetch())
+
+    fields = adapter.http.get.call_args.kwargs["params"]["fields"].split(",")
+    for required in (
+        "id", "name", "url", "datePublished",
+        "cities", "opportunityTypes", "researchAreas", "excerpt",
+    ):
+        assert required in fields
+
+
+# ---------------------------------------------------------------------------
+# Pagination
+# ---------------------------------------------------------------------------
+
+def _page(page_num: int, total_pages: int, items: list[dict]) -> MagicMock:
+    return _mock_response({
+        "_pagination": {
+            "total": 200, "perPage": 100,
+            "currentPage": page_num, "totalPages": total_pages,
+        },
+        "items": items,
     })
-    # HTML fallback also fails (no jobs)
-    html_no_data = _mock_response("<html><body>No jobs here</body></html>")
 
-    adapter.http.get.side_effect = [eightfold_fail, html_no_data]
+
+def test_follows_pagination_to_the_last_page():
+    adapter = _make_adapter()
+    items = _fixture()["items"]
+    adapter.http.get.side_effect = [
+        _page(1, 2, items[:1]),
+        _page(2, 2, items[1:2]),
+    ]
 
     jobs = list(adapter.fetch())
-    assert jobs == []
-    # Two calls: Eightfold + HTML scrape
+
+    assert len(jobs) == 2
     assert adapter.http.get.call_count == 2
+    assert adapter.http.get.call_args_list[1].kwargs["params"]["page"] == 2
 
 
-def test_eightfold_not_authorized_triggers_html_fallback():
-    """Eightfold 403 + auth message → falls back to HTML."""
+def test_stops_at_a_single_page():
     adapter = _make_adapter()
+    adapter.http.get.return_value = _mock_response(_fixture())
 
-    eightfold_fail = _mock_response({"message": "Not authorized for PCSX"}, status=403)
-    html_no_data = _mock_response("<html><body>SPA content</body></html>")
+    list(adapter.fetch())
 
-    adapter.http.get.side_effect = [eightfold_fail, html_no_data]
+    assert adapter.http.get.call_count == 1
+
+
+def test_pagination_is_capped_against_a_runaway_response():
+    """A totalPages the server reports wrong must not spin the run forever."""
+    adapter = _make_adapter()
+    items = _fixture()["items"][:1]
+    adapter.http.get.return_value = _page(1, 9999, items)
 
     jobs = list(adapter.fetch())
-    assert jobs == []
+
+    assert adapter.http.get.call_count <= 10
+    assert len(jobs) == adapter.http.get.call_count
 
 
 # ---------------------------------------------------------------------------
-# HTML scrape with __NEXT_DATA__
+# Failure paths — never raises
 # ---------------------------------------------------------------------------
 
-def test_next_data_json_parsed_when_present():
-    """When __NEXT_DATA__ is present in HTML, jobs are extracted."""
+def test_http_error_yields_nothing():
+    """The WAF 403s on some user agents. That must degrade, not crash."""
     adapter = _make_adapter()
+    adapter.http.get.side_effect = requests.HTTPError("403 Forbidden")
 
-    # Eightfold fails first
-    eightfold_fail = _mock_response({
-        "status": "failure",
-        "errorMsg": "Tenant not identified",
-        "data": None,
-    })
-
-    # HTML page with embedded __NEXT_DATA__
-    next_data = {
-        "props": {
-            "pageProps": {
-                "jobs": [
-                    {
-                        "jobId": "R1234567",
-                        "title": "Research Intern - NLP",
-                        "location": "Redmond, WA",
-                        "department": "Microsoft Research",
-                        "url": "https://jobs.careers.microsoft.com/job/R1234567",
-                    }
-                ]
-            }
-        }
-    }
-    html_content = f"""
-    <html><body>
-    <script id="__NEXT_DATA__" type="application/json">{json.dumps(next_data)}</script>
-    </body></html>
-    """
-    html_resp = _mock_response(html_content)
-
-    adapter.http.get.side_effect = [eightfold_fail, html_resp]
-
-    jobs = list(adapter.fetch())
-    assert len(jobs) == 1
-    assert jobs[0].title == "Research Intern - NLP"
-    assert jobs[0].source_platform == "microsoft_research"
+    assert list(adapter.fetch()) == []
 
 
-def test_next_data_searchresults_fallback():
-    """When jobs not at pageProps.jobs, tries pageProps.searchResults."""
+def test_network_error_yields_nothing():
     adapter = _make_adapter()
+    adapter.http.get.side_effect = requests.ConnectionError("DNS failure")
 
-    eightfold_fail = _mock_response({
-        "status": "failure",
-        "errorMsg": "Tenant not identified",
-        "data": None,
-    })
-
-    next_data = {
-        "props": {
-            "pageProps": {
-                "searchResults": [
-                    {
-                        "id": "R9999999",
-                        "title": "Research Intern - CV",
-                        "location": "Redmond, WA",
-                        "department": "Microsoft Research",
-                        "url": "https://jobs.careers.microsoft.com/job/R9999999",
-                    }
-                ]
-            }
-        }
-    }
-    html_content = f"""
-    <html><body>
-    <script id="__NEXT_DATA__" type="application/json">{json.dumps(next_data)}</script>
-    </body></html>
-    """
-    html_resp = _mock_response(html_content)
-    adapter.http.get.side_effect = [eightfold_fail, html_resp]
-
-    jobs = list(adapter.fetch())
-    assert len(jobs) == 1
-    assert jobs[0].title == "Research Intern - CV"
+    assert list(adapter.fetch()) == []
 
 
-# ---------------------------------------------------------------------------
-# No exception on any failure path
-# ---------------------------------------------------------------------------
-
-def test_no_exception_on_json_error():
+def test_malformed_json_yields_nothing():
     adapter = _make_adapter()
     resp = MagicMock()
     resp.ok = True
     resp.status_code = 200
-    resp.json.side_effect = ValueError("malformed json")
-    resp.text = "<html>some html</html>"
-    adapter.http.get.side_effect = [resp, _mock_response("<html></html>")]
+    resp.json.side_effect = ValueError("not json")
+    adapter.http.get.return_value = resp
 
-    jobs = list(adapter.fetch())
-    assert jobs == []
+    assert list(adapter.fetch()) == []
 
 
-def test_no_exception_on_network_error():
+def test_missing_items_key_yields_nothing():
     adapter = _make_adapter()
-    adapter.http.get.side_effect = requests.ConnectionError("DNS failure")
+    adapter.http.get.return_value = _mock_response({"_pagination": {"totalPages": 1}})
+
+    assert list(adapter.fetch()) == []
+
+
+def test_item_without_a_name_is_skipped_not_fatal():
+    adapter = _make_adapter()
+    payload = _fixture()
+    payload["items"].insert(0, {"id": 1, "url": "https://example.com"})
+    adapter.http.get.return_value = _mock_response(payload)
 
     jobs = list(adapter.fetch())
-    assert jobs == []
+
+    assert len(jobs) == 3
+    assert all(job.title for job in jobs)
+
+
+def test_one_unparseable_item_does_not_lose_the_others():
+    """A stray non-dict in `items` must cost that entry, not the whole page."""
+    adapter = _make_adapter()
+    payload = _fixture()
+    payload["items"].insert(0, "not-an-object")
+    adapter.http.get.return_value = _mock_response(payload)
+
+    jobs = list(adapter.fetch())
+
+    assert len(jobs) == 3
+
+
+def test_a_malformed_subfield_degrades_that_field_not_the_posting():
+    """`cities` arriving as a string rather than a list loses the location and
+    nothing else. Dropping a real job over one bad field is the worse failure."""
+    adapter = _make_adapter()
+    payload = _fixture()
+    payload["items"].insert(0, {"id": 2, "name": "Broken Cities", "cities": "not-a-list"})
+    adapter.http.get.return_value = _mock_response(payload)
+
+    jobs = list(adapter.fetch())
+
+    assert len(jobs) == 4
+    broken = _by_title(jobs, "Broken Cities")
+    assert broken.location == ""
+
+
+def test_failure_on_a_later_page_keeps_the_earlier_results():
+    adapter = _make_adapter()
+    adapter.http.get.side_effect = [
+        _page(1, 3, _fixture()["items"][:2]),
+        requests.ConnectionError("dropped"),
+    ]
+
+    jobs = list(adapter.fetch())
+
+    assert len(jobs) == 2
