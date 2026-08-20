@@ -526,7 +526,7 @@ ones. That distinction only becomes informative once history accumulates.
 - [ ] **Step 3: Confirm the notice fires 24h later** — PENDING, earliest 2026-08-20 ~20:00 UTC.
 
 **Superseded in part, 2026-08-19 (same day).** Microsoft Research is no longer a
-subject of this check: `5d6ce46` rewrote its adapter onto the MSR WordPress REST API,
+subject of this check: `cd33cfe` rewrote its adapter onto the MSR WordPress REST API,
 and it now fetches 99 postings per run. `last_nonempty_at` gets stamped on the next
 run, so it will never cross the threshold and must NOT produce a notice. That is the
 health signal working, not failing — this is precisely the transition it exists to
