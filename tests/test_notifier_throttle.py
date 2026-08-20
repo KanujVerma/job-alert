@@ -233,3 +233,77 @@ class TestNotifierSendSummary:
         embed = captured["payload"]["embeds"][0]
         assert embed["title"] == "My Title"
         assert embed["description"] == "My Description"
+
+
+# ---------------------------------------------------------------------------
+# Timestamp formatting — 12-hour clock (requested 2026-08-20)
+# ---------------------------------------------------------------------------
+
+class TestTwelveHourTimestamps:
+    """Discord embeds show times on a 12-hour clock with AM/PM.
+
+    The bot's audience reads these at a glance on a phone; "1:05 PM" is the
+    format they think in. Applies to both the Posted and Detected fields, and to
+    the UTC fallback used when zoneinfo is unavailable.
+    """
+
+    @staticmethod
+    def _fields_for(job) -> dict:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 204
+        mock_resp.ok = True
+        captured = {}
+
+        def capture_post(url, json=None, **kwargs):
+            captured["payload"] = json
+            return mock_resp
+
+        with patch("src.notifier.requests.post", side_effect=capture_post):
+            Notifier("https://discord.com/api/webhooks/test/token").send_job_alert(job)
+        embed = captured["payload"]["embeds"][0]
+        return {f["name"]: f["value"] for f in embed["fields"]}
+
+    def test_detected_time_uses_am_pm(self):
+        # 2026-05-06 12:00 UTC is 05:00 PT — an hour that differs between clocks.
+        fields = self._fields_for(make_job())
+        detected = [v for k, v in fields.items() if "Detected" in k]
+        assert detected, f"no Detected field in {list(fields)}"
+        assert "AM" in detected[0] or "PM" in detected[0], detected[0]
+
+    def test_posted_time_uses_am_pm(self):
+        job = make_job(posted_at=datetime(2026, 5, 6, 20, 30, 0, tzinfo=timezone.utc))
+        fields = self._fields_for(job)
+        posted = [v for k, v in fields.items() if "Posted" in k]
+        assert posted, f"no Posted field in {list(fields)}"
+        assert "PM" in posted[0], posted[0]
+
+    def test_no_24_hour_hour_component_remains(self):
+        """13:00 and above must never appear — that is the format being replaced."""
+        job = make_job(posted_at=datetime(2026, 5, 6, 20, 30, 0, tzinfo=timezone.utc))
+        fields = self._fields_for(job)
+        for name, value in fields.items():
+            if "Posted" in name or "Detected" in name:
+                hour = value.split()[1].split(":")[0]
+                assert 1 <= int(hour) <= 12, f"{name}={value!r} is not a 12-hour clock"
+
+    def test_hour_has_no_leading_zero(self):
+        """'1:05 PM', not '01:05 PM' — this is how people write it."""
+        job = make_job(posted_at=datetime(2026, 5, 6, 16, 5, 0, tzinfo=timezone.utc))
+        fields = self._fields_for(job)
+        posted = [v for k, v in fields.items() if "Posted" in k][0]
+        assert not posted.split()[1].startswith("0"), posted
+
+    def test_unknown_posted_at_still_says_unknown(self):
+        """A missing timestamp must stay an honest 'Unknown', not a fake time."""
+        fields = self._fields_for(make_job(posted_at=None))
+        posted = [v for k, v in fields.items() if "Posted" in k][0]
+        assert posted == "Unknown"
+
+    def test_utc_fallback_also_uses_am_pm(self):
+        """The zoneinfo-unavailable path must not silently keep a 24-hour clock."""
+        job = make_job(posted_at=datetime(2026, 5, 6, 20, 30, 0, tzinfo=timezone.utc))
+        with patch.dict("sys.modules", {"zoneinfo": None}):
+            fields = self._fields_for(job)
+        for name, value in fields.items():
+            if "Posted" in name or "Detected" in name:
+                assert "AM" in value or "PM" in value, f"{name}={value!r}"

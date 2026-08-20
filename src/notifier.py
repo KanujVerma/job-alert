@@ -16,7 +16,21 @@ ROLE_TYPE_EMOJI = {
     "unknown": "❓",
 }
 
-_PT_FORMAT = "%Y-%m-%d %H:%M PT"
+_PT_FORMAT = "PT"
+_UTC_FORMAT = "UTC"
+
+
+def _fmt_ts(dt, zone_label: str) -> str:
+    """"2026-05-06 1:05 PM PT" — 12-hour clock, no leading zero on the hour.
+
+    The hour is built explicitly rather than with strftime("%-I"): that flag is
+    a glibc/BSD extension, absent on Windows, and this formats user-facing text
+    so a silent platform difference would be a real defect. "%I" is portable and
+    zero-padded, so strip the pad; midnight formats as "12", which lstrip("0")
+    would empty, hence the fallback.
+    """
+    hour = dt.strftime("%I").lstrip("0") or "12"
+    return f"{dt.strftime('%Y-%m-%d')} {hour}:{dt.strftime('%M %p')} {zone_label}"
 
 
 class TokenBucket:
@@ -66,16 +80,16 @@ class Notifier:
         try:
             import zoneinfo
             pt_tz = zoneinfo.ZoneInfo("America/Los_Angeles")
-            detected_str = job.detected_at.astimezone(pt_tz).strftime(_PT_FORMAT)
+            detected_str = _fmt_ts(job.detected_at.astimezone(pt_tz), _PT_FORMAT)
             posted_str = (
-                job.posted_at.astimezone(pt_tz).strftime(_PT_FORMAT)
+                _fmt_ts(job.posted_at.astimezone(pt_tz), _PT_FORMAT)
                 if job.posted_at is not None
                 else "Unknown"
             )
         except Exception:
-            detected_str = job.detected_at.strftime("%Y-%m-%d %H:%M UTC")
+            detected_str = _fmt_ts(job.detected_at, _UTC_FORMAT)
             posted_str = (
-                job.posted_at.strftime("%Y-%m-%d UTC")
+                _fmt_ts(job.posted_at, _UTC_FORMAT)
                 if job.posted_at is not None
                 else "Unknown"
             )
