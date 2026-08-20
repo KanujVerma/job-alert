@@ -525,16 +525,29 @@ ones. That distinction only becomes informative once history accumulates.
 
 - [ ] **Step 3: Confirm the notice fires 24h later** — PENDING, earliest 2026-08-20 ~20:00 UTC.
 
-Roughly 24h after the first run carrying this code, check Discord for a single
-"🔕 Adapter looks dead" notice naming Microsoft Research, and confirm it does not
-repeat on subsequent runs:
+**Superseded in part, 2026-08-19 (same day).** Microsoft Research is no longer a
+subject of this check: `5d6ce46` rewrote its adapter onto the MSR WordPress REST API,
+and it now fetches 99 postings per run. `last_nonempty_at` gets stamped on the next
+run, so it will never cross the threshold and must NOT produce a notice. That is the
+health signal working, not failing — this is precisely the transition it exists to
+make visible, arriving faster than the alert would have.
+
+Two subjects remain, and two are enough. Roughly 24h after the first run carrying
+this code, check Discord for a single "🔕 No postings" notice for **Plaid** and one
+for **Oracle**, and confirm neither repeats on subsequent runs:
 
 ```bash
 git pull --rebase origin main
-./.venv/bin/python -c "import json; d=json.load(open('state/seen_jobs.json')); print(d['companies']['Microsoft Research']['health'])"
+./.venv/bin/python -c "import json; d=json.load(open('state/seen_jobs.json')); [print(c, d['companies'][c]['health']) for c in ('Plaid', 'Oracle', 'Microsoft Research')]"
 ```
 
-Expected: `alerted: True`, and exactly one Discord message.
+Expected: `alerted: True` for Plaid and Oracle with exactly one Discord message each;
+Microsoft Research `alerted: False` with a non-null `last_nonempty_at`.
+
+Both Plaid and Oracle are believed healthy-but-empty (verified 2026-08-19: Lever
+returns `[]`, Oracle returns `{"items":[],"count":0}`), so the notices are expected
+to be true-but-uninteresting. That is the designed behaviour — the copy states the
+observation rather than diagnosing a break.
 
 If the notice does not appear, do not patch symptomatically — the transition logic is
 pure and directly testable, so reproduce the failing state in `tests/test_health.py`
