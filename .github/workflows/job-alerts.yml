@@ -95,7 +95,13 @@ jobs:
           print("chromium launched and rendered DOM text")
           PY
       - name: Run job alerts
-        timeout-minutes: 8
+        # Raised 8 -> 14 on 2026-08-20. Adding Microsoft took a measured full
+        # sweep from 276s to 444s: that adapter pages a rate-limited API and
+        # must space requests 3-5s apart, costing ~90s on its own. 444s against
+        # a 480s cap left 36s of margin, and blowing the cap kills the run
+        # before state is written, so every alert in it is lost and re-sent next
+        # time. The job-level 20m cap below is still the real backstop.
+        timeout-minutes: 14
         run: python main.py run
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
