@@ -3,7 +3,7 @@
   "first_run_completed_at": "2026-05-07T16:53:59.639660+00:00",
   "companies": {
     "Micron": {
-      "last_checked_at": "2026-08-21T16:05:46.339980+00:00",
+      "last_checked_at": "2026-08-21T16:52:50.247749+00:00",
       "seen_jobs": {
         "Micron::workday::JR97659": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -368,12 +368,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:03:30.775500+00:00",
-        "last_nonempty_at": "2026-08-21T16:05:46.280690+00:00",
+        "last_nonempty_at": "2026-08-21T16:52:50.181078+00:00",
         "alerted": false
       }
     },
     "Salesforce": {
-      "last_checked_at": "2026-08-21T16:06:37.095555+00:00",
+      "last_checked_at": "2026-08-21T16:53:38.959030+00:00",
       "seen_jobs": {
         "Salesforce::workday::JR337715": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -433,12 +433,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:04:18.313685+00:00",
-        "last_nonempty_at": "2026-08-21T16:06:37.044397+00:00",
+        "last_nonempty_at": "2026-08-21T16:53:38.898354+00:00",
         "alerted": false
       }
     },
     "CrowdStrike": {
-      "last_checked_at": "2026-08-21T16:06:54.917948+00:00",
+      "last_checked_at": "2026-08-21T16:53:56.529386+00:00",
       "seen_jobs": {
         "CrowdStrike::workday::R26742": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -448,12 +448,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:04:35.191411+00:00",
-        "last_nonempty_at": "2026-08-21T16:06:54.898506+00:00",
+        "last_nonempty_at": "2026-08-21T16:53:56.508757+00:00",
         "alerted": false
       }
     },
     "Intel": {
-      "last_checked_at": "2026-08-21T16:07:20.104380+00:00",
+      "last_checked_at": "2026-08-21T16:54:19.875282+00:00",
       "seen_jobs": {
         "Intel::workday::JR0279646": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -693,12 +693,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:05:23.848913+00:00",
-        "last_nonempty_at": "2026-08-21T16:07:20.087050+00:00",
+        "last_nonempty_at": "2026-08-21T16:54:19.854773+00:00",
         "alerted": false
       }
     },
     "Applied Materials": {
-      "last_checked_at": "2026-08-21T16:08:35.785581+00:00",
+      "last_checked_at": "2026-08-21T16:55:34.541824+00:00",
       "seen_jobs": {
         "Applied Materials::workday::R2615108": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -778,12 +778,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:06:45.809306+00:00",
-        "last_nonempty_at": "2026-08-21T16:08:35.717091+00:00",
+        "last_nonempty_at": "2026-08-21T16:55:34.474281+00:00",
         "alerted": false
       }
     },
     "Western Digital": {
-      "last_checked_at": "2026-08-21T16:08:40.503935+00:00",
+      "last_checked_at": "2026-08-21T16:55:39.324734+00:00",
       "seen_jobs": {
         "Western Digital::smartrecruiters::744000124342235": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -883,12 +883,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:06:50.049151+00:00",
-        "last_nonempty_at": "2026-08-21T16:08:40.496254+00:00",
+        "last_nonempty_at": "2026-08-21T16:55:39.317198+00:00",
         "alerted": false
       }
     },
     "SanDisk": {
-      "last_checked_at": "2026-08-21T16:08:44.388734+00:00",
+      "last_checked_at": "2026-08-21T16:55:43.455062+00:00",
       "seen_jobs": {
         "SanDisk::smartrecruiters::744000124692433": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -913,12 +913,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:06:54.718205+00:00",
-        "last_nonempty_at": "2026-08-21T16:08:44.380634+00:00",
+        "last_nonempty_at": "2026-08-21T16:55:43.447589+00:00",
         "alerted": false
       }
     },
     "Plaid": {
-      "last_checked_at": "2026-08-21T16:08:48.324562+00:00",
+      "last_checked_at": "2026-08-21T16:55:45.861030+00:00",
       "seen_jobs": {},
       "health": {
         "first_tracked_at": "2026-08-19T20:06:58.725277+00:00",
@@ -927,7 +927,7 @@
       }
     },
     "Oracle": {
-      "last_checked_at": "2026-08-21T16:08:51.355210+00:00",
+      "last_checked_at": "2026-08-21T16:55:48.824565+00:00",
       "seen_jobs": {},
       "health": {
         "first_tracked_at": "2026-08-19T20:07:01.268344+00:00",
@@ -936,16 +936,16 @@
       }
     },
     "Microsoft Research": {
-      "last_checked_at": "2026-08-21T16:08:55.403561+00:00",
+      "last_checked_at": "2026-08-21T16:55:52.032311+00:00",
       "seen_jobs": {},
       "health": {
         "first_tracked_at": "2026-08-19T20:07:04.094182+00:00",
-        "last_nonempty_at": "2026-08-21T16:08:55.401889+00:00",
+        "last_nonempty_at": "2026-08-21T16:55:52.031493+00:00",
         "alerted": false
       }
     },
     "Amazon": {
-      "last_checked_at": "2026-08-21T16:10:46.912132+00:00",
+      "last_checked_at": "2026-08-21T16:57:44.775493+00:00",
       "seen_jobs": {
         "Amazon::amazon_jobs::10412347": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -2425,12 +2425,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:07:48.440586+00:00",
-        "last_nonempty_at": "2026-08-21T16:10:46.780427+00:00",
+        "last_nonempty_at": "2026-08-21T16:57:44.639603+00:00",
         "alerted": false
       }
     },
     "Apple": {
-      "last_checked_at": "2026-08-21T16:11:09.413892+00:00",
+      "last_checked_at": "2026-08-21T16:58:06.501250+00:00",
       "seen_jobs": {
         "Apple::apple_jobs::200606475-3810": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -2495,7 +2495,7 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:08:11.913842+00:00",
-        "last_nonempty_at": "2026-08-21T16:11:09.343483+00:00",
+        "last_nonempty_at": "2026-08-21T16:58:06.428420+00:00",
         "alerted": false
       }
     },
@@ -2508,7 +2508,7 @@
       "seen_jobs": {}
     },
     "Microsoft": {
-      "last_checked_at": "2026-08-21T16:10:01.951279+00:00",
+      "last_checked_at": "2026-08-21T16:56:57.505887+00:00",
       "seen_jobs": {
         "Microsoft::eightfold_pcsx::1970393556962891": {
           "first_seen": "2026-08-20T06:07:46.961472+00:00",
@@ -2518,7 +2518,7 @@
       },
       "health": {
         "first_tracked_at": "2026-08-20T06:07:46.765231+00:00",
-        "last_nonempty_at": "2026-08-21T16:10:01.820655+00:00",
+        "last_nonempty_at": "2026-08-21T16:56:57.371905+00:00",
         "alerted": false
       }
     }
