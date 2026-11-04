@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 import time
 import threading
 import logging
@@ -67,6 +68,128 @@ class TokenBucket:
             time.sleep(wait)
 
 
+def sanitize_discord_text(text: str, max_len: int = 1024) -> str:
+    """Strip control characters, neutralize disallowed mentions, and truncate safely."""
+    if not text:
+        return ""
+    zwsp = "\u200b"
+    clean = re.sub(r"@everyone\b", f"@{zwsp}everyone", text)
+    clean = re.sub(r"@here\b", f"@{zwsp}here", clean)
+    clean = re.sub(r"<@&?(\d+)>", f"@{zwsp}[\\g<1>]", clean)
+    clean = re.sub(r"<@!?(\d+)>", f"@{zwsp}[\\g<1>]", clean)
+    # Strip non-printable control chars except \n and \t
+    clean = "".join(c for c in clean if c in ("\n", "\t") or (ord(c) >= 32 and ord(c) != 127))
+    if len(clean) > max_len:
+        clean = clean[: max_len - 1].rstrip() + "…"
+    return clean
+
+
+def sanitize_url(url: str) -> str:
+    """Ensure URL uses http or https, otherwise return placeholder."""
+    clean = (url or "").strip()
+    if clean.startswith("http://") or clean.startswith("https://"):
+        return clean
+    return "https://invalid-url"
+
+
+def build_job_embed(job: Job) -> dict:
+    """Construct a sanitized, validated Discord embed dictionary following P1-B contract."""
+    # Prefix badge
+    badge = "⭐ NETWORK PRIORITY" if getattr(job, "network_priority", False) else "DISCOVERED"
+    emoji = ROLE_TYPE_EMOJI.get(job.role_type, "❓")
+
+    # Employer normalization
+    if job.company in ("Microsoft", "Microsoft Research"):
+        display_company = "Microsoft"
+        company_field_val = "Microsoft" if job.company == "Microsoft" else "Microsoft (via Microsoft Research)"
+    else:
+        display_company = job.company
+        company_field_val = job.company
+
+    title = f"{badge} · {emoji} {job.role_type.title()} · {display_company}"
+
+    # Location priority
+    if job.priority == "preferred":
+        budget = _DISCORD_TITLE_MAX - len(title) - len(" [PRIORITY: ]")
+        loc_str = job.location or ""
+        if len(loc_str) > budget:
+            loc_str = loc_str[: max(budget - 1, 0)].rstrip(" ;,") + "…"
+        title += f" [PRIORITY: {loc_str}]"
+
+    title = sanitize_discord_text(title, _DISCORD_TITLE_MAX)
+    desc = sanitize_discord_text(job.title, 256)
+
+    # Format timestamps in PT
+    try:
+        import zoneinfo
+        pt_tz = zoneinfo.ZoneInfo("America/Los_Angeles")
+        detected_str = _fmt_ts(job.detected_at.astimezone(pt_tz), _PT_FORMAT)
+        posted_str = (
+            _fmt_ts(job.posted_at.astimezone(pt_tz), _PT_FORMAT)
+            if job.posted_at is not None
+            else "Unknown"
+        )
+    except Exception:
+        detected_str = _fmt_ts(job.detected_at, _UTC_FORMAT)
+        posted_str = (
+            _fmt_ts(job.posted_at, _UTC_FORMAT)
+            if job.posted_at is not None
+            else "Unknown"
+        )
+
+    # Department / category
+    dept_parts = [p for p in [job.department, job.category] if p]
+    dept_str = " / ".join(dept_parts) if dept_parts else "N/A"
+
+    # Role verification
+    v_level = getattr(job.verdict, "career_level", None) if job.verdict else job.role_type
+    if v_level == "new_grad":
+        verif_str = "Full-Time New Grad (Verified)"
+    elif v_level in ("entry_level", "junior"):
+        verif_str = "Full-Time Entry-Level (Verified)"
+    elif job.role_type == "new-grad":
+        verif_str = "Full-Time New Grad (Verified)"
+    else:
+        verif_str = f"Full-Time {job.role_type.title()} (Verified)"
+
+    # Referral status
+    raw_ref = getattr(job, "referral_status", "unconfirmed") or "unconfirmed"
+    ref_title = raw_ref.replace("_", " ").title()
+    if getattr(job, "network_priority", False):
+        ref_val = f"{ref_title} (Original Cohort)"
+    else:
+        ref_val = ref_title
+
+    fields = [
+        {"name": "📍 Location", "value": sanitize_discord_text(job.location or "Not specified", 256), "inline": True},
+        {"name": "🏢 Company", "value": sanitize_discord_text(company_field_val, 256), "inline": True},
+        {"name": "📋 Verification", "value": verif_str, "inline": True},
+        {"name": "🤝 Referral Status", "value": ref_val, "inline": True},
+        {"name": "📅 Posted", "value": posted_str, "inline": True},
+        {"name": "🕐 Detected", "value": detected_str, "inline": True},
+        {
+            "name": "🏷️ Tags",
+            "value": sanitize_discord_text(f"{job.role_type} · {job.source_platform} · {job.priority}", 256),
+            "inline": True,
+        },
+        {"name": "🔗 Direct URL", "value": sanitize_url(job.url), "inline": False},
+    ]
+
+    # Salary ONLY when verified
+    sal = getattr(job, "salary", None)
+    if sal:
+        fields.append({"name": "💰 Salary", "value": sanitize_discord_text(str(sal), 256), "inline": True})
+
+    color = 0xFEE75C if getattr(job, "network_priority", False) else 0x5865F2
+
+    return {
+        "title": title,
+        "description": desc,
+        "fields": fields,
+        "color": color,
+    }
+
+
 class Notifier:
     def __init__(self, webhook_url: str):
         self._url = webhook_url
@@ -74,69 +197,7 @@ class Notifier:
 
     def send_job_alert(self, job: Job) -> bool:
         """Send one Discord embed for a job. Returns True on success."""
-        emoji = ROLE_TYPE_EMOJI.get(job.role_type, "❓")
-        title = f"🆕 {emoji} {job.role_type.title()} · {job.company}"
-        if job.priority == "preferred":
-            # Discord rejects an embed title over 256 chars with HTTP 400, and a
-            # 400 is not a one-off: the send fails, mark_alerted never runs, and
-            # the job re-fires every run for the whole freshness window. The
-            # PCSX adapter joins up to 8 sites with "; ", and 9 of 207 live
-            # Microsoft postings already exceed the limit this way.
-            #
-            # Trim the LOCATION rather than the finished title, so the company
-            # and role — the part the reader needs first — always survive.
-            budget = _DISCORD_TITLE_MAX - len(title) - len(" [PRIORITY: ]")
-            location = job.location
-            if len(location) > budget:
-                location = location[: max(budget - 1, 0)].rstrip(" ;,") + "…"
-            title += f" [PRIORITY: {location}]"
-
-        # Format timestamps in PT
-        try:
-            import zoneinfo
-            pt_tz = zoneinfo.ZoneInfo("America/Los_Angeles")
-            detected_str = _fmt_ts(job.detected_at.astimezone(pt_tz), _PT_FORMAT)
-            posted_str = (
-                _fmt_ts(job.posted_at.astimezone(pt_tz), _PT_FORMAT)
-                if job.posted_at is not None
-                else "Unknown"
-            )
-        except Exception:
-            detected_str = _fmt_ts(job.detected_at, _UTC_FORMAT)
-            posted_str = (
-                _fmt_ts(job.posted_at, _UTC_FORMAT)
-                if job.posted_at is not None
-                else "Unknown"
-            )
-
-        # Department / category field
-        dept_parts = [p for p in [job.department, job.category] if p]
-        dept_str = " / ".join(dept_parts) if dept_parts else "N/A"
-
-        fields = [
-            {"name": "📍 Location", "value": job.location or "Not specified", "inline": True},
-            {"name": "🏢 Department", "value": dept_str, "inline": True},
-            {
-                "name": "🏷️ Tags",
-                "value": f"{job.role_type} · {job.source_platform} · {job.priority}",
-                "inline": False,
-            },
-            {
-                "name": "🔑 Keywords",
-                "value": ", ".join(job.matched_keywords[:8]) or "none",
-                "inline": False,
-            },
-            {"name": "🔗 URL", "value": job.url, "inline": False},
-            {"name": "📅 Posted", "value": posted_str, "inline": True},
-            {"name": "🕐 Detected", "value": detected_str, "inline": True},
-        ]
-
-        embed = {
-            "title": title,
-            "description": job.title,
-            "fields": fields,
-            "color": 0x5865F2,  # Discord blurple
-        }
+        embed = build_job_embed(job)
         return self._send_embed(embed)
 
     def send_summary(self, title: str, description: str) -> bool:

@@ -139,6 +139,9 @@ companies:
   - name: Micron
     adapter: workday
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://micron.wd1.myworkdayjobs.com
       tenant: micron
@@ -147,6 +150,9 @@ companies:
   - name: Salesforce
     adapter: workday
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://salesforce.wd12.myworkdayjobs.com
       tenant: salesforce
@@ -155,6 +161,9 @@ companies:
   - name: CrowdStrike
     adapter: workday
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://crowdstrike.wd5.myworkdayjobs.com
       tenant: crowdstrike
@@ -163,6 +172,9 @@ companies:
   - name: Intel
     adapter: workday
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://intel.wd1.myworkdayjobs.com
       tenant: intel
@@ -171,6 +183,9 @@ companies:
   - name: Applied Materials
     adapter: workday
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://amat.wd1.myworkdayjobs.com
       tenant: amat
@@ -179,24 +194,36 @@ companies:
   - name: Western Digital
     adapter: smartrecruiters
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       slug: WesternDigital
 
   - name: SanDisk
     adapter: smartrecruiters
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       slug: sandisk
 
   - name: Plaid
     adapter: lever
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       slug: plaid
 
   - name: Oracle
     adapter: oracle_careers
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://eeho.fa.us2.oraclecloud.com
       api_path: /hcmRestApi/resources/latest/recruitingCEJobRequisitions
@@ -204,6 +231,9 @@ companies:
   - name: Microsoft Research
     adapter: microsoft_research
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://www.microsoft.com/en-us/research/careers/open-positions/
 
@@ -227,6 +257,9 @@ companies:
   - name: Microsoft
     adapter: eightfold_pcsx
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       base_url: https://apply.careers.microsoft.com
       domain: microsoft.com
@@ -240,6 +273,9 @@ companies:
   - name: Amazon
     adapter: amazon_jobs
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       include_internship_search: false
       base_categories:
@@ -259,6 +295,9 @@ companies:
   - name: Apple
     adapter: apple_jobs
     enabled: true
+    network_priority: true
+    cohort: original_2026_11_04
+    referral_status: unconfirmed
     config:
       sources:
         # Phase 1: disabled internship source in favor of full-time new grad postings
