@@ -3,7 +3,7 @@
   "first_run_completed_at": "2026-05-07T16:53:59.639660+00:00",
   "companies": {
     "Micron": {
-      "last_checked_at": "2026-11-04T17:57:02.373217+00:00",
+      "last_checked_at": "2026-11-04T21:20:51.790857+00:00",
       "seen_jobs": {
         "Micron::workday::JR97659": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -503,12 +503,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:03:30.775500+00:00",
-        "last_nonempty_at": "2026-11-04T17:57:02.302664+00:00",
+        "last_nonempty_at": "2026-11-04T21:20:51.790834+00:00",
         "alerted": false
       }
     },
     "Salesforce": {
-      "last_checked_at": "2026-11-04T17:57:56.393823+00:00",
+      "last_checked_at": "2026-11-04T21:21:39.363070+00:00",
       "seen_jobs": {
         "Salesforce::workday::JR337715": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -588,12 +588,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:04:18.313685+00:00",
-        "last_nonempty_at": "2026-11-04T17:57:56.310702+00:00",
+        "last_nonempty_at": "2026-11-04T21:21:39.362808+00:00",
         "alerted": false
       }
     },
     "CrowdStrike": {
-      "last_checked_at": "2026-11-04T17:58:13.558727+00:00",
+      "last_checked_at": "2026-11-04T21:21:53.859693+00:00",
       "seen_jobs": {
         "CrowdStrike::workday::R26742": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -603,12 +603,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:04:35.191411+00:00",
-        "last_nonempty_at": "2026-11-04T17:58:13.539833+00:00",
+        "last_nonempty_at": "2026-11-04T21:21:53.859422+00:00",
         "alerted": false
       }
     },
     "Intel": {
-      "last_checked_at": "2026-11-04T17:58:54.527599+00:00",
+      "last_checked_at": "2026-11-04T21:22:30.118161+00:00",
       "seen_jobs": {
         "Intel::workday::JR0279646": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -973,12 +973,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:05:23.848913+00:00",
-        "last_nonempty_at": "2026-11-04T17:58:54.481987+00:00",
+        "last_nonempty_at": "2026-11-04T21:22:30.118070+00:00",
         "alerted": false
       }
     },
     "Applied Materials": {
-      "last_checked_at": "2026-11-04T18:01:02.815101+00:00",
+      "last_checked_at": "2026-11-04T21:24:06.360375+00:00",
       "seen_jobs": {
         "Applied Materials::workday::R2615108": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -1098,12 +1098,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:06:45.809306+00:00",
-        "last_nonempty_at": "2026-11-04T18:01:02.766403+00:00",
+        "last_nonempty_at": "2026-11-04T21:24:06.360176+00:00",
         "alerted": false
       }
     },
     "Western Digital": {
-      "last_checked_at": "2026-11-04T18:01:07.567716+00:00",
+      "last_checked_at": "2026-11-04T21:24:11.651008+00:00",
       "seen_jobs": {
         "Western Digital::smartrecruiters::744000124342235": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -1213,12 +1213,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:06:50.049151+00:00",
-        "last_nonempty_at": "2026-11-04T18:01:07.558877+00:00",
+        "last_nonempty_at": "2026-11-04T21:24:11.650697+00:00",
         "alerted": false
       }
     },
     "SanDisk": {
-      "last_checked_at": "2026-11-04T18:01:11.777361+00:00",
+      "last_checked_at": "2026-11-04T21:24:14.320575+00:00",
       "seen_jobs": {
         "SanDisk::smartrecruiters::744000124692433": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -1248,7 +1248,7 @@
       }
     },
     "Plaid": {
-      "last_checked_at": "2026-11-04T18:01:15.193619+00:00",
+      "last_checked_at": "2026-11-04T21:24:19.667376+00:00",
       "seen_jobs": {},
       "health": {
         "first_tracked_at": "2026-08-19T20:06:58.725277+00:00",
@@ -1257,7 +1257,7 @@
       }
     },
     "Oracle": {
-      "last_checked_at": "2026-11-04T18:01:18.228148+00:00",
+      "last_checked_at": "2026-11-04T21:24:22.582813+00:00",
       "seen_jobs": {},
       "health": {
         "first_tracked_at": "2026-08-19T20:07:01.268344+00:00",
@@ -1266,7 +1266,7 @@
       }
     },
     "Microsoft Research": {
-      "last_checked_at": "2026-11-04T18:01:25.207843+00:00",
+      "last_checked_at": "2026-11-04T21:24:29.318984+00:00",
       "seen_jobs": {
         "Microsoft Research::microsoft_research::1189978": {
           "first_seen": "2026-10-15T19:24:08.671003+00:00",
@@ -1281,12 +1281,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:07:04.094182+00:00",
-        "last_nonempty_at": "2026-11-04T18:01:25.207378+00:00",
+        "last_nonempty_at": "2026-11-04T21:24:29.318962+00:00",
         "alerted": false
       }
     },
     "Amazon": {
-      "last_checked_at": "2026-11-04T18:03:53.734594+00:00",
+      "last_checked_at": "2026-11-04T21:26:55.998399+00:00",
       "seen_jobs": {
         "Amazon::amazon_jobs::10412347": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -3006,12 +3006,12 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:07:48.440586+00:00",
-        "last_nonempty_at": "2026-11-04T18:03:53.610120+00:00",
+        "last_nonempty_at": "2026-11-04T21:26:55.998305+00:00",
         "alerted": false
       }
     },
     "Apple": {
-      "last_checked_at": "2026-11-04T18:04:16.198725+00:00",
+      "last_checked_at": "2026-11-04T21:27:17.637861+00:00",
       "seen_jobs": {
         "Apple::apple_jobs::200606475-3810": {
           "first_seen": "2026-05-09T21:03:23.930181+00:00",
@@ -3141,7 +3141,7 @@
       },
       "health": {
         "first_tracked_at": "2026-08-19T20:08:11.913842+00:00",
-        "last_nonempty_at": "2026-11-04T18:04:16.052441+00:00",
+        "last_nonempty_at": "2026-11-04T21:27:17.637659+00:00",
         "alerted": false
       }
     },
@@ -3154,7 +3154,7 @@
       "seen_jobs": {}
     },
     "Microsoft": {
-      "last_checked_at": "2026-11-04T18:03:07.748830+00:00",
+      "last_checked_at": "2026-11-04T21:26:17.247210+00:00",
       "seen_jobs": {
         "Microsoft::eightfold_pcsx::1970393556962891": {
           "first_seen": "2026-08-20T06:07:46.961472+00:00",
@@ -3444,9 +3444,1327 @@
       },
       "health": {
         "first_tracked_at": "2026-08-20T06:07:46.765231+00:00",
-        "last_nonempty_at": "2026-11-04T18:03:07.537881+00:00",
+        "last_nonempty_at": "2026-11-04T21:26:17.247165+00:00",
         "alerted": false
       }
     }
+  },
+  "alerted_urls": {},
+  "review_queue": {
+    "Micron::workday::JR113501": {
+      "company": "Micron",
+      "title": "HIG Product Engineer - Media Health",
+      "url": "https://micron.wd1.myworkdayjobs.com/External/job/Boise-ID---Main-Site/HIG-Product-Engineer---Media-Health_JR113501",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: US city match: boise",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:20:51.790857+00:00",
+      "last_seen": "2026-11-04T21:20:51.790857+00:00"
+    },
+    "Salesforce::workday::JR367231": {
+      "company": "Salesforce",
+      "title": "Software Engineering, AI Systems (PMTS)",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/California---San-Francisco/Software-Engineering--AI-Systems--PMTS-_JR367231-1",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "Salesforce::workday::JR366831": {
+      "company": "Salesforce",
+      "title": "Software Engineering LMTS",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/California---San-Francisco/Software-Engineering-LMTS_JR366831",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "Salesforce::workday::JR358978": {
+      "company": "Salesforce",
+      "title": "Product Security Engineer",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/Washington---Bellevue/Product-Security_JR358978",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "Salesforce::workday::JR363027": {
+      "company": "Salesforce",
+      "title": "Software Engineering - MTS, Trust Intelligence Platform",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/California---San-Francisco/Software-Engineering---MTS--Trust-Intelligence-Platform_JR363027",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: US city match: san francisco",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "Salesforce::workday::JR359585": {
+      "company": "Salesforce",
+      "title": "Software Engineering, AI Systems (SMTS)",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/California---San-Francisco/Software-Engineering-SMTS_JR359585",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "Salesforce::workday::JR366553": {
+      "company": "Salesforce",
+      "title": "Front End SMTS Software Engineer - MeshMesh",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/California---San-Francisco/Front-End-SMTS-Software-Engineer---MeshMesh_JR366553",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "Salesforce::workday::JR366524": {
+      "company": "Salesforce",
+      "title": "Data Scientist - MeshMesh",
+      "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site/job/California---San-Francisco/Data-Scientist_JR366524",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:39.363070+00:00",
+      "last_seen": "2026-11-04T21:21:39.363070+00:00"
+    },
+    "CrowdStrike::workday::R30708": {
+      "company": "CrowdStrike",
+      "title": "Software Development Engineer in Test - Agentic Automation (Remote, CAN)",
+      "url": "https://crowdstrike.wd5.myworkdayjobs.com/crowdstrikecareers/job/Canada---Remote-AB/Software-Development-Engineer-in-Test---Agentic-Automation--Remote--CAN-_R30708",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US confirmed: remote",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:53.859693+00:00",
+      "last_seen": "2026-11-04T21:21:53.859693+00:00"
+    },
+    "CrowdStrike::workday::R30689": {
+      "company": "CrowdStrike",
+      "title": "Software Engineer 3 - Sensor, macOS (Remote)",
+      "url": "https://crowdstrike.wd5.myworkdayjobs.com/crowdstrikecareers/job/USA---Remote-CA/Software-Engineer-3---Sensor--macOS--Remote-_R30689",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: US confirmed: remote",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:21:53.859693+00:00",
+      "last_seen": "2026-11-04T21:21:53.859693+00:00"
+    },
+    "CrowdStrike::workday::R30742": {
+      "company": "CrowdStrike",
+      "title": "Software Engineer II -SoM, Sensor Quality MatriX (Hybrid)",
+      "url": "https://crowdstrike.wd5.myworkdayjobs.com/crowdstrikecareers/job/USA---Redmond-WA/Software-Engineer-II--SoM--Sensor-Quality-MatriX--Hybrid-_R30742",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:21:53.859693+00:00",
+      "last_seen": "2026-11-04T21:21:53.859693+00:00"
+    },
+    "Intel::workday::JR0288776": {
+      "company": "Intel",
+      "title": "EDA Tool Software Engineer",
+      "url": "https://intel.wd1.myworkdayjobs.com/External/job/US-Texas-Austin/EDA-Tool-Software-Engineer_JR0288776",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:22:30.118161+00:00",
+      "last_seen": "2026-11-04T21:22:30.118161+00:00"
+    },
+    "Intel::workday::JR0288777": {
+      "company": "Intel",
+      "title": "EDA Tool Software Engineer",
+      "url": "https://intel.wd1.myworkdayjobs.com/External/job/US-Texas-Austin/EDA-Tool-Software-Engineer_JR0288777",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:22:30.118161+00:00",
+      "last_seen": "2026-11-04T21:22:30.118161+00:00"
+    },
+    "Intel::workday::JR0288775": {
+      "company": "Intel",
+      "title": "Data Scientist",
+      "url": "https://intel.wd1.myworkdayjobs.com/External/job/US-Oregon-Hillsboro/Data-Scientist_JR0288775",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:22:30.118161+00:00",
+      "last_seen": "2026-11-04T21:22:30.118161+00:00"
+    },
+    "Applied Materials::workday::R2632370": {
+      "company": "Applied Materials",
+      "title": "Data Scientist - EMEA",
+      "url": "https://amat.wd1.myworkdayjobs.com/External/job/EindhovenNLD/Data-Scientist---EMEA_R2632370",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:24:06.360375+00:00",
+      "last_seen": "2026-11-04T21:24:06.360375+00:00"
+    },
+    "Applied Materials::workday::R2630786": {
+      "company": "Applied Materials",
+      "title": "Software Engineer III (E3)",
+      "url": "https://amat.wd1.myworkdayjobs.com/External/job/Santa-ClaraCA/SW-Engineer_R2630786",
+      "reasons": [
+        "freshness: posted_at unknown, allowing",
+        "location: US city match: santa clara",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:24:06.360375+00:00",
+      "last_seen": "2026-11-04T21:24:06.360375+00:00"
+    },
+    "Western Digital::smartrecruiters::744000159513129": {
+      "company": "Western Digital",
+      "title": "Vice President, Platform Engineering",
+      "url": "https://jobs.smartrecruiters.com/WesternDigital/744000159513129",
+      "reasons": [
+        "freshness: fresh: 22h old",
+        "location: US country code",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:24:11.651008+00:00",
+      "last_seen": "2026-11-04T21:24:11.651008+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557007257": {
+      "company": "Microsoft",
+      "title": "Software Engineer II",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557007257",
+      "reasons": [
+        "freshness: fresh: 3h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557051412": {
+      "company": "Microsoft",
+      "title": "Site Reliability Engineer II",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557051412",
+      "reasons": [
+        "freshness: fresh: 4h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393556982635": {
+      "company": "Microsoft",
+      "title": "Software Engineer",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556982635",
+      "reasons": [
+        "freshness: fresh: 5h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393556971484": {
+      "company": "Microsoft",
+      "title": "Azure Advanced Cloud Engineer 2 - Customer Focused",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556971484",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557022797": {
+      "company": "Microsoft",
+      "title": "Software Engineer II",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557022797",
+      "reasons": [
+        "freshness: fresh: 23h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557047398": {
+      "company": "Microsoft",
+      "title": "Software Engineer II - Perception Red Agent Team",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557047398",
+      "reasons": [
+        "freshness: fresh: 23h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393556999173": {
+      "company": "Microsoft",
+      "title": "Software Engineer II - CTJ - Poly",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556999173",
+      "reasons": [
+        "freshness: fresh: 24h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557023035": {
+      "company": "Microsoft",
+      "title": "Software Engineering",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557023035",
+      "reasons": [
+        "freshness: fresh: 26h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557025694": {
+      "company": "Microsoft",
+      "title": "Software Engineer - CTJ - Poly",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557025694",
+      "reasons": [
+        "freshness: fresh: 28h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393556988227": {
+      "company": "Microsoft",
+      "title": "Security Engineer II",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556988227",
+      "reasons": [
+        "freshness: fresh: 31h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393556986124": {
+      "company": "Microsoft",
+      "title": "Software Engineer 2",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556986124",
+      "reasons": [
+        "freshness: fresh: 44h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393557004929": {
+      "company": "Microsoft",
+      "title": "Security Engineer",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393557004929",
+      "reasons": [
+        "freshness: fresh: 46h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Microsoft::eightfold_pcsx::1970393556962281": {
+      "company": "Microsoft",
+      "title": "Software Engineering II - AI Compiler Engineer",
+      "url": "https://apply.careers.microsoft.com/careers/job/1970393556962281",
+      "reasons": [
+        "freshness: fresh: 46h old",
+        "location: US confirmed: united states",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:17.247210+00:00",
+      "last_seen": "2026-11-04T21:26:17.247210+00:00"
+    },
+    "Amazon::amazon_jobs::10597086": {
+      "company": "Amazon",
+      "title": "Software Development Engineer II, Robotics Development and Packaging Innovation",
+      "url": "https://www.amazon.jobs/en/jobs/10597086/software-development-engineer-ii-robotics-development-and-packaging-innovation",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596657": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Ads Analytics & Insights-Fixed",
+      "url": "https://www.amazon.jobs/en/jobs/10596657/software-development-engineer-ads-analytics-insights-fixed",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596901": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Provisioning - Amazon Leo",
+      "url": "https://www.amazon.jobs/en/jobs/10596901/software-development-engineer-provisioning-amazon-leo",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596899": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Provisioning - Amazon Leo",
+      "url": "https://www.amazon.jobs/en/jobs/10596899/software-development-engineer-provisioning-amazon-leo",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596875": {
+      "company": "Amazon",
+      "title": "Software Development Engineer II, DC Bridge",
+      "url": "https://www.amazon.jobs/en/jobs/10596875/software-development-engineer-ii-dc-bridge",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596654": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, AWS Experience Analytics",
+      "url": "https://www.amazon.jobs/en/jobs/10596654/software-development-engineer-aws-experience-analytics",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596691": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Leo Telemetry Platform",
+      "url": "https://www.amazon.jobs/en/jobs/10596691/software-development-engineer-leo-telemetry-platform",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596546": {
+      "company": "Amazon",
+      "title": "Embedded Software Development Engineer, Applied Automation Controls/Embedded Software",
+      "url": "https://www.amazon.jobs/en/jobs/10596546/embedded-software-development-engineer-applied-automation-controls-embedded-software",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596540": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, AWS Transform",
+      "url": "https://www.amazon.jobs/en/jobs/10596540/software-development-engineer-aws-transform",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596539": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, AWS Transform",
+      "url": "https://www.amazon.jobs/en/jobs/10596539/software-development-engineer-aws-transform",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596393": {
+      "company": "Amazon",
+      "title": "Software Development Engineer III, Resilience Infrastruction and Solutions: Incident Mitigation",
+      "url": "https://www.amazon.jobs/en/jobs/10596393/software-development-engineer-iii-resilience-infrastruction-and-solutions-incident-mitigation",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595040": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, WW Stores FinTech",
+      "url": "https://www.amazon.jobs/en/jobs/10595040/software-development-engineer-ww-stores-fintech",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595981": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Sponsored Products and Brands",
+      "url": "https://www.amazon.jobs/en/jobs/10595981/software-development-engineer-sponsored-products-and-brands",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595891": {
+      "company": "Amazon",
+      "title": "Software Engineer, Worldwide Amazon Stores Finance Technology, Controllership Engineering",
+      "url": "https://www.amazon.jobs/en/jobs/10595891/software-engineer-worldwide-amazon-stores-finance-technology-controllership-engineering",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595931": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, AI Foundations, Amazon Leo Networking Software",
+      "url": "https://www.amazon.jobs/en/jobs/10595931/software-development-engineer-ai-foundations-amazon-leo-networking-software",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595865": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Bottlerocket",
+      "url": "https://www.amazon.jobs/en/jobs/10595865/software-development-engineer-bottlerocket",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595864": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Bottlerocket",
+      "url": "https://www.amazon.jobs/en/jobs/10595864/software-development-engineer-bottlerocket",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595839": {
+      "company": "Amazon",
+      "title": "Software Development Engineer (Embedded Systems) Early Career - 2027 (US)",
+      "url": "https://www.amazon.jobs/en/jobs/10595839/software-development-engineer-embedded-systems-early-career-2027-us",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, COHORT_2027_UNSPECIFIED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595761": {
+      "company": "Amazon",
+      "title": "Software Development Engineer II, Selling Partner Trust & Compliance",
+      "url": "https://www.amazon.jobs/en/jobs/10595761/software-development-engineer-ii-selling-partner-trust-compliance",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595565": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Data and Analytics",
+      "url": "https://www.amazon.jobs/en/jobs/10595565/software-development-engineer-data-and-analytics",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US confirmed: usa",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595515": {
+      "company": "Amazon",
+      "title": "Software Development Engineer II, Amazon Connect Customer",
+      "url": "https://www.amazon.jobs/en/jobs/10595515/software-development-engineer-ii-amazon-connect-customer",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, AMBIGUOUS_LEVEL"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10594986": {
+      "company": "Amazon",
+      "title": "Software Development Engineer - Amazon MSK, Managed Streaming for Kafka",
+      "url": "https://www.amazon.jobs/en/jobs/10594986/software-development-engineer-amazon-msk-managed-streaming-for-kafka",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10594998": {
+      "company": "Amazon",
+      "title": "Software Development Engineer, Eva Development Team",
+      "url": "https://www.amazon.jobs/en/jobs/10594998/software-development-engineer-eva-development-team",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595880": {
+      "company": "Amazon",
+      "title": "Data Engineer, WW Pricing - Data & Analytics",
+      "url": "https://www.amazon.jobs/en/jobs/10595880/data-engineer-ww-pricing-data-analytics",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10596873": {
+      "company": "Amazon",
+      "title": "Applied Scientist II, Sponsored Products and Brands",
+      "url": "https://www.amazon.jobs/en/jobs/10596873/applied-scientist-ii-sponsored-products-and-brands",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595783": {
+      "company": "Amazon",
+      "title": "Applied Scientist, AWS Science of Security, AWS Provable Security",
+      "url": "https://www.amazon.jobs/en/jobs/10595783/applied-scientist-aws-science-of-security-aws-provable-security",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595560": {
+      "company": "Amazon",
+      "title": "Applied Scientist, Sponsored Products and Brands",
+      "url": "https://www.amazon.jobs/en/jobs/10595560/applied-scientist-sponsored-products-and-brands",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595504": {
+      "company": "Amazon",
+      "title": "Applied Scientist, AGI",
+      "url": "https://www.amazon.jobs/en/jobs/10595504/applied-scientist-agi",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10595247": {
+      "company": "Amazon",
+      "title": "Applied Scientist II, Prime Video Personalization and Discovery Science, Prime Video - Personalization and Discovery Science",
+      "url": "https://www.amazon.jobs/en/jobs/10595247/applied-scientist-ii-prime-video-personalization-and-discovery-science-prime-video-personalization-and-discovery-science",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10593774": {
+      "company": "Amazon",
+      "title": "Applied Scientist II, Kiro Science",
+      "url": "https://www.amazon.jobs/en/jobs/10593774/applied-scientist-ii-kiro-science",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Amazon::amazon_jobs::10594793": {
+      "company": "Amazon",
+      "title": "Applied Scientist, Amazon Books Ads",
+      "url": "https://www.amazon.jobs/en/jobs/10594793/applied-scientist-amazon-books-ads",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: US country code USA",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, US_LOCATION_CONFIRMED, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:26:55.998399+00:00",
+      "last_seen": "2026-11-04T21:26:55.998399+00:00"
+    },
+    "Apple::apple_jobs::200693487-0836": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, Platform Architecture",
+      "url": "https://jobs.apple.com/en-us/details/200693487-0836/machine-learning-engineer-platform-architecture?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693506-0836": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, Platform Architecture",
+      "url": "https://jobs.apple.com/en-us/details/200693506-0836/machine-learning-engineer-platform-architecture?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693483-3956": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer - 3D Vision & Perception",
+      "url": "https://jobs.apple.com/en-us/details/200693483-3956/machine-learning-engineer-3d-vision-perception?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693427-0157": {
+      "company": "Apple",
+      "title": "Forward Deployed Software Engineer - Platforms Engineering, Enterprise Technology Services",
+      "url": "https://jobs.apple.com/en-us/details/200693427-0157/forward-deployed-software-engineer-platforms-engineering-enterprise-technology-services?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693403-3543": {
+      "company": "Apple",
+      "title": "Software Development Engineer - Cellular (Instrument Engineering) |",
+      "url": "https://jobs.apple.com/en-us/details/200693403-3543/software-development-engineer-cellular-instrument-engineering?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693352-0836": {
+      "company": "Apple",
+      "title": "Software Development Engineer in Test (SDET), Web + Server \u2014 Find My",
+      "url": "https://jobs.apple.com/en-us/details/200693352-0836/software-development-engineer-in-test-sdet-web-server-find-my?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US state code: IN",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200680546-3543": {
+      "company": "Apple",
+      "title": "Bluetooth Software Engineer, Wireless Technologies & Ecosystems",
+      "url": "https://jobs.apple.com/en-us/details/200680546-3543/bluetooth-software-engineer-wireless-technologies-ecosystems?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693309-0836": {
+      "company": "Apple",
+      "title": "Software Engineering Systems",
+      "url": "https://jobs.apple.com/en-us/details/200693309-0836/software-engineering-systems?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693310-3337": {
+      "company": "Apple",
+      "title": "Software Engineer in Natural Language Processing (NLP) and Machine Learning (ML)",
+      "url": "https://jobs.apple.com/en-us/details/200693310-3337/software-engineer-in-natural-language-processing-nlp-and-machine-learning-ml?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 21h old",
+        "location: US state code: IN",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200690757-0157": {
+      "company": "Apple",
+      "title": "Software Engineer, Content Management Systems - Retail & Marcom Engineering",
+      "url": "https://jobs.apple.com/en-us/details/200690757-0157/software-engineer-content-management-systems-retail-marcom-engineering?team=CORSV",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200658689-0836": {
+      "company": "Apple",
+      "title": "Software Development Engineer, Wireless Technologies & Ecosystems",
+      "url": "https://jobs.apple.com/en-us/details/200658689-0836/software-development-engineer-wireless-technologies-ecosystems?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693199-0836": {
+      "company": "Apple",
+      "title": "AI Software Engineer, App Intelligence",
+      "url": "https://jobs.apple.com/en-us/details/200693199-0836/ai-software-engineer-app-intelligence?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200692554-0836": {
+      "company": "Apple",
+      "title": "Battery Algorithm ML Engineer",
+      "url": "https://jobs.apple.com/en-us/details/200692554-0836/battery-algorithm-ml-engineer?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200689295-0836": {
+      "company": "Apple",
+      "title": "Software Engineer, WebKit Accessibility",
+      "url": "https://jobs.apple.com/en-us/details/200689295-0836/software-engineer-webkit-accessibility?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200692974-3956": {
+      "company": "Apple",
+      "title": "Software Development Engineer - Test",
+      "url": "https://jobs.apple.com/en-us/details/200692974-3956/software-development-engineer-test?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693002-0836": {
+      "company": "Apple",
+      "title": "Software Engineer - VE",
+      "url": "https://jobs.apple.com/en-us/details/200693002-0836/software-engineer-ve?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200692539-3956": {
+      "company": "Apple",
+      "title": "Software Engineer (Marcom Interactive Apps), Retail and Marcom Engineering",
+      "url": "https://jobs.apple.com/en-us/details/200692539-3956/software-engineer-marcom-interactive-apps-retail-and-marcom-engineering?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200691979-3749": {
+      "company": "Apple",
+      "title": "Applied Research Software Engineer",
+      "url": "https://jobs.apple.com/en-us/details/200691979-3749/applied-research-software-engineer?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693087-3337": {
+      "company": "Apple",
+      "title": "Software Engineer - Visual Intelligence",
+      "url": "https://jobs.apple.com/en-us/details/200693087-3337/software-engineer-visual-intelligence?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200693064-0836": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, Siri Speech",
+      "url": "https://jobs.apple.com/en-us/details/200693064-0836/machine-learning-engineer-siri-speech?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200661302-0836": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, SIML",
+      "url": "https://jobs.apple.com/en-us/details/200661302-0836/machine-learning-engineer-siml?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200661302-3337": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, SIML",
+      "url": "https://jobs.apple.com/en-us/details/200661302-3337/machine-learning-engineer-siml?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200688846-0836": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, Data for Foundation Models",
+      "url": "https://jobs.apple.com/en-us/details/200688846-0836/machine-learning-engineer-data-for-foundation-models?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200688846-3337": {
+      "company": "Apple",
+      "title": "Machine Learning Engineer, Data for Foundation Models",
+      "url": "https://jobs.apple.com/en-us/details/200688846-3337/machine-learning-engineer-data-for-foundation-models?team=MLAI",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200692940-0157": {
+      "company": "Apple",
+      "title": "Frontend Engineer (AI Experiences), Retail and Marcom Engineering",
+      "url": "https://jobs.apple.com/en-us/details/200692940-0157/frontend-engineer-ai-experiences-retail-and-marcom-engineering?team=SFTWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200687597-1242": {
+      "company": "Apple",
+      "title": "Systems Software Engineer, Platform Architecture",
+      "url": "https://jobs.apple.com/en-us/details/200687597-1242/systems-software-engineer-platform-architecture?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    },
+    "Apple::apple_jobs::200687597-0836": {
+      "company": "Apple",
+      "title": "Systems Software Engineer, Platform Architecture",
+      "url": "https://jobs.apple.com/en-us/details/200687597-0836/systems-software-engineer-platform-architecture?team=HRDWR",
+      "reasons": [
+        "freshness: fresh: 45h old",
+        "location: location ambiguous",
+        "eligibility: needs_review: TECH_ROLE_CONFIRMED, LOCATION_UNKNOWN, EXPERIENCE_UNSPECIFIED, FULL_TIME_UNSPECIFIED"
+      ],
+      "first_seen": "2026-11-04T21:27:17.637861+00:00",
+      "last_seen": "2026-11-04T21:27:17.637861+00:00"
+    }
+  },
+  "heartbeat_history": [
+    {
+      "configured_cadence_minutes": 15,
+      "started_at": "2026-11-04T21:19:37.707658+00:00",
+      "finished_at": "2026-11-04T21:27:21.743308+00:00",
+      "duration_seconds": 464.04,
+      "gap_since_last_run_seconds": null,
+      "scheduler_gap_detected": false,
+      "adapters_attempted": 13,
+      "adapters_succeeded": 13,
+      "adapters_failed": 0,
+      "adapters_zero_results": 3,
+      "accepted_count": 0,
+      "review_count": 88,
+      "excluded_count": 9219,
+      "alert_success_count": 0,
+      "alert_failure_count": 0,
+      "per_adapter_breakdown": {
+        "Micron": {
+          "status": "ok",
+          "error": null,
+          "fetched": 2858,
+          "matched": 0,
+          "review": 1,
+          "excluded": 2857
+        },
+        "Salesforce": {
+          "status": "ok",
+          "error": null,
+          "fetched": 1552,
+          "matched": 0,
+          "review": 7,
+          "excluded": 1545
+        },
+        "CrowdStrike": {
+          "status": "ok",
+          "error": null,
+          "fetched": 398,
+          "matched": 0,
+          "review": 3,
+          "excluded": 395
+        },
+        "Intel": {
+          "status": "ok",
+          "error": null,
+          "fetched": 842,
+          "matched": 0,
+          "review": 3,
+          "excluded": 839
+        },
+        "Applied Materials": {
+          "status": "ok",
+          "error": null,
+          "fetched": 2000,
+          "matched": 0,
+          "review": 2,
+          "excluded": 1998
+        },
+        "Western Digital": {
+          "status": "ok",
+          "error": null,
+          "fetched": 341,
+          "matched": 0,
+          "review": 1,
+          "excluded": 340
+        },
+        "SanDisk": {
+          "status": "zero",
+          "error": null,
+          "fetched": 0,
+          "matched": 0,
+          "review": 0,
+          "excluded": 0
+        },
+        "Plaid": {
+          "status": "zero",
+          "error": null,
+          "fetched": 0,
+          "matched": 0,
+          "review": 0,
+          "excluded": 0
+        },
+        "Oracle": {
+          "status": "zero",
+          "error": null,
+          "fetched": 0,
+          "matched": 0,
+          "review": 0,
+          "excluded": 0
+        },
+        "Microsoft Research": {
+          "status": "ok",
+          "error": null,
+          "fetched": 145,
+          "matched": 0,
+          "review": 0,
+          "excluded": 145
+        },
+        "Microsoft": {
+          "status": "ok",
+          "error": null,
+          "fetched": 256,
+          "matched": 0,
+          "review": 13,
+          "excluded": 243
+        },
+        "Amazon": {
+          "status": "ok",
+          "error": null,
+          "fetched": 515,
+          "matched": 0,
+          "review": 31,
+          "excluded": 484
+        },
+        "Apple": {
+          "status": "ok",
+          "error": null,
+          "fetched": 400,
+          "matched": 0,
+          "review": 27,
+          "excluded": 373
+        }
+      }
+    }
+  ],
+  "last_heartbeat": {
+    "configured_cadence_minutes": 15,
+    "started_at": "2026-11-04T21:19:37.707658+00:00",
+    "finished_at": "2026-11-04T21:27:21.743308+00:00",
+    "duration_seconds": 464.04,
+    "gap_since_last_run_seconds": null,
+    "scheduler_gap_detected": false,
+    "adapters_attempted": 13,
+    "adapters_succeeded": 13,
+    "adapters_failed": 0,
+    "adapters_zero_results": 3,
+    "accepted_count": 0,
+    "review_count": 88,
+    "excluded_count": 9219,
+    "alert_success_count": 0,
+    "alert_failure_count": 0,
+    "per_adapter_breakdown": {
+      "Micron": {
+        "status": "ok",
+        "error": null,
+        "fetched": 2858,
+        "matched": 0,
+        "review": 1,
+        "excluded": 2857
+      },
+      "Salesforce": {
+        "status": "ok",
+        "error": null,
+        "fetched": 1552,
+        "matched": 0,
+        "review": 7,
+        "excluded": 1545
+      },
+      "CrowdStrike": {
+        "status": "ok",
+        "error": null,
+        "fetched": 398,
+        "matched": 0,
+        "review": 3,
+        "excluded": 395
+      },
+      "Intel": {
+        "status": "ok",
+        "error": null,
+        "fetched": 842,
+        "matched": 0,
+        "review": 3,
+        "excluded": 839
+      },
+      "Applied Materials": {
+        "status": "ok",
+        "error": null,
+        "fetched": 2000,
+        "matched": 0,
+        "review": 2,
+        "excluded": 1998
+      },
+      "Western Digital": {
+        "status": "ok",
+        "error": null,
+        "fetched": 341,
+        "matched": 0,
+        "review": 1,
+        "excluded": 340
+      },
+      "SanDisk": {
+        "status": "zero",
+        "error": null,
+        "fetched": 0,
+        "matched": 0,
+        "review": 0,
+        "excluded": 0
+      },
+      "Plaid": {
+        "status": "zero",
+        "error": null,
+        "fetched": 0,
+        "matched": 0,
+        "review": 0,
+        "excluded": 0
+      },
+      "Oracle": {
+        "status": "zero",
+        "error": null,
+        "fetched": 0,
+        "matched": 0,
+        "review": 0,
+        "excluded": 0
+      },
+      "Microsoft Research": {
+        "status": "ok",
+        "error": null,
+        "fetched": 145,
+        "matched": 0,
+        "review": 0,
+        "excluded": 145
+      },
+      "Microsoft": {
+        "status": "ok",
+        "error": null,
+        "fetched": 256,
+        "matched": 0,
+        "review": 13,
+        "excluded": 243
+      },
+      "Amazon": {
+        "status": "ok",
+        "error": null,
+        "fetched": 515,
+        "matched": 0,
+        "review": 31,
+        "excluded": 484
+      },
+      "Apple": {
+        "status": "ok",
+        "error": null,
+        "fetched": 400,
+        "matched": 0,
+        "review": 27,
+        "excluded": 373
+      }
+    }
+  },
+  "migrations": {
+    "2026-11-newgrad-v1": {
+      "started_at": "2026-11-04T21:19:37.721547+00:00",
+      "completed_at": "2026-11-04T21:27:20.683043+00:00",
+      "backfill_completed": true
+    }
+  },
+  "policy_version": "2026-11-newgrad-v1",
+  "review_digest": {
+    "last_sent_at": "2026-11-04T21:27:21.743292+00:00"
   }
 }
