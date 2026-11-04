@@ -1,0 +1,76 @@
+# Phase 1 executable contract — new-grad-only + network-priority alerts
+
+**User-facing release:** Jobbie 2.1. **At foundation creation: NOT IMPLEMENTED.**
+**Scope:** existing 13 enabled monitored career-site entries only, no new providers, no AI, no candidate PDFs, no Discord slash commands, no Cloudflare, no external email, no private storage. Keep legacy Python webhook + state/CLI available. Three ordered PRs P1-A/P1-B/P1-C. Do not skip live evidence.
+
+## Exact before-state (RECONFIRM on HEAD)
+- `companies.yaml` has 15 configured, 13 enabled, 2 disabled. `internship_only: false` but early-career keywords still include internship/co-op/student. Apple and Amazon still query internship sources. ``src/filtering.py` has raw-text rules with possible false positive/negative classification.
+- Existing functions: `apply_filter_pipeline` and `label_job`; `Job.role_type` frozen enum; `src/notifier.py` publishes embeds; `src/storage.py` v2 first-seen/alerted state; workflow scheduled 15m but observed many hours between runs. Refactor safely.
+- Network original list EXACT names in `docs/PRODUCT.md`. Do not include inactive Snowflake/Applied Digital as network-priority by default. `Microsoft Research` and `Microsoft` are two monitored entries, one wider company family, dedup apply URLs.
+
+## Explicit policy / sample role matrix
+Eligible to individual-alert if there is positive evidence of TECH role and full-time/early career with no disqualifier:
+- "Software Engineer, New Grad" full-time US / no conflicting dates -> eligible.
+- "Software Engineer I" with 0-2 yrs and full-time US -> eligible.
+- "University Graduate 2027" with explicit eligible Dec 2026 graduating range -> eligible.
+- "Junior Backend Engineer" 0-2 yrs full-time US -> eligible.
+- Applied AI, SWE, full-stack, FDE 0-2 yrs (real early-career) -> eligible.
+Needs review (not confidently eligible):
+- General "Software Engineer" with no level or required experience, even if the description mentions interns in a different sentence.
+- 2027 cohort with NO actual graduation eligibility window.
+- "Engineer II" with unspecified years, 3 years required, or 0-2 years but contradictory levels.
+- Unknown work authorization, role type or location; salary missing does NOT itself trigger review.
+Excluded from job alerts:
+- Explicit "Summer 2027 Software Engineer Intern", "Co-op", student placement.
+- Senior/Staff/Principal/Lead/Director/Manager engineering roles when titles indicate seniority, or >=4 required years with no clear junior alternative.
+- Non-US ONLY positions, required US citizenship/active clearance, or explicit degree/graduation requirement the owner doesn't meet.
+- Explicit contract/part-time-only when permanent full-time required.
+- Nontechnical sales/HR/operations role even if description mentions Python. Exclude based on TITLE/structured department/duties, not incidental words in a technical job description.
+Need review tier must appear in a *bounded, labeled summary* or review log, never disappear silently or be announced as a confirmed fit. Do not suppress legitimate US option because same posting also lists Canada.
+
+## Ordered implementation work
+
+### P1-A: eligibility engine and fixture corpus
+1. Capture base branch SHA, tests, config/workflow and small representative dry-run diagnostic. Never send test webhook unless explicitly permitted/verified safe.
+2. Introduce `src/eligibility.py` pure deterministic classifier: `employment_type`, `career_level`, `eligibility`, stable reasons + evidence extraction from explicit title, structured fields and relevant requirement sentences. Do not use a word found anywhere in raw_text to classify role; distinguish "internship preferred" in job history vs internship job. Preserve existing Job constructor/adapter return types and CLI, add an adapter-normalization helper only as needed.
+3. Update `src/filtering.py` to invoke eligibility and location logic, preserving legacy compatibility and reason logs. Prevent inappropriate "sales" / "masters" / "PhD" mention excludes and generic technology mentions in nontech postings. Parse multiple locations individually; distinguish US remote vs unspecified remote. Unknown posted date is not automatically "posted today".
+4. Restrict Phase 1 TECH roles to SWE, backend, full-stack, product engineering, AI/FDE, justified junior data/ML; generic product/program manager is not a default engineering alert.
+5. Change `companies.yaml` `filters` to explicitly select `new_grad_full_time` while preserving ability to dry-run legacy mode for rollback; mark old `internship_only` deprecated or translate it with warnings, never silently allow interns.
+6. Disable APPLE internship source and AMAZON internship-only query in config without removing adapters or tests. Do not modify disabled companies or bypass employer authentication.
+7. Add table-driven synthetic fixtures under `tests/fixtures` and `tests/test_eligibility.py`: at least 25 adversarial cases spanning the matrix, semantically ambiguous wording, grad dates, US citizenship vs green card, 2027 class, PhD preferred vs required, salary unknown, foreign-city names, identical title distinct reqs. Preserve all existing tests.
+8. Output include/exclude/review summary counts by company in `--dry-run --verbose`; run tests and compare baseline.
+
+**P1-A gate:** 100% exclusion of explicit internship/senior/citizenship-only fixture roles; all clearly eligible examples included; uncertain cases `needs_review` with reason; no regression in existing unit suite; no public state mutation on `--dry-run`. Do not claim real adapter coverage yet.
+
+### P1-B: immutable original cohort + webhook formatting
+1. Add `network_priority: true` and `cohort: original_2026_11_04` to exactly 13 enabled source entries in `companies.yaml`. Add `referral_status: unconfirmed` for each. Disabled entries remain false/not flagged. Validate a new discovered source defaults to no marker.
+2. Keep location priority (`Job.priority`) separate from network/referral metadata. If duplicates across Microsoft and Microsoft Research, preserve source records but display one normalized employer with a network badge.
+3. Add precise notifier contract: prefix `⭐ NETWORK PRIORITY` for original 13, `DISCOVERED` for future; show role/full-time verification category, company, city/location, direct URL, posted_at when source-known OR detected_at labeled as such; source attribution, confidence/review label; salary only when verified. Do not invent a salary, exact job-age, referral contact or referral status.
+4. Guard against Discord embed limits, rate limits, disallowed @mentions, untrusted Markdown/control chars, bad/empty URL, and sanitization of public text.
+5. Create `tests/test_network.py` and notifier snapshot/regression tests for 13 flagged + 2 unflagged, duplicate source, unconfirmed referral, unknown dates and long titles. Keep existing webhook transport and max-alert cap.
+
+**P1-B gate:** explicit 13/2 flag assertions, zero assertion of actual referral, readable embeds and no duplicate sends in fixtures. Network badges do not appear on disabled/added companies.
+
+### P1-C: state migration, schedule observability, cutover
+1. Existing v2 `state/seen_jobs.json` MUST be retained and backed up before any migration. Use additive versioned state fields; do not reset all seen jobs.
+2. Implement ``policy_version=2026-11-newgrad-v1` migration marker and a safe reclassification/backfill preview. Re-examine *currently available, source-verified* postings to find eligible opportunities from the last 7 days (when posted_at is credible; if unknown, use observed_at accurately). Cap summary at 10 items/first run with total count and direct links where possible. Do not firehose every old item. Track migration completed exactly once, and no summary from failed fetch.
+3. Default subsequent runs notify only newly discovered/reopened verified eligible jobs, once per canonical URL/requisition across sources/runs where possible. Need-review positions should be recorded and summarized no more than daily, capped; never silently erased. Preserve old state and detect missing/corrupt state instead of treating total loss as a legitimate fresh run.
+4. Add run heartbeat/diagnostics: configured cron, actual start/finish, adapter count, accepted/review/excluded, actual alert success/failure, per-source zero/failed distinction, last-success age, scheduler gaps. Structured logs no secrets. If Actions is late, report elapsed age without promising exact 15m latency.
+5. Check GitHub Actions resource and time limits; keep existing concurrency and serial state commit behavior. Fix identified scheduler/config problems without requiring a new external runtime. Provide manual `workflow_dispatch` and dry-run playbook.
+6. Add `docs/OPERATIONS.md` Phase 1 release addendum and update root `README.md` 15/13 reality and new commands; no false live claims.
+7. Verify full `pytest`, `validate-config`, targeted live adapter read-only dry-run, no side effects. Run an approved live webhook smoke and an actual workflow run if secrets are configured; record run URL and timestamp. Recheck GitHub Actions schedule after deployment; if scheduled gap remains, state accurately and give fallback.
+8. Rollback: feature flag returns to previous stable notifier/filter while preserving state; migration marker remains auditable; no deleting state or mass re-alerting.
+
+**P1-C gate:** dry-run has no state/webhook mutation; controlled first-run backfill not spam; duplicate suppression across runs; no loss of existing alert state; real verified job alert to Discord when credentials permitted; live Actions run success (and observed schedule latency caveat).
+
+## Tests / evidence artifacts required
+- Regression table: 25+ eligibility fixtures, observed expected/result with reason codes.
+- 13 original/2 disabled config snapshot with flags.
+- Before-and-after job counts by enabled adapter using same source sample; do NOT call "missing postings" healthy without source verification.
+- Discord payload snapshot showing NETWORK PRIORITY / referral UNCONFIRMED and no fabricated salary/date.
+- State-migration fixture using copy of redacted prior v2 state, repeat-run idempotency, cap behavior, reset/corruption handling, revert test.
+- Exact test commands/output and GitHub Actions run link; failures/blocked reasons.
+- No screenshots of private webhooks, personal resumes, token-bearing URLs.
+
+## Phase 1 release decision / stop rules
+Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks an adapter, mark degraded, keep other sources, never bypass auth. If webhook secret or workflow permissions absent, stop at `BLOCKED_LIVE` with exact manual setup, not a fictional success. If scheduled runs remain sparse, transparently call service best-effort, not real-time. Do NOT commence Phase 2 before Phase 1 is demonstrably usable.

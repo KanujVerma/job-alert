@@ -1,4 +1,16 @@
-# job-alert
+# Jobbie — product foundation (legacy repository name: job-alert)
+
+> **Status on 2026-11-04:** Jobbie 2.0 is a PLANNED incremental upgrade. The live bot is still the legacy Python GitHub Actions + Discord webhook job monitor. The requested GitHub rename to `KanujVerma/jobbie` requires the owner's Settings action and has NOT been verified. Do not interpret docs/ as deployed features.
+
+**Start here:** [AGENTS.md](AGENTS.md) · [Documentation index](docs/README.md) · [Locked decisions](docs/DECISIONS.md) · [Six-phase roadmap](docs/PHASES.md) · [Phase 1 exact contract](docs/phases/PHASE-1.md) · [Ready-to-paste Phase 1 /code prompt](docs/agent-prompts/PHASE-1-CODE.md).
+
+**Immediate goal:** restore useful full-time new-grad alerts for the existing 13 enabled company sources, with permanent NETWORK PRIORITY labels and no assumed actual referrals. **No AI, private resume, new data source or Cloudflare migration is required for Phase 1.** Later phases progressively add discovery, matching, verified resume tailoring, startup outreach, and application tracking.
+
+**Legacy README below is historical.** Its count of 14 configured/12 enabled is stale; `companies.yaml` contained 15 configured/13 enabled at the foundation audit. Actual runtime behavior is defined by inspected code and tests, not by the future-product documentation.
+
+---
+
+# Legacy job-alert runtime
 
 ## 1. What it does
 
