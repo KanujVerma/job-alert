@@ -99,6 +99,14 @@ class TestTotalFailureIsVisible:
         rc = run_with(make_config("Acme"), {"stub": EmptyAdapter}, company="__missing__")
         assert rc != 0
 
+    def test_returns_nonzero_when_state_is_corrupt(self, tmp_path):
+        state_file = tmp_path / "corrupt_state.json"
+        state_file.write_text("{corrupt state[[")
+        config = make_config("Acme")
+        config.defaults["state_path"] = str(state_file)
+        rc = run_with(config, {"stub": EmptyAdapter})
+        assert rc != 0
+
 
 class TestKnownLimitation:
     def test_adapter_returning_empty_still_counts_as_success(self):

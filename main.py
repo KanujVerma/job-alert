@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from src.config import load_config, validate_config
 from src.adapters import ADAPTER_REGISTRY, browser_required
 from src.storage import (
+    POLICY_VERSION,
+    StateCorruptionError,
     load_state,
     save_state,
     is_first_run,
@@ -19,8 +21,22 @@ from src.storage import (
     mark_cap_suppressed,
     update_last_checked,
     prune_seen_jobs,
+    normalize_url,
+    is_url_alerted,
+    record_alerted_url,
+    is_backfill_pending,
+    mark_backfill_completed,
+    get_backfill_candidates,
+    record_review_job,
+    get_daily_review_digest,
 )
-from src.health import update_health, HEALTH_STALE, HEALTH_RECOVERED
+from src.health import (
+    update_health,
+    HEALTH_STALE,
+    HEALTH_RECOVERED,
+    compute_run_diagnostics,
+    record_run_heartbeat,
+)
 from src.http import HTTPClient
 from src.browser import BrowserClient
 from src.notifier import Notifier
@@ -95,6 +111,7 @@ def cmd_test_discord(args) -> int:
 def do_run(args) -> int:
     load_dotenv()
     logger = logging.getLogger(__name__)
+    run_start = datetime.now(timezone.utc)
 
     try:
         config = load_config(args.config)
@@ -103,8 +120,16 @@ def do_run(args) -> int:
         return 1
 
     state_path = config.defaults.get("state_path", "state/seen_jobs.json")
-    state = load_state(state_path)
+    try:
+        state = load_state(state_path, raise_on_corrupt=True)
+    except StateCorruptionError as e:
+        logger.error(f"Failed to load state: {e}. Aborting run to prevent alert storm.")
+        return 1
+
     first_run = is_first_run(state)
+    is_new_policy_migration = False
+    if not first_run and is_backfill_pending(state, POLICY_VERSION):
+        is_new_policy_migration = True
 
     ttl_days = int(config.defaults.get("first_seen_ttl_days", 180))
     prune_seen_jobs(state, ttl_days, datetime.now(timezone.utc))
@@ -135,23 +160,14 @@ def do_run(args) -> int:
     max_alerts = config.defaults.get("max_alerts_per_run", 25)
     stale_after_hours = float(config.defaults.get("adapter_stale_after_hours", 24))
     alert_count = 0
+    alert_failures = 0
     cap_hit = False
     summary_jobs = []
+    backfill_jobs: list[Job] = []
     any_company_succeeded = False
     companies_attempted = 0
+    company_stats: dict[str, dict] = {}
 
-    # Apply URLs already alerted in THIS run. Two companies can legitimately
-    # carry the same posting: `Microsoft` (eightfold_pcsx) and `Microsoft
-    # Research` overlap on 75 of MSR's 99 listings, which share the PCSX apply
-    # URL. Nothing downstream can collapse them — seen_jobs is keyed per company
-    # and make_job_id namespaces by company + platform, so the two ids differ by
-    # construction and both would alert. The apply URL is the only thing that
-    # identifies the underlying posting, so dedupe on that.
-    #
-    # Run-scoped deliberately: both adapters run in the same pass, so this
-    # catches the real case without adding cross-run state. A posting that
-    # reaches the two adapters on different runs can still double-fire; that is
-    # a narrower window and is noted in docs rather than solved with new state.
     alerted_urls: set[str] = set()
 
     # Determine which companies to process
@@ -182,16 +198,17 @@ def do_run(args) -> int:
 
             fetched = []
             companies_attempted += 1
+            fetch_error: str | None = None
+            adapter_succeeded = False
             try:
                 fetched = list(adapter.fetch())
                 any_company_succeeded = True
+                adapter_succeeded = True
             except Exception as e:
+                fetch_error = str(e)
                 logger.error(f"{cname}: fetch failed: {e}", exc_info=True)
 
-            # Adapter health. Deliberately keyed on the pre-filter count: a healthy
-            # adapter routinely returns postings that all fail the filters, and that
-            # must stay silent. An adapter that raises leaves fetched empty too, so
-            # this one signal covers both a crashing adapter and a silently-empty one.
+            # Adapter health. Keyed on pre-filter count.
             company_state = state["companies"].setdefault(
                 cname, {"last_checked_at": None, "seen_jobs": {}}
             )
@@ -200,21 +217,14 @@ def do_run(args) -> int:
             )
             if verdict and notifier and not getattr(args, "dry_run", False):
                 if verdict == HEALTH_STALE:
-                    # State the observation, not a diagnosis. Verified 2026-08-19:
-                    # Plaid and Oracle both return a well-formed empty result (`[]`
-                    # and `{"items":[],"count":0}`) because they genuinely have no
-                    # open postings — their adapters are fine. Only the silence is a
-                    # fact; "broken" would be a guess, and wrong for those two.
                     sent = notifier.send_summary(
-                        title="🔕 No postings",
+                        title="🗝 No postings",
                         description=(
                             f"**{cname}** has returned no job postings for over "
                             f"{stale_after_hours:.0f}h. Either the site has nothing "
                             f"open, or the adapter is broken — worth a look."
                         ),
                     )
-                    # Only keep the flag if the notice actually landed, so a failed
-                    # send retries next run instead of burning the single alert.
                     if not sent:
                         company_state["health"]["alerted"] = False
                 elif verdict == HEALTH_RECOVERED:
@@ -233,6 +243,7 @@ def do_run(args) -> int:
             review_count = 0
             excluded_count = 0
             filter_reasons = {}
+            loop_now = datetime.now(timezone.utc)
             for job in fetched:
                 filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
                 if filtered_job is not None:
@@ -247,13 +258,29 @@ def do_run(args) -> int:
                 else:
                     if any("needs_review" in r for r in reasons):
                         review_count += 1
+                        record_review_job(state, job, reasons, loop_now)
                     else:
                         excluded_count += 1
                 filter_reasons[job.id] = reasons
 
-            # Classify against first_seen state (also updates last_seen in-memory)
+            # Record per-company stats for health reporting
+            company_stats[cname] = {
+                "status": "failed" if not adapter_succeeded else ("zero" if len(fetched) == 0 else "ok"),
+                "error": fetch_error,
+                "fetched": len(fetched),
+                "matched": len(matched),
+                "review": review_count,
+                "excluded": excluded_count,
+            }
+
+            # Collect bounded backfill candidates if pending migration
+            if is_new_policy_migration:
+                backfill_candidates = get_backfill_candidates(matched, state, loop_now, lookback_days=7)
+                backfill_jobs.extend(backfill_candidates)
+
+            # Classify against first_seen state
             freshness_hours = float(config.filters.get("freshness_hours", 48))
-            now = datetime.now(timezone.utc)
+            now = loop_now
             alert_candidates = classify_jobs(
                 matched, cname, state, freshness_hours, now,
                 verbose=getattr(args, "verbose", False),
@@ -275,24 +302,24 @@ def do_run(args) -> int:
                                     description=f"Max alerts per run ({max_alerts}) reached. Remaining jobs silenced.",
                                 )
                         else:
-                            url_key = (job.url or "").strip().rstrip("/").lower()
-                            if url_key and url_key in alerted_urls:
+                            url_key = normalize_url(job.url)
+                            if url_key and (url_key in alerted_urls or is_url_alerted(job.url, state)):
                                 logger.info(
-                                    "%s: %r already alerted this run under another "
-                                    "company (%s) — not sending twice.",
+                                    "%s: %r already alerted under another company or prior run (%s) — not sending twice.",
                                     cname, job.title, job.url,
                                 )
-                                # Recorded as alerted so it is not retried next
-                                # run; the posting genuinely did reach Discord.
                                 actually_alerted.append(job)
                             else:
                                 sent = notifier.send_job_alert(job) if notifier else True
                                 if sent:
                                     if url_key:
                                         alerted_urls.add(url_key)
+                                        record_alerted_url(job.url, cname, job.id, state, now)
                                     alert_count += 1
                                     alerted += 1
                                     actually_alerted.append(job)
+                                else:
+                                    alert_failures += 1
                     else:
                         cap_suppressed_jobs.append(job)
                 elif summary_mode:
@@ -323,7 +350,7 @@ def do_run(args) -> int:
         if browser is not None:
             browser.close()
 
-    # Summary mode: send one embed
+    # Summary mode: send one embed (legacy first run)
     if summary_mode and summary_jobs and notifier and not getattr(args, "dry_run", False):
         desc_lines = [f"Found {len(summary_jobs)} new jobs on first run:"]
         for j in summary_jobs[:20]:
@@ -333,8 +360,88 @@ def do_run(args) -> int:
             description="\n".join(desc_lines),
         )
 
+    # Policy backfill summary (Jobbie 2.1 migration first run)
+    if is_new_policy_migration:
+        unique_backfill: list[Job] = []
+        seen_bf_urls: set[str] = set()
+        for j in backfill_jobs:
+            nurl = normalize_url(j.url)
+            if nurl and nurl in seen_bf_urls:
+                continue
+            if nurl:
+                seen_bf_urls.add(nurl)
+            unique_backfill.append(j)
+
+        if not getattr(args, "dry_run", False) and any_company_succeeded:
+            if unique_backfill and notifier:
+                total_bf = len(unique_backfill)
+                desc_lines = [
+                    f"Found {total_bf} eligible jobs from the last 7 days across monitored sites (showing {min(10, total_bf)}):"
+                ]
+                for j in unique_backfill[:10]:
+                    loc_str = f" ({j.location})" if j.location else ""
+                    desc_lines.append(f"• [{j.company}: {j.title}]({j.url}){loc_str}")
+                notifier.send_summary(
+                    title="📋 Phase 1 Policy Backfill (Last 7 Days)",
+                    description="\n".join(desc_lines),
+                )
+            mark_backfill_completed(state, POLICY_VERSION, datetime.now(timezone.utc))
+            for j in unique_backfill:
+                mark_alerted([j], j.company, state)
+                record_alerted_url(j.url, j.company, j.id, state, datetime.now(timezone.utc))
+        elif getattr(args, "dry_run", False):
+            print(
+                f"Migration backfill preview: found {len(unique_backfill)} eligible jobs from last 7 days "
+                f"(would send summary capped at 10)."
+            )
+
+    # Daily review digest
+    if notifier and not getattr(args, "dry_run", False):
+        digest_res = get_daily_review_digest(state, datetime.now(timezone.utc), cap=10)
+        if digest_res is not None:
+            review_items, total_rev = digest_res
+            if review_items:
+                lines = [f"Found {total_rev} positions needing review (showing up to {len(review_items)}):"]
+                for item in review_items:
+                    reasons_str = ", ".join(item.get("reasons", []))
+                    lines.append(f"• [{item.get('company')}: {item.get('title')}]({item.get('url')}) — `{reasons_str}`")
+                sent = notifier.send_summary(
+                    title="📋 Daily Review Digest",
+                    description="\n".join(lines),
+                )
+                if sent:
+                    state.setdefault("review_digest", {})["last_sent_at"] = datetime.now(timezone.utc).isoformat()
+
     if first_run and any_company_succeeded:
         mark_first_run_complete(state)
+
+    # Compute diagnostics and record heartbeat
+    run_finish = datetime.now(timezone.utc)
+    cadence_min = int(config.defaults.get("schedule_minutes", 15))
+    diag = compute_run_diagnostics(
+        state, run_start, run_finish, cadence_min, company_stats, alert_count, alert_failure_count=alert_failures
+    )
+    record_run_heartbeat(state, diag)
+    gap_display = f"{diag['gap_since_last_run_seconds']}s" if diag['gap_since_last_run_seconds'] is not None else "initial"
+    logger.info(
+        "Run heartbeat: duration=%.2fs, gap=%s, scheduler_gap=%s, adapters=%d/%d (zero=%d), matched=%d, review=%d, excluded=%d, alerted=%d",
+        diag["duration_seconds"],
+        gap_display,
+        diag["scheduler_gap_detected"],
+        diag["adapters_succeeded"],
+        diag["adapters_attempted"],
+        diag["adapters_zero_results"],
+        diag["accepted_count"],
+        diag["review_count"],
+        diag["excluded_count"],
+        diag["alert_success_count"],
+    )
+    if diag["scheduler_gap_detected"]:
+        gap_mins = diag["gap_since_last_run_seconds"] / 60.0
+        logger.warning(
+            "Scheduler gap detected! Elapsed since last run: %.1f minutes (expected ~%d min). Actions schedule drift observed.",
+            gap_mins, cadence_min,
+        )
 
     if not getattr(args, "dry_run", False):
         try:
@@ -343,14 +450,7 @@ def do_run(args) -> int:
             logger.error(f"Failed to save state: {e}")
             return 1
 
-    # Backstop against silent death. Without this the run exits 0 even when every
-    # site was unreachable, so a totally broken bot looks identical to a quiet one
-    # and nobody finds out until they notice the alerts stopped.
-    #
-    # Deliberately narrow: it fires only when NOTHING worked. An adapter that
-    # degrades gracefully to [] still counts as a success here, so this does not
-    # catch a single dead adapter — per-company health reporting is that fix, and
-    # it belongs on Discord rather than in a red cron that runs 96 times a day.
+    # Backstop against silent death.
     if not any_company_succeeded:
         if companies_attempted == 0:
             logger.error(

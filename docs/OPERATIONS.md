@@ -51,5 +51,29 @@ Workflow path `.github/workflows/job-alerts.yml`; configured cron `*/15 * * * *`
 ## Rename migration
 Follow `RENAME.md` after owner performs GitHub Settings rename; do not create replacement repo. Verify actual repo ID and job workflow, update local origin and external references. The planned target name itself is `jobbie`.
 
+## Phase 1 Release Addendum (Jobbie 2.1)
+- **Release Status:** Jobbie 2.1 is deployed.
+- **Audience & Invariants:**
+  - Targeted exclusively at single owner (December 2026 CS graduate seeking full-time US software engineering roles starting January 2027 onward).
+  - Internship and co-op postings are 100% excluded.
+  - Exactly 13 enabled employer entries in `companies.yaml` carry permanent `network_priority: true`, `cohort: original_2026_11_04`, and `referral_status: unconfirmed`.
+  - 2 disabled companies (`Snowflake`, `Applied Digital`) remain unflagged.
+  - Zero assumed referrals; unverified salaries remain unmentioned; location priority (`Job.priority`) remains separate from network priority.
+- **State Schema & Migration (`2026-11-newgrad-v1`):**
+  - Version 2 format is preserved with additive fields: `policy_version`, `migrations`, `alerted_urls`, `review_queue`, and `heartbeat_history`.
+  - State corruption detection: `StateCorruptionError` is raised on malformed state files, failing safe to prevent mass re-alert storms.
+  - Bounded Backfill: First run under `2026-11-newgrad-v1` identifies source-verified postings from the last 7 days and delivers a single Discord summary embed capped at 10 items instead of firehosing individual alerts.
+  - Cross-Run URL Deduplication: Normalized URLs (stripped of tracking tokens and fragments) are tracked in `state["alerted_urls"]` to suppress duplicate alerts across multiple sources (e.g. Microsoft and Microsoft Research) and across subsequent runs.
+  - Review Queue & Daily Digest: Ambiguous roles requiring review are stored in `state["review_queue"]` and batched into a daily summary digest (capped at 10) instead of being dropped silently.
+- **Scheduler Reality & Cron Drift:**
+  - GitHub Actions runs the workflow on `cron: '*/15 * * * *'`.
+  - Public repository runners experience significant queue latency; actual intervals between runs regularly stretch from 15 minutes to multiple hours during peak GitHub Actions load.
+  - Run heartbeats record start/finish, elapsed duration, and detect scheduler gaps (>45 minutes), logging clear warnings without promising sub-15-minute real-time latency.
+  - Manual Trigger: Trigger an immediate scrape pass using GitHub Actions UI or `gh workflow run job-alerts.yml`.
+- **Rollback Protocol:**
+  - Set `filters: { mode: "legacy" }` in `companies.yaml`.
+  - The system will immediately revert to legacy keyword/internship filtering.
+  - State remains backward-compatible: seen jobs and migration metadata are preserved without requiring state deletion or re-alerting.
+
 ## Subsequent phase releases
 Every new provider/feature behind flag and isolated from legacy polling. P2 catalogue dual-write and 72h shadow; P3 command+upload authorized test; P4 owner-approved sample documents; P5 exact approved outbound test; P6 confirmed application/reminder. Before cutover, validate free quota/pricing and rollback. Update docs from actual deployment, not hypothetical diagrams.
