@@ -24,6 +24,10 @@ class Job:
     priority: str   # "preferred" | "normal"
     matched_keywords: tuple[str, ...]  # use tuple so dataclass stays hashable/frozen
     verdict: Any = None
+    network_priority: bool = False
+    cohort: str = "discovered"  # "original_2026_11_04" | "discovered"
+    referral_status: str = "unavailable"  # "unconfirmed" | "unavailable" | etc.
+    salary: str | None = None
 
     def __post_init__(self):
         if self.role_type not in ROLE_TYPES:

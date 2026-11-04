@@ -225,6 +225,10 @@ def do_run(args) -> int:
 
             # Apply filter pipeline
             source_config = company_cfg.get("config", {})
+            is_network = bool(company_cfg.get("network_priority", False))
+            cohort = str(company_cfg.get("cohort", "discovered"))
+            referral_status = str(company_cfg.get("referral_status", "unconfirmed" if is_network else "unavailable"))
+
             matched = []
             review_count = 0
             excluded_count = 0
@@ -232,6 +236,13 @@ def do_run(args) -> int:
             for job in fetched:
                 filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
                 if filtered_job is not None:
+                    import dataclasses
+                    filtered_job = dataclasses.replace(
+                        filtered_job,
+                        network_priority=is_network,
+                        cohort=cohort,
+                        referral_status=referral_status,
+                    )
                     matched.append(filtered_job)
                 else:
                     if any("needs_review" in r for r in reasons):
