@@ -1,20 +1,29 @@
-# Jobbie — product foundation (legacy repository name: job-alert)
+# Jobbie — Career Opportunity Engine (Repository: KanujVerma/jobbie)
 
-> **Status on 2026-11-04:** Jobbie 2.0 is a PLANNED incremental upgrade. The live bot is still the legacy Python GitHub Actions + Discord webhook job monitor. The requested GitHub rename to `KanujVerma/jobbie` requires the owner's Settings action and has NOT been verified. Do not interpret docs/ as deployed features.
+> **Status on 2026-11-04:** **Jobbie 2.1 (Phase 1) is released.** Monitors 15 configured career sites (13 enabled with verified `NETWORK PRIORITY`, 2 disabled) for U.S.-based full-time early-career software engineering roles for December 2026 CS graduates (January 2027 start onward). Strictly excludes internships and co-ops.
 
-**Start here:** [AGENTS.md](AGENTS.md) · [Documentation index](docs/README.md) · [Locked decisions](docs/DECISIONS.md) · [Six-phase roadmap](docs/PHASES.md) · [Phase 1 exact contract](docs/phases/PHASE-1.md) · [Ready-to-paste Phase 1 /code prompt](docs/agent-prompts/PHASE-1-CODE.md).
-
-**Immediate goal:** restore useful full-time new-grad alerts for the existing 13 enabled company sources, with permanent NETWORK PRIORITY labels and no assumed actual referrals. **No AI, private resume, new data source or Cloudflare migration is required for Phase 1.** Later phases progressively add discovery, matching, verified resume tailoring, startup outreach, and application tracking.
-
-**Legacy README below is historical.** Its count of 14 configured/12 enabled is stale; `companies.yaml` contained 15 configured/13 enabled at the foundation audit. Actual runtime behavior is defined by inspected code and tests, not by the future-product documentation.
+**Documentation Index:**
+- [AGENTS.md](AGENTS.md) · [Documentation index](docs/README.md) · [Locked decisions](docs/DECISIONS.md) · [Six-phase roadmap](docs/PHASES.md)
+- [Phase 1 executable contract](docs/phases/PHASE-1.md) · [Operations Runbook](docs/OPERATIONS.md) · [Canonical Contracts](docs/CONTRACTS.md)
 
 ---
 
-# Legacy job-alert runtime
+## 1. What Jobbie 2.1 Does
 
-## 1. What it does
+- **Target Persona:** Single candidate, December 2026 Computer Science graduate seeking full-time U.S. software engineering positions (starting January 2027 onward).
+- **Zero Internships / Co-ops:** Pure deterministic classifier strictly eliminates all internships, co-ops, senior/lead roles, and non-US positions.
+- **Network Priority:** The 13 enabled target companies carry permanent `⭐ NETWORK PRIORITY` tags. Unverified referral contacts and unverified salaries remain strictly unassumed.
+- **State Migration & Deduplication:** Versioned state schema (`2026-11-newgrad-v1`), safe 7-day bounded first-run backfill summary, cross-run canonical URL deduplication, review queue for ambiguous roles, and scheduler gap observability.
+- **Rollback Safety:** If needed, setting `filters.mode: legacy` returns to previous alert behavior while preserving all historical state.
 
-Monitors 14 configured company career sites (12 currently enabled — see section 12) every 15 minutes for U.S.-based internships, new-grad, and entry-level tech roles. Sends Discord webhook alerts when new postings are detected. Runs free on GitHub Actions with state committed back to the repo to avoid duplicates.
+---
+
+## 2. Monitored Companies (15 Configured, 13 Enabled)
+
+- **Network Priority (13 Enabled):**
+  - Amazon, Apple, Cisco, Datadog, IBM, Micron, Microsoft, Microsoft Research, MongoDB, Oracle, Plaid, Salesforce, Workday.
+- **Disabled (2 Configured):**
+  - Snowflake, Applied Digital (kept in configuration without network tags).
 
 ---
 

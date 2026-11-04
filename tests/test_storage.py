@@ -425,3 +425,217 @@ class TestLoadStateMigration:
         path = str(tmp_path / "nonexistent.json")
         state = load_state(path)
         assert state["version"] == 2
+
+
+# ---------------------------------------------------------------------------
+# P1-C: Policy Migration, Corruption Handling, Deduplication, & Backfill
+# ---------------------------------------------------------------------------
+
+from src.storage import (
+    POLICY_VERSION,
+    StateCorruptionError,
+    _empty_state,
+    migrate_state,
+    normalize_url,
+    is_url_alerted,
+    record_alerted_url,
+    is_backfill_pending,
+    mark_backfill_completed,
+    get_backfill_candidates,
+    record_review_job,
+    get_daily_review_digest,
+)
+
+
+class TestStateCorruption:
+    def test_corrupt_json_raises_corruption_error(self, tmp_path):
+        path = tmp_path / "corrupt.json"
+        path.write_text("{invalid json{{")
+        with pytest.raises(StateCorruptionError, match="Corrupt state file"):
+            load_state(str(path), raise_on_corrupt=True)
+
+    def test_non_dict_json_raises_corruption_error(self, tmp_path):
+        path = tmp_path / "array.json"
+        path.write_text("[1, 2, 3]")
+        with pytest.raises(StateCorruptionError, match="did not contain a JSON object"):
+            load_state(str(path), raise_on_corrupt=True)
+
+    def test_invalid_companies_raises_corruption_error(self, tmp_path):
+        path = tmp_path / "bad_companies.json"
+        path.write_text('{"version": 2, "companies": "not_a_dict"}')
+        with pytest.raises(StateCorruptionError, match="invalid 'companies' field"):
+            load_state(str(path), raise_on_corrupt=True)
+
+    def test_missing_file_never_raises(self, tmp_path):
+        path = str(tmp_path / "missing.json")
+        state = load_state(path, raise_on_corrupt=True)
+        assert state["version"] == 2
+        assert state["policy_version"] == POLICY_VERSION
+
+
+class TestPolicyMigration:
+    def test_migrate_state_sets_policy_version_and_structures(self):
+        v2_raw = {
+            "version": 2,
+            "first_run_completed_at": "2026-05-01T00:00:00+00:00",
+            "companies": {
+                "Micron": {
+                    "last_checked_at": None,
+                    "seen_jobs": {"JR123": {"first_seen": "2026-05-01T00:00:00+00:00", "last_seen": "2026-05-01T00:00:00+00:00", "alerted": True}},
+                }
+            },
+        }
+        migrated_state, did_migrate = migrate_state(v2_raw)
+        assert did_migrate is True
+        assert migrated_state["policy_version"] == POLICY_VERSION
+        assert POLICY_VERSION in migrated_state["migrations"]
+        assert migrated_state["migrations"][POLICY_VERSION]["backfill_completed"] is False
+        assert "alerted_urls" in migrated_state
+        assert "review_queue" in migrated_state
+        # Preserves historical seen_jobs
+        assert "JR123" in migrated_state["companies"]["Micron"]["seen_jobs"]
+        assert migrated_state["companies"]["Micron"]["seen_jobs"]["JR123"]["alerted"] is True
+
+    def test_migrate_state_is_idempotent(self):
+        state = _empty_state()
+        migrate_state(state)
+        # Calling migrate_state again
+        state2, did_migrate2 = migrate_state(state)
+        assert did_migrate2 is False
+        assert state2["policy_version"] == POLICY_VERSION
+
+
+class TestURLDeduplication:
+    def test_normalize_url_strips_tracking_and_normalizes(self):
+        url1 = "https://jobs.example.com/careers/job/123/?utm_source=linkedin&utm_medium=feed#overview"
+        url2 = "https://jobs.example.com/careers/job/123?ref=social&lever-source=post"
+        assert normalize_url(url1) == "https://jobs.example.com/careers/job/123"
+        assert normalize_url(url2) == "https://jobs.example.com/careers/job/123"
+
+    def test_is_url_alerted_and_record(self):
+        state = _empty_state()
+        url = "https://careers.microsoft.com/us/en/job/1812345/Software-Engineer-New-Grad?utm_source=board"
+        assert is_url_alerted(url, state) is False
+
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        record_alerted_url(url, "Microsoft", "ms::pcsx::1812345", state, now)
+
+        # Exact match and match with different tracking parameters
+        assert is_url_alerted(url, state) is True
+        assert is_url_alerted("https://careers.microsoft.com/us/en/job/1812345/Software-Engineer-New-Grad", state) is True
+        # Cross-source check (e.g. MSR pointing to same requisition)
+        assert is_url_alerted("https://careers.microsoft.com/us/en/job/1812345/Software-Engineer-New-Grad?source=msr", state) is True
+
+
+class TestBoundedBackfill:
+    def test_backfill_completion_lifecycle(self):
+        state = _empty_state()
+        migrate_state(state)
+        assert is_backfill_pending(state) is True
+
+        mark_backfill_completed(state)
+        assert is_backfill_pending(state) is False
+
+    def test_get_backfill_candidates_seven_day_window(self):
+        import dataclasses
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        state = _empty_state()
+        migrate_state(state)
+
+        # Job 1: posted 3 days ago -> eligible candidate
+        job_recent = dataclasses.replace(
+            make_job("job_recent"),
+            posted_at=now - timedelta(days=3),
+            url="https://example.com/job/recent",
+        )
+
+        # Job 2: posted 10 days ago -> outside 7-day window
+        job_old = dataclasses.replace(
+            make_job("job_old"),
+            posted_at=now - timedelta(days=10),
+            url="https://example.com/job/old",
+        )
+
+        # Job 3: recent but already alerted URL
+        job_alerted = dataclasses.replace(
+            make_job("job_alerted"),
+            posted_at=now - timedelta(days=2),
+            url="https://example.com/job/alerted",
+        )
+        record_alerted_url(job_alerted.url, "Acme", job_alerted.id, state, now)
+
+        candidates = get_backfill_candidates([job_recent, job_old, job_alerted], state, now, lookback_days=7)
+        assert len(candidates) == 1
+        assert candidates[0].id == "job_recent"
+
+
+class TestReviewQueueAndDigest:
+    def test_record_and_digest(self):
+        state = _empty_state()
+        migrate_state(state)
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+
+        job = make_job("rev_1")
+        record_review_job(state, job, ["needs_review: generic software engineer"], now)
+
+        assert "rev_1" in state["review_queue"]
+        assert state["review_queue"]["rev_1"]["title"] == job.title
+
+        # First digest should return items
+        digest_res = get_daily_review_digest(state, now, cap=10)
+        assert digest_res is not None
+        items, count = digest_res
+        assert count == 1
+        assert items[0]["company"] == "Acme"
+
+        # Mark digest sent
+        state["review_digest"]["last_sent_at"] = now.isoformat()
+
+        # Called 5 hours later -> should be throttled (returns None)
+        assert get_daily_review_digest(state, now + timedelta(hours=5)) is None
+
+        # Called 25 hours later -> returns digest
+        later = now + timedelta(hours=25)
+        digest_res2 = get_daily_review_digest(state, later)
+        assert digest_res2 is not None
+
+
+class TestPruneExtended:
+    def test_prunes_alerted_urls_and_review_queue(self):
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        old_ts = (now - timedelta(days=200)).isoformat()
+        recent_ts = (now - timedelta(days=10)).isoformat()
+
+        state = _empty_state()
+        state["alerted_urls"] = {
+            "https://example.com/old": {"alerted_at": old_ts, "company": "A", "job_id": "1"},
+            "https://example.com/recent": {"alerted_at": recent_ts, "company": "A", "job_id": "2"},
+        }
+        state["review_queue"] = {
+            "old_rev": {"last_seen": old_ts, "company": "A", "title": "Old"},
+            "recent_rev": {"last_seen": recent_ts, "company": "A", "title": "Recent"},
+        }
+
+        prune_seen_jobs(state, ttl_days=180, now=now)
+
+        assert "https://example.com/old" not in state["alerted_urls"]
+        assert "https://example.com/recent" in state["alerted_urls"]
+        assert "old_rev" not in state["review_queue"]
+        assert "recent_rev" in state["review_queue"]
+
+
+class TestRollbackCompatibility:
+    def test_legacy_mode_compatible_with_versioned_state(self):
+        """Verifies rollback rule: state with policy_version remains fully readable and functional in legacy mode."""
+        state = _empty_state()
+        migrate_state(state)
+        # Add seen jobs
+        job = make_job("job_legacy")
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        candidates = classify_jobs([job], "Acme", state, freshness_hours=48, now=now)
+        assert len(candidates) == 1
+        mark_alerted(candidates, "Acme", state)
+        assert state["companies"]["Acme"]["seen_jobs"]["job_legacy"]["alerted"] is True
+        # Re-running classify suppresses already alerted job as expected
+        candidates2 = classify_jobs([job], "Acme", state, freshness_hours=48, now=now)
+        assert len(candidates2) == 0
