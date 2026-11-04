@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 ROLE_TYPES = {"internship", "new-grad", "entry-level", "unknown"}
 PRIORITY_TYPES = {"preferred", "normal"}
@@ -22,6 +23,7 @@ class Job:
     role_type: str  # "internship" | "new-grad" | "entry-level" | "unknown"
     priority: str   # "preferred" | "normal"
     matched_keywords: tuple[str, ...]  # use tuple so dataclass stays hashable/frozen
+    verdict: Any = None
 
     def __post_init__(self):
         if self.role_type not in ROLE_TYPES:

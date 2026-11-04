@@ -13,12 +13,10 @@ defaults:
   adapter_stale_after_hours: 24
 
 filters:
-  # false since 2026-08-20: also alert on new-grad and early-career full-time
-  # roles, not just confirmed internships. Measured before flipping, over the
-  # whole ~9,000-posting corpus with freshness disabled: this lets through 3
-  # additional postings, all genuinely early-career, none senior. The exclude,
-  # tech-role, location and freshness layers are unchanged and still do the
-  # filtering — only the final internship gate moved.
+  # Mode 'new_grad_full_time' (Jobbie 2.1): deterministic new-grad eligibility engine.
+  # Set to 'legacy' to roll back to Jobbie 1.x keyword-based pipeline.
+  mode: new_grad_full_time
+  # Deprecated in Jobbie 2.1; retained for legacy rollback compatibility:
   internship_only: false
   freshness_hours: 48     # drop jobs posted more than 48h ago (skipped if posted_at unknown)
   early_career_keywords:
@@ -243,7 +241,7 @@ companies:
     adapter: amazon_jobs
     enabled: true
     config:
-      include_internship_search: true
+      include_internship_search: false
       base_categories:
         - Software Development
         - Data Science
@@ -263,9 +261,10 @@ companies:
     enabled: true
     config:
       sources:
-        - kind: internships
-          team: internships-STDNT-INTRN
-          require_early_career: false
+        # Phase 1: disabled internship source in favor of full-time new grad postings
+        # - kind: internships
+        #   team: internships-STDNT-INTRN
+        #   require_early_career: false
         - kind: general
           require_early_career: true
 

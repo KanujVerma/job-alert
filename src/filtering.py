@@ -149,58 +149,99 @@ def filter_freshness(job: Job, filters: dict) -> FilterResult:
     return FilterResult(True, f"fresh: {age_hours:.0f}h old")
 
 
+def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
+    """Check a single location string. Returns (is_us, reason) where is_us can be True, False, or None (ambiguous)."""
+    loc_lower = loc_str.lower().strip()
+    loc_parts = [p.strip() for p in loc_lower.split(",")]
+
+    # 2-letter ISO code in "city, region, COUNTRY" (3+ parts, to avoid "Denver, CO")
+    if len(loc_parts) >= 3 and len(loc_parts[-1]) == 2 and loc_parts[-1].isalpha():
+        last = loc_parts[-1]
+        if last == "us":
+            return True, "US country code"
+        if last in _NON_US_COUNTRY_CODES:
+            return False, f"non-US country code: {last.upper()}"
+
+    # 3-letter ISO code in "city, COUNTRY" (2+ parts)
+    if len(loc_parts) >= 2 and len(loc_parts[-1]) == 3 and loc_parts[-1].isalpha():
+        last3 = loc_parts[-1]
+        if last3 == "usa":
+            return True, "US country code USA"
+        if last3 in _NON_US_COUNTRY_CODES_3:
+            return False, f"non-US country code: {last3.upper()}"
+
+    # Explicit US signals
+    for us_signal in ("united states", "usa", "u.s."):
+        if us_signal in loc_lower:
+            return True, f"US confirmed: {us_signal}"
+
+    # Non-US signals
+    for signal in NON_US_SIGNALS:
+        pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
+        if re.search(pattern, loc_lower):
+            return False, f"non-US location: {signal}"
+
+    # US tech cities
+    for city in US_TECH_CITIES:
+        if city in loc_lower:
+            return True, f"US city match: {city}"
+
+    # US state codes
+    for code in US_STATE_CODES:
+        pattern = r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])"
+        if re.search(pattern, loc_str):
+            return True, f"US state code: {code}"
+
+    return None, "ambiguous"
+
+
 def filter_location(job: Job, filters: dict) -> FilterResult:
-    """Step 1: Location filter."""
+    """Step 1: Location filter.
+
+    Parses multi-location postings (joined by ';') individually so that a legitimate
+    US option is never suppressed just because the same posting also lists non-US offices.
+    """
     location_lower = (job.location or "").lower()
     raw = job.raw_text.lower() if job.raw_text else ""
     combined = f"{location_lower} {raw}"
 
-    # Check NON_US_SIGNALS first (word-boundary match)
-    for signal in NON_US_SIGNALS:
-        pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
-        if re.search(pattern, combined):
-            return FilterResult(False, f"non-US location: {signal}")
+    sub_locations = [s.strip() for s in location_lower.split(";") if s.strip()]
 
-    # ISO country code checks, applied to each location SEPARATELY.
-    #
-    # A posting open in several places arrives as one ";"-joined string, and
-    # splitting that on commas treats the whole thing as a single address. Seven
-    # 2-letter codes are both a US state and a foreign country — CA California/
-    # Canada, CO Colorado/Colombia, DE Delaware/Germany, IL Illinois/Israel,
-    # IN Indiana/India, ID Idaho/Indonesia, AR Arkansas/Argentina — so
-    # "Redmond, WA; Mountain View, CA" split into three comma-parts ended in
-    # "ca" and California, the largest US tech market, was rejected as Canadian.
-    #
-    # Splitting on ";" first is what makes the "3+ parts" guard mean what it
-    # says. Each real address is judged on its own, so "Mountain View, CA" stays
-    # a 2-part US city while "Noida, Uttar Pradesh, IN" stays a 3-part foreign
-    # one. Do NOT instead exempt the ambiguous codes from the country table —
-    # that lets genuine Noida/Bogota postings through as Indiana and Colorado.
-    for sub_location in [s.strip() for s in location_lower.split(";") if s.strip()]:
-        loc_parts = [p.strip() for p in sub_location.split(",")]
+    if sub_locations:
+        us_reason = None
+        non_us_reason = None
+        for sub in sub_locations:
+            is_us, reason = _check_single_location(sub)
+            if is_us is True:
+                us_reason = reason
+                break
+            elif is_us is False and non_us_reason is None:
+                non_us_reason = reason
 
-        # 2-letter ISO code in "city, region, COUNTRY" (3+ parts, to avoid "Denver, CO")
-        if len(loc_parts) >= 3 and len(loc_parts[-1]) == 2 and loc_parts[-1].isalpha():
-            last = loc_parts[-1]
-            if last == "us":
-                return FilterResult(True, "US country code")
-            if last in _NON_US_COUNTRY_CODES:
-                return FilterResult(False, f"non-US country code: {last.upper()}")
+        if us_reason:
+            return FilterResult(True, us_reason)
+        if non_us_reason and len(sub_locations) == 1:
+            return FilterResult(False, non_us_reason)
+        if non_us_reason and not us_reason:
+            # Check if raw text provides a US signal
+            for us_signal in ("united states", "usa", "u.s."):
+                if us_signal in combined:
+                    return FilterResult(True, f"US confirmed: {us_signal}")
+            return FilterResult(False, non_us_reason)
 
-        # 3-letter ISO code in "city, COUNTRY" (2+ parts — no US state uses 3 letters)
-        if len(loc_parts) >= 2 and len(loc_parts[-1]) == 3 and loc_parts[-1].isalpha():
-            last3 = loc_parts[-1]
-            if last3 == "usa":
-                return FilterResult(True, "US country code USA")
-            if last3 in _NON_US_COUNTRY_CODES_3:
-                return FilterResult(False, f"non-US country code: {last3.upper()}")
+    # Check non-US signals across combined text if no sublocations found
+    if not sub_locations:
+        for signal in NON_US_SIGNALS:
+            pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
+            if re.search(pattern, combined):
+                return FilterResult(False, f"non-US location: {signal}")
 
     # Explicit US signals
     for us_signal in ("united states", "usa", "u.s.", "remote"):
         if us_signal in combined:
             return FilterResult(True, f"US confirmed: {us_signal}")
 
-    # US state codes (2-letter word-boundary, case-insensitive to match lowercased strings)
+    # US state codes
     for code in US_STATE_CODES:
         pattern = r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])"
         if re.search(pattern, location_lower, re.IGNORECASE) or re.search(pattern, raw, re.IGNORECASE):
@@ -211,8 +252,13 @@ def filter_location(job: Job, filters: dict) -> FilterResult:
         if city in combined:
             return FilterResult(True, f"US city match: {city}")
 
-    # Non-empty but unrecognized locations are passed through rather than dropped,
-    # to avoid false negatives (e.g. "Hybrid" or vague office names).
+    # Check non-US signals in raw text as backstop
+    for signal in NON_US_SIGNALS:
+        pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
+        if re.search(pattern, combined):
+            return FilterResult(False, f"non-US location: {signal}")
+
+    # Non-empty but unrecognized locations are passed through rather than dropped
     return FilterResult(True, "location ambiguous")
 
 
@@ -350,16 +396,60 @@ def label_job(job: Job, filters: dict, location_ambiguous: bool) -> Job:
 # Pipeline
 # ---------------------------------------------------------------------------
 
-def apply_filter_pipeline(
+def _apply_new_grad_filter_pipeline(
     job: Job,
     filters: dict,
     source_config: dict,
 ) -> tuple[Job | None, list[str]]:
-    """
-    Run all 6 filter steps. Returns (filtered_job, reasons).
-    filtered_job is None if the job was dropped.
-    reasons is a list of strings explaining each step outcome (for --verbose logging).
-    """
+    reasons = []
+
+    # Step 0: Freshness
+    result = filter_freshness(job, filters)
+    reasons.append(f"freshness: {result.reason}")
+    if not result.passes:
+        return None, reasons
+
+    # Step 1: Location
+    result = filter_location(job, filters)
+    reasons.append(f"location: {result.reason}")
+    if not result.passes:
+        return None, reasons
+    location_ambiguous = "ambiguous" in result.reason
+
+    # Step 2: Deterministic eligibility evaluation
+    from src.eligibility import classify_eligibility
+    verdict = classify_eligibility(job, filters)
+    reasons.append(f"eligibility: {verdict.status}: {', '.join(verdict.reasons)}")
+
+    # Excluded jobs are dropped
+    if verdict.status == "excluded":
+        return None, reasons
+
+    # Needs review jobs are recorded in reasons and logged, but silenced from individual job alerts
+    if verdict.status == "needs_review":
+        return None, reasons
+
+    # Step 3: Label job for confirmed eligible role
+    labelled = label_job(job, filters, location_ambiguous)
+    role_type = labelled.role_type
+    if verdict.career_level == "new_grad":
+        role_type = "new-grad"
+    elif verdict.career_level in ("entry_level", "junior"):
+        role_type = "entry-level"
+    elif role_type == "unknown":
+        role_type = "new-grad"
+
+    labelled = dataclasses.replace(labelled, role_type=role_type, verdict=verdict)
+    reasons.append(f"label: role_type={labelled.role_type} priority={labelled.priority}")
+
+    return labelled, reasons
+
+
+def _apply_legacy_filter_pipeline(
+    job: Job,
+    filters: dict,
+    source_config: dict,
+) -> tuple[Job | None, list[str]]:
     reasons = []
 
     # Step 0: Freshness
@@ -409,6 +499,27 @@ def apply_filter_pipeline(
         return None, reasons
 
     return labelled, reasons
+
+
+def apply_filter_pipeline(
+    job: Job,
+    filters: dict,
+    source_config: dict,
+) -> tuple[Job | None, list[str]]:
+    """
+    Run filter steps. Returns (filtered_job, reasons).
+    filtered_job is None if the job was dropped.
+    reasons is a list of strings explaining each step outcome (for --verbose logging).
+    """
+    if filters.get("mode") == "new_grad_full_time":
+        return _apply_new_grad_filter_pipeline(job, filters, source_config)
+    return _apply_legacy_filter_pipeline(job, filters, source_config)
+
+
+def classify_job_eligibility(job: Job, filters: dict | None = None):
+    """Helper to classify eligibility directly."""
+    from src.eligibility import classify_eligibility
+    return classify_eligibility(job, filters)
 
 
 # ---------------------------------------------------------------------------
