@@ -226,11 +226,18 @@ def do_run(args) -> int:
             # Apply filter pipeline
             source_config = company_cfg.get("config", {})
             matched = []
+            review_count = 0
+            excluded_count = 0
             filter_reasons = {}
             for job in fetched:
                 filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
                 if filtered_job is not None:
                     matched.append(filtered_job)
+                else:
+                    if any("needs_review" in r for r in reasons):
+                        review_count += 1
+                    else:
+                        excluded_count += 1
                 filter_reasons[job.id] = reasons
 
             # Classify against first_seen state (also updates last_seen in-memory)
@@ -286,10 +293,17 @@ def do_run(args) -> int:
             update_last_checked(cname, state, now)
 
             if getattr(args, "verbose", False):
-                print(
-                    f"{cname}: fetched={len(fetched)} matched={len(matched)} "
-                    f"candidates={len(alert_candidates)} alerted={alerted}"
-                )
+                if config.filters.get("mode") == "new_grad_full_time":
+                    print(
+                        f"{cname}: fetched={len(fetched)} matched={len(matched)} "
+                        f"review={review_count} excluded={excluded_count} "
+                        f"candidates={len(alert_candidates)} alerted={alerted}"
+                    )
+                else:
+                    print(
+                        f"{cname}: fetched={len(fetched)} matched={len(matched)} "
+                        f"candidates={len(alert_candidates)} alerted={alerted}"
+                    )
 
             # Polite delay between companies
             http.polite_delay(min_delay, max_delay)
