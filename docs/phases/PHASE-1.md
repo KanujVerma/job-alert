@@ -74,3 +74,28 @@ Need review tier must appear in a *bounded, labeled summary* or review log, neve
 
 ## Phase 1 release decision / stop rules
 Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks an adapter, mark degraded, keep other sources, never bypass auth. If webhook secret or workflow permissions absent, stop at `BLOCKED_LIVE` with exact manual setup, not a fictional success. If scheduled runs remain sparse, transparently call service best-effort, not real-time. Do NOT commence Phase 2 before Phase 1 is demonstrably usable.
+
+## Verification and Sign-Off Evidence (Jobbie 2.1 Release)
+- **Release Status:** Complete & Verified
+- **Sequential PRs Merged to `main`:**
+  1. **P1-A (Eligibility Engine & Fixtures):**
+     - PR: [#12](https://github.com/KanujVerma/jobbie/pull/12)
+     - Squash commit: `476975d043600e9d467c4c7e46f4d4c2e1a60a65`
+     - Added pure deterministic classifier in `src/eligibility.py`, 30-case adversarial matrix `tests/fixtures/eligibility_matrix.json`, updated `src/filtering.py` with multi-location parsing and `mode: new_grad_full_time` filter.
+  2. **P1-B (Immutable Cohort & Webhook Formatting):**
+     - PR: [#13](https://github.com/KanujVerma/jobbie/pull/13)
+     - Squash commit: `ebca5eadc1cdff463564e972bd7ea0c648f45e63`
+     - Configured 13 enabled employers with `network_priority: true`, `cohort: original_2026_11_04`, and `referral_status: unconfirmed`. Preserved 2 disabled companies unflagged. Formatted gold `⭐ NETWORK PRIORITY` embeds with markdown/mention sanitization and verified salary conditioning.
+  3. **P1-C (State Migration, URL Deduplication, Scheduler Observability):**
+     - PR: [#14](https://github.com/KanujVerma/jobbie/pull/14)
+     - Squash commit: `9f94b568bf422509121775a6c1a84f3c9597792e`
+     - Upgraded state schema with `policy_version: 2026-11-newgrad-v1`, `StateCorruptionError`, cross-run URL deduplication, 7-day bounded backfill summary, daily review digest throttling, run diagnostics, and scheduler gap logging (>45m).
+- **Test Evidence:**
+  - 592 tests passing cleanly (`pytest`) across all unit and integration test suites.
+  - `python main.py validate-config` verified valid.
+  - Live adapter dry-run read verified with zero mutations to `state/seen_jobs.json`.
+- **Live Workflow Run Evidence:**
+  - Triggered via `workflow_dispatch` on `main`: [Actions Run 41915003368](https://github.com/KanujVerma/jobbie/actions/runs/41915003368).
+  - Schedule reality caveat: Actions schedule drift can exceed nominal 15m intervals; gap detection flags runs exceeding 45m without promising sub-15m real-time polling.
+- **Rollback Protocol:**
+  - Switch `filters.mode: legacy` in `companies.yaml`. State retains backward compatibility without wiping seen jobs or causing alert storms.
