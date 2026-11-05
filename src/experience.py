@@ -55,14 +55,31 @@ _OPTIONAL_YEARS_BEFORE = re.compile(
 )
 
 
+_QUALIFICATION_HEADER = re.compile(
+    r"\b(?P<kind>minimum|basic|required|preferred|desired)"
+    r"\s+(?:qualifications?|requirements?)\s*:?\s*",
+    re.IGNORECASE,
+)
+
+
 def _required_section(text: str) -> str:
     normalized = (text or "").replace("\u2019", "'").replace("\xa0", " ")
-    minimum = _MIN_HEADER.search(normalized)
-    if minimum:
-        normalized = normalized[minimum.end():]
-    preferred = _PREFERRED_HEADER.search(normalized)
-    if preferred:
-        normalized = normalized[:preferred.start()]
+    # The order of sections is not guaranteed. A "Required Qualifications"
+    # section can occur AFTER "Preferred Qualifications". Preserve each
+    # required section rather than truncating the posting at first preference.
+    headers = list(_QUALIFICATION_HEADER.finditer(normalized))
+    if headers:
+        retained: list[str] = []
+        for i, header in enumerate(headers):
+            kind = header.group("kind").lower()
+            if kind not in {"minimum", "basic", "required"}:
+                continue
+            next_start = headers[i + 1].start() if i + 1 < len(headers) else len(normalized)
+            fragment = normalized[header.end():next_start].strip()
+            if fragment:
+                retained.append(fragment)
+        # If a JD contains only preferred sections, don't infer work minima.
+        normalized = "\n".join(retained)
     # "5 years required, Python preferred" MUST retain five years.
     # "0-2 years required. 4 years preferred" masks only four.
     normalized = _OPTIONAL_YEARS_AFTER.sub(" ", normalized)

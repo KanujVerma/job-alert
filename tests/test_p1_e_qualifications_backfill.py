@@ -424,3 +424,51 @@ def test_required_minimum_without_explicit_required_word_survives_unrelated_pref
     assert classify_eligibility(
         make_job(91, title="Software Engineer, New Grad", description=raw)
     ).status == "excluded"
+
+
+def test_required_qualifications_after_preferred_section_are_not_silently_lost():
+    requirement = (
+        "Minimum Qualifications: Bachelor's degree. "
+        "Preferred Qualifications: Python and React experience. "
+        "Required Qualifications: 5 years of professional experience."
+    )
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years == 5
+    verdict = classify_eligibility(
+        make_job(92, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "excluded"
+
+
+def test_required_sections_after_preferred_retain_small_qualifying_minimum():
+    requirement = (
+        "Minimum qualifications: Bachelor's degree in CS.\n"
+        "Preferred qualifications: 6+ years of experience with Kubernetes.\n"
+        "Required requirements: 0-2 years of professional experience."
+    )
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years == 0
+    verdict = classify_eligibility(
+        make_job(93, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "eligible"
+
+
+def test_multiple_disjoint_required_sections_are_conjunctive():
+    requirement = (
+        "Minimum Qualifications: Bachelor's degree with 2+ years professional experience. "
+        "Preferred Qualifications: Python. "
+        "Required Qualifications: 5+ years of relevant industry experience."
+    )
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years == 5
+    assert classify_eligibility(
+        make_job(94, title="Software Engineer, New Grad", description=requirement)
+    ).status == "excluded"
+
+
+def test_only_preferred_section_does_not_create_required_experience():
+    requirement = "Preferred Qualifications: 8+ years of professional experience."
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years is None
+    assert not assessment.ambiguous
