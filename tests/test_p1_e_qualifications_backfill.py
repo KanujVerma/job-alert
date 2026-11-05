@@ -197,7 +197,7 @@ def test_25_backfill_opportunities_are_all_displayed_in_three_bounded_batches():
     assert len(sender.payloads) == 3
     all_delivered_urls = " ".join(body for _, body in sender.payloads)
     for job in jobs:
-        assert all_delivered_urls.count(job.url) == 1
+        assert sum(1 for line in all_delivered_urls.splitlines() if line.strip() == job.url) == 1
         assert is_url_alerted(job.url, state)
         assert state["companies"]["Intel"]["seen_jobs"][job.id]["alerted"] is True
     assert len(sender.payloads[0][1]) < 4096
@@ -259,3 +259,17 @@ def test_repeated_job_urls_cannot_generate_duplicate_backfill_items():
     result = deliver_backfill_batch([original, duplicate], state, sender, now=NOW)
     assert result.delivered == 1 and result.completed
     assert sender.payloads[0][1].count(original.url) == 1
+
+
+def test_malformed_url_is_skipped_without_blocking_valid_candidates():
+    invalid = make_job(1, url="javascript:alert(1)")
+    valid = make_job(2)
+    state = make_state([invalid, valid])
+    sender = FakeSender()
+    outcome = deliver_backfill_batch([invalid, valid], state, sender, now=NOW)
+    assert outcome.delivered == 1 and outcome.remaining == 1
+    assert not outcome.completed
+    assert is_url_alerted(valid.url, state)
+    assert not is_url_alerted(invalid.url, state)
+    assert valid.url in sender.payloads[0][1]
+    assert "javascript:" not in sender.payloads[0][1]

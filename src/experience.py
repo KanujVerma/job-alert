@@ -29,14 +29,6 @@ _PREFERRED_HEADER = re.compile(
     r"\b(?:preferred|desired)\s+(?:qualifications?|requirements?)\s*:?\s*",
     re.IGNORECASE,
 )
-_GENERAL_AFTER = re.compile(
-    r"\bexperience\s+(?:with|in|using)\s+(?!"
-    r"(?:the\s+)?(?:software\s+(?:engineering|development)|engineering|"
-    r"industry|related\s+field|professional|product\s+development)\b)",
-    re.IGNORECASE,
-)
-
-
 @dataclass(frozen=True)
 class ExperienceAssessment:
     minimum_years: float | None

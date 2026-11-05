@@ -94,13 +94,18 @@ def deliver_backfill_batch(
     # line could not be included in the Discord embed.
     lines: list[str] = []
     shown: list[Job] = []
-    for job in unique[:max_items]:
+    for job in unique:
+        if len(shown) >= max_items:
+            break
         line = _safe_line(job)
         if line is None:
             logger.warning("Backfill candidate %s has no usable direct URL; not acknowledging", job.id)
-            break
+            continue
         if len("\n".join(lines)) + len(line) + 200 > MAX_SUMMARY_DESCRIPTION:
-            break
+            # Leave an oversized posting pending rather than hiding it and
+            # acknowledging it without its actual direct URL.
+            logger.warning("Backfill candidate %s exceeds safe embed size; leaving pending", job.id)
+            continue
         lines.append(line)
         shown.append(job)
 
@@ -116,7 +121,7 @@ def deliver_backfill_batch(
         + (f"\n{remaining} remaining; next scheduled run will continue." if remaining else "")
     )
     try:
-        delivered = bool(notifier.send_summary("Phase 1 Policy Backfill (Last 7 Days)", description))
+        delivered = bool(notifier.send_summary(title="Phase 1 Policy Backfill (Last 7 Days)", description=description))
     except Exception:
         logger.exception("Backfill summary delivery failed")
         delivered = False
