@@ -24,6 +24,7 @@ Dated 2026-11-04. "Locked" means an agent cannot change it without explicit owne
 | J-018 | IMPLEMENTATION CHOICE | Groq GPT-OSS 120B is initial **candidate** for free AI inference, not an asserted winner. Benchmark naturalness + grounded accuracy with privacy policies and rate limits. No paid OpenAI usage unless credits/billing verified and separately approved. |
 | J-019 | IMPLEMENTATION CHOICE | Reuse MIT/Apache-licensed open-source components only with NOTICE/LICENSE obligations; evaluate permitted data-feed terms independently. |
 | J-020 | LOCKED | Existing README and historical plans are legacy references, not authoritative proof of 2.0 implementation. Published "live" status requires actual operator evidence. |
+| J-021 | LOCKED | Phase 1D Quality and Release Hardening: Enforce strict new-grad eligibility (levels, locations, 0-2 yrs), confirmed alert delivery invariant, 7-day backfill freshness decoupling, review queue ranking/retention, and CI test automation. |
 
 ## Open decisions: default actions (not questions to invent answers for)
 1. Referral people/contact details: UNKNOWN. Maintain `unconfirmed` for all 13 until owner supplies and confirms. Do not request names as prerequisite to Phase 1.

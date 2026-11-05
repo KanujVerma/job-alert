@@ -99,3 +99,35 @@ Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks a
   - Schedule reality caveat: Actions schedule drift can exceed nominal 15m intervals; gap detection flags runs exceeding 45m without promising sub-15m real-time polling.
 - **Rollback Protocol:**
   - Switch `filters.mode: legacy` in `companies.yaml`. State retains backward compatibility without wiping seen jobs or causing alert storms.
+
+## Phase 1D: Quality and Release Hardening (Jobbie 2.1 Final Release)
+- **Release Status:** PARTIAL (P1-D1 & P1-D2 merged to main; P1-D3 in review on PR #17)
+- **Sequential PR Implementation:**
+  1. **P1-D1 (Classification and Coverage):**
+     - PR: [#15](https://github.com/KanujVerma/jobbie/pull/15)
+     - Squash commit: `e1608cf6223d21ef7ebaf2ce565c0e96f0159970`
+     - Corrected level code classifications (E3/IC1/L1/P1 -> new_grad; E4+/L4+/IC3+ -> senior/excluded; E3/L3 with ambiguous exp -> needs_review).
+     - Disambiguated Workday multi-locations with composite `location` and `additionalLocations` parsing.
+     - Resolved geographic disambiguation (Georgia state vs Georgia country, London OH vs London UK, Paris TX vs Paris France).
+  2. **P1-D2 (State and Delivery Correctness):**
+     - PR: [#16](https://github.com/KanujVerma/jobbie/pull/16)
+     - Squash commit: `c9acd1ce69a6866ec88fecab76f7f022718797f1`
+     - Decoupled 7-day backfill freshness from standard 48-hour individual alert threshold, isolating historical postings from consuming the alert cap.
+     - Enforced confirmed delivery invariant (`alerted=True` only when Discord webhook succeeds).
+     - Added `--rerun-backfill` CLI flag for safe reruns without resetting state.
+     - Re-raised Lever adapter HTTP errors (404 classified as failed rather than healthy zero).
+     - Review queue cleanup and prioritization (scoring canonical 13 network priority, early career keywords, tech hubs, and preserving classification evidence).
+  3. **P1-D3 (Automated Verification and Release):**
+     - PR: [#17](https://github.com/KanujVerma/jobbie/pull/17)
+     - Added GitHub Actions CI workflow in `.github/workflows/test.yml` running pytest and config validation on PRs and pushes to main.
+     - CI Run Evidence: [Actions Run 41952511295](https://github.com/KanujVerma/jobbie/actions/runs/41952511295) passing on commit `de791b5`.
+     - Measured actual GitHub Actions cron delivery gaps on production runs:
+       - Run 41881777832 (`2026-11-04T17:55:22Z`) to Run 41933684385 (`2026-11-04T23:26:08Z`): 5h 30m gap.
+       - Run 41810957728 (`2026-11-04T09:57:20Z`) to Run 41881777832 (`2026-11-04T17:55:22Z`): 7h 58m gap.
+       - Run 41762686190 (`2026-11-04T02:44:24Z`) to Run 41810957728 (`2026-11-04T09:57:20Z`): 7h 13m gap.
+       - Verification: Confirms public Actions runner scheduling drift can delay nominal 15m intervals up to ~8 hours during low priority scheduling. Confirms `compute_run_diagnostics()` in `src/health.py` accurately identifies `scheduler_gap_detected=True` when elapsed interval exceeds 45m (3x cadence), preventing false-positive operational alerts while transparently recording scheduler health.
+     - Verified zero state or alert mutation during `--dry-run`.
+- **Test Suite Evidence:** 654 tests passing cleanly synchronously (`pytest`).
+- **Operational Transition Note:** Full Phase 1D status will transition from `PARTIAL` to `COMPLETE & VERIFIED` on `main` upon squash-merging PR #17 and recording the final post-merge release run on `main`.
+
+
