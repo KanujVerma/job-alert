@@ -115,21 +115,49 @@ def assess_experience_requirements(raw_text: str) -> ExperienceAssessment:
                 break
 
     if bachelors:
-        # A degree mentioned without any numerical experience condition is
-        # not an ambiguous experience pathway by itself.
+        # An educational degree named with NO tenure requirement is not
+        # inherently an ambiguous *experience* requirement.
         if not _mentions(required, degree_context=True):
             return ExperienceAssessment(None, False, None, has_alternative)
-        # Each bachelor's clause ends at the next degree alternative.
+
         candidates: list[tuple[float, str]] = []
         incomplete = False
         for index, bachelor in bachelors:
-            next_degree = degrees[index + 1].start() if index + 1 < len(degrees) else len(required)
-            fragment = required[bachelor.end():next_degree]
-            numbers = _mentions(fragment, degree_context=True)
+            prev_degree_end = degrees[index - 1].end() if index else 0
+            next_degree_start = degrees[index + 1].start() if index + 1 < len(degrees) else len(required)
+
+            # Wording may put the experience number BEFORE the degree:
+            # "4+ years of experience with a bachelor's degree OR
+            #  2+ years with a master's degree."
+            prefix = required[max(prev_degree_end, bachelor.start() - 170):bachelor.start()]
+            prefix_numbers: list[tuple[float, str, bool]] = []
+            if re.search(
+                r"\b(?:with|for|if|when|and|plus)\s+(?:a\s+|an\s+)?$",
+                prefix,
+                re.IGNORECASE,
+            ):
+                previous_mentions = _mentions(prefix, degree_context=True)
+                if previous_mentions:
+                    prefix_numbers = previous_mentions[-1:]
+
+            fragment = required[bachelor.end():next_degree_start]
+            # A number after "OR" may describe the NEXT degree option,
+            # so never borrow it as the bachelor's minimum.
+            next_option = re.search(
+                r"\bor\b\s*(?:(?:\d+(?:\.\d+)?\s*\+?\s*"
+                r"(?:years?|yrs?|months?|mos?))|"
+                r"(?:master(?:'?s|s)?|m\.?s\.?|ph\.?d\.?|doctorate))\b",
+                fragment,
+                re.IGNORECASE,
+            )
+            if next_option:
+                fragment = fragment[:next_option.start()]
+
+            numbers = prefix_numbers + _mentions(fragment, degree_context=True)
             if not numbers:
                 incomplete = True
             else:
-                # Multiple requirements in the same pathway are conjunctive.
+                # Requirements within one bachelor's route are conjunctive.
                 strongest = max(numbers, key=lambda value: value[0])
                 candidates.append((strongest[0], strongest[1]))
         if incomplete or not candidates or len({v for v, _ in candidates}) > 1:

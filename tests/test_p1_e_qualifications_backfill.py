@@ -273,3 +273,33 @@ def test_malformed_url_is_skipped_without_blocking_valid_candidates():
     assert not is_url_alerted(invalid.url, state)
     assert valid.url in sender.payloads[0][1]
     assert "javascript:" not in sender.payloads[0][1]
+
+
+@pytest.mark.parametrize(
+    "description, years, ambiguous",
+    [
+        ("Minimum Qualifications: 4+ years of professional experience with a Bachelor's degree "
+         "OR 2+ years of professional experience with a Master's degree.", 4, False),
+        ("4+ years experience with bachelor's degree OR 2+ years with master's degree", 4, False),
+        ("6 months experience with a bachelor's degree or master's degree with 0 years", 0.5, False),
+        ("Bachelor's degree in CS or a related field with 4+ years experience OR Master's with 2+ years", 4, False),
+        ("Master's with 2 years OR Bachelor's with 4 years experience", 4, False),
+        ("Bachelor's degree OR 2+ years experience with a Master's degree", None, True),
+    ],
+)
+def test_years_preceding_degree_not_stolen_from_next_degree_path(description, years, ambiguous):
+    assessment = assess_experience_requirements(description)
+    assert assessment.minimum_years == years
+    assert assessment.ambiguous is ambiguous
+
+
+def test_bachelors_pathway_with_prefix_four_years_blocks_false_newgrad_alert():
+    title = "EDA Tool Software Engineer"
+    description = (
+        "Minimum Qualifications: 4+ years of relevant industry experience "
+        "with a Bachelor's degree OR 2+ years of industry experience "
+        "with a Master's degree. 1+ year of experience with EDA software."
+    )
+    verdict = classify_eligibility(make_job(45, title=title, description=description))
+    assert verdict.status == "excluded"
+    assert "EXPERIENCE_EXCEEDS_RANGE" in verdict.reasons
