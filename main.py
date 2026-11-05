@@ -28,6 +28,7 @@ from src.storage import (
     mark_backfill_completed,
     get_backfill_candidates,
     record_review_job,
+    remove_review_job,
     get_daily_review_digest,
 )
 from src.health import (
@@ -128,7 +129,9 @@ def do_run(args) -> int:
 
     first_run = is_first_run(state)
     is_new_policy_migration = False
-    if not first_run and is_backfill_pending(state, POLICY_VERSION):
+    if getattr(args, "rerun_backfill", False):
+        is_new_policy_migration = True
+    elif not first_run and is_backfill_pending(state, POLICY_VERSION):
         is_new_policy_migration = True
 
     ttl_days = int(config.defaults.get("first_seen_ttl_days", 180))
@@ -212,6 +215,13 @@ def do_run(args) -> int:
             company_state = state["companies"].setdefault(
                 cname, {"last_checked_at": None, "seen_jobs": {}}
             )
+            if not adapter_succeeded:
+                company_state["last_error"] = fetch_error
+                company_state["last_error_at"] = datetime.now(timezone.utc).isoformat()
+            else:
+                company_state.pop("last_error", None)
+                company_state.pop("last_error_at", None)
+
             verdict = update_health(
                 company_state, len(fetched), datetime.now(timezone.utc), stale_after_hours
             )
@@ -239,12 +249,23 @@ def do_run(args) -> int:
             cohort = str(company_cfg.get("cohort", "discovered"))
             referral_status = str(company_cfg.get("referral_status", "unconfirmed" if is_network else "unavailable"))
 
+            # Keep individual alert candidate matching strictly bound to standard freshness (48h)
+            # Decouple widened 7-day backfill candidate set so historical postings (48-168h) do not enter alert_candidates
+            backfill_filters = None
+            if is_new_policy_migration:
+                backfill_filters = dict(config.filters)
+                backfill_filters["freshness_hours"] = max(
+                    float(config.filters.get("freshness_hours", 48)), 7 * 24.0
+                )
+
             matched = []
+            backfill_matched = []
             review_count = 0
             excluded_count = 0
             filter_reasons = {}
             loop_now = datetime.now(timezone.utc)
             for job in fetched:
+                # Normal pipeline evaluation (standard 48h freshness threshold for individual alerts)
                 filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
                 if filtered_job is not None:
                     import dataclasses
@@ -255,12 +276,59 @@ def do_run(args) -> int:
                         referral_status=referral_status,
                     )
                     matched.append(filtered_job)
+                    if backfill_filters is not None:
+                        backfill_matched.append(filtered_job)
+                    remove_review_job(state, job.id)
                 else:
-                    if any("needs_review" in r for r in reasons):
+                    # If pending migration/backfill, check if eligible under widened 7-day backfill freshness
+                    if backfill_filters is not None:
+                        bf_job, _ = apply_filter_pipeline(job, backfill_filters, source_config)
+                        if bf_job is not None:
+                            import dataclasses
+                            bf_job = dataclasses.replace(
+                                bf_job,
+                                network_priority=is_network,
+                                cohort=cohort,
+                                referral_status=referral_status,
+                            )
+                            backfill_matched.append(bf_job)
+                            remove_review_job(state, job.id)
+
+                    # Check why filtered_job was None
+                    is_needs_review = any("needs_review" in r for r in reasons)
+                    is_excluded = any("excluded" in r for r in reasons) or any("location: dropped" in r for r in reasons)
+
+                    if not is_needs_review and not is_excluded and any("freshness: stale" in r for r in reasons):
+                        # Dropped at Step 0 purely for freshness. Evaluate location & eligibility to check if review is needed
+                        from src.filtering import filter_location
+                        loc_res = filter_location(job, config.filters)
+                        if not loc_res.passes:
+                            is_excluded = True
+                            reasons.append(f"location: {loc_res.reason}")
+                        else:
+                            from src.eligibility import classify_eligibility
+                            verdict = classify_eligibility(job, config.filters)
+                            if verdict.status == "needs_review":
+                                is_needs_review = True
+                                reasons.append(f"eligibility: {verdict.status}: {', '.join(verdict.reasons)}")
+                            elif verdict.status == "excluded":
+                                is_excluded = True
+                                reasons.append(f"eligibility: {verdict.status}: {', '.join(verdict.reasons)}")
+
+                    if is_needs_review:
                         review_count += 1
-                        record_review_job(state, job, reasons, loop_now)
+                        import dataclasses
+                        review_job = dataclasses.replace(
+                            job,
+                            network_priority=is_network,
+                            cohort=cohort,
+                            referral_status=referral_status,
+                        )
+                        record_review_job(state, review_job, reasons, loop_now)
                     else:
                         excluded_count += 1
+                        if is_excluded:
+                            remove_review_job(state, job.id)
                 filter_reasons[job.id] = reasons
 
             # Record per-company stats for health reporting
@@ -273,12 +341,7 @@ def do_run(args) -> int:
                 "excluded": excluded_count,
             }
 
-            # Collect bounded backfill candidates if pending migration
-            if is_new_policy_migration:
-                backfill_candidates = get_backfill_candidates(matched, state, loop_now, lookback_days=7)
-                backfill_jobs.extend(backfill_candidates)
-
-            # Classify against first_seen state
+            # Classify against first_seen state for individual alerts
             freshness_hours = float(config.filters.get("freshness_hours", 48))
             now = loop_now
             alert_candidates = classify_jobs(
@@ -310,7 +373,19 @@ def do_run(args) -> int:
                                 )
                                 actually_alerted.append(job)
                             else:
-                                sent = notifier.send_job_alert(job) if notifier else True
+                                if notifier is None:
+                                    logger.warning(
+                                        "%s: %r alert not delivered (no DISCORD_WEBHOOK_URL set).",
+                                        cname, job.title,
+                                    )
+                                    sent = False
+                                else:
+                                    try:
+                                        sent = notifier.send_job_alert(job)
+                                    except Exception as exc:
+                                        logger.error("%s: %r alert exception: %s", cname, job.title, exc)
+                                        sent = False
+
                                 if sent:
                                     if url_key:
                                         alerted_urls.add(url_key)
@@ -329,6 +404,17 @@ def do_run(args) -> int:
             mark_alerted(actually_alerted, cname, state)
             mark_cap_suppressed(cap_suppressed_jobs, cname, state)
             update_last_checked(cname, state, now)
+
+            # Collect bounded backfill candidates if pending migration
+            # Kept separate from alert_candidates: historical postings (48-168h) appear in backfill summary, not individual alerts
+            if is_new_policy_migration:
+                company_backfill_candidates = get_backfill_candidates(backfill_matched, state, loop_now, lookback_days=7)
+                alerted_urls_this_run = {normalize_url(j.url) for j in actually_alerted}
+                company_backfill_candidates = [
+                    j for j in company_backfill_candidates
+                    if normalize_url(j.url) not in alerted_urls_this_run
+                ]
+                backfill_jobs.extend(company_backfill_candidates)
 
             if getattr(args, "verbose", False):
                 if config.filters.get("mode") == "new_grad_full_time":
@@ -360,7 +446,7 @@ def do_run(args) -> int:
             description="\n".join(desc_lines),
         )
 
-    # Policy backfill summary (Jobbie 2.1 migration first run)
+    # Policy backfill summary (Jobbie 2.1 migration first run or manual rerun)
     if is_new_policy_migration:
         unique_backfill: list[Job] = []
         seen_bf_urls: set[str] = set()
@@ -373,22 +459,36 @@ def do_run(args) -> int:
             unique_backfill.append(j)
 
         if not getattr(args, "dry_run", False) and any_company_succeeded:
-            if unique_backfill and notifier:
-                total_bf = len(unique_backfill)
-                desc_lines = [
-                    f"Found {total_bf} eligible jobs from the last 7 days across monitored sites (showing {min(10, total_bf)}):"
-                ]
-                for j in unique_backfill[:10]:
-                    loc_str = f" ({j.location})" if j.location else ""
-                    desc_lines.append(f"• [{j.company}: {j.title}]({j.url}){loc_str}")
-                notifier.send_summary(
-                    title="📋 Phase 1 Policy Backfill (Last 7 Days)",
-                    description="\n".join(desc_lines),
-                )
-            mark_backfill_completed(state, POLICY_VERSION, datetime.now(timezone.utc))
-            for j in unique_backfill:
-                mark_alerted([j], j.company, state)
-                record_alerted_url(j.url, j.company, j.id, state, datetime.now(timezone.utc))
+            if unique_backfill:
+                if notifier:
+                    total_bf = len(unique_backfill)
+                    desc_lines = [
+                        f"Found {total_bf} eligible jobs from the last 7 days across monitored sites (showing {min(10, total_bf)}):"
+                    ]
+                    for j in unique_backfill[:10]:
+                        loc_str = f" ({j.location})" if j.location else ""
+                        desc_lines.append(f"• [{j.company}: {j.title}]({j.url}){loc_str}")
+                    try:
+                        sent = notifier.send_summary(
+                            title="📋 Phase 1 Policy Backfill (Last 7 Days)",
+                            description="\n".join(desc_lines),
+                        )
+                    except Exception as exc:
+                        logger.error("Failed to send backfill summary to Discord: %s", exc)
+                        sent = False
+
+                    if sent:
+                        mark_backfill_completed(state, POLICY_VERSION, datetime.now(timezone.utc))
+                        for j in unique_backfill:
+                            mark_alerted([j], j.company, state)
+                            record_alerted_url(j.url, j.company, j.id, state, datetime.now(timezone.utc))
+                    else:
+                        logger.warning("Backfill summary delivery failed or unconfirmed; leaving backfill pending.")
+                else:
+                    logger.warning("No Discord notifier configured; backfill summary cannot be delivered. Leaving backfill pending.")
+            else:
+                # No backfill jobs found across any monitored source; safely mark completed
+                mark_backfill_completed(state, POLICY_VERSION, datetime.now(timezone.utc))
         elif getattr(args, "dry_run", False):
             print(
                 f"Migration backfill preview: found {len(unique_backfill)} eligible jobs from last 7 days "
@@ -527,6 +627,11 @@ def main():
         action="store_true",
         help="On first run, send one summary embed",
     )
+    run_parser.add_argument(
+        "--rerun-backfill",
+        action="store_true",
+        help="Force re-running the 7-day migration backfill summary without resetting seen state",
+    )
 
     # daemon
     daemon_parser = subparsers.add_parser("daemon", help="Run continuously on schedule")
@@ -543,6 +648,11 @@ def main():
         "--summary-first-run",
         action="store_true",
         help="On first run, send one summary embed",
+    )
+    daemon_parser.add_argument(
+        "--rerun-backfill",
+        action="store_true",
+        help="Force re-running the 7-day migration backfill summary without resetting seen state",
     )
 
     args = parser.parse_args()

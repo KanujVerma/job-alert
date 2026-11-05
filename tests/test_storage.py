@@ -575,7 +575,13 @@ class TestReviewQueueAndDigest:
         migrate_state(state)
         now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
 
-        job = make_job("rev_1")
+        import dataclasses
+        job = dataclasses.replace(
+            make_job("rev_1"),
+            title="Software Engineer",
+            raw_text="software engineer full-time remote core platform",
+            role_type="unknown",
+        )
         record_review_job(state, job, ["needs_review: generic software engineer"], now)
 
         assert "rev_1" in state["review_queue"]
@@ -598,6 +604,102 @@ class TestReviewQueueAndDigest:
         later = now + timedelta(hours=25)
         digest_res2 = get_daily_review_digest(state, later)
         assert digest_res2 is not None
+
+    def test_remove_review_job(self):
+        from src.storage import remove_review_job
+        state = _empty_state()
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        job = make_job("rev_to_remove")
+        record_review_job(state, job, ["needs_review"], now)
+        assert "rev_to_remove" in state["review_queue"]
+
+        assert remove_review_job(state, "rev_to_remove") is True
+        assert "rev_to_remove" not in state["review_queue"]
+        assert remove_review_job(state, "nonexistent") is False
+
+    def test_clean_review_queue_prunes_excluded_senior_roles(self):
+        from src.storage import clean_review_queue
+        state = _empty_state()
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+
+        # 1. Senior role that should be pruned
+        queue = state.setdefault("review_queue", {})
+        queue["senior_pmts"] = {
+            "company": "Salesforce",
+            "title": "Software Engineering, AI Systems (PMTS)",
+            "url": "https://example.com/job/pmts",
+            "location": "San Francisco, CA",
+            "network_priority": True,
+            "reasons": ["eligibility: needs_review"],
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
+        }
+
+        # 2. Genuine early career role that should remain
+        queue["early_swe"] = {
+            "company": "Apple",
+            "title": "Software Engineer I",
+            "url": "https://example.com/job/swe1",
+            "location": "Cupertino, CA",
+            "network_priority": True,
+            "reasons": ["eligibility: needs_review"],
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
+        }
+
+        pruned = clean_review_queue(state)
+        assert pruned == 1
+        assert "senior_pmts" not in state["review_queue"]
+        assert "early_swe" in state["review_queue"]
+
+    def test_prioritized_digest_ranks_promising_tech_roles_first(self):
+        state = _empty_state()
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        queue = state.setdefault("review_queue", {})
+
+        # Low relevance: non-network, non-tech
+        queue["job_generic"] = {
+            "company": "GenericCorp",
+            "title": "Technical Writer",
+            "url": "https://example.com/job/tw",
+            "location": "Anytown, USA",
+            "network_priority": False,
+            "reasons": ["needs_review"],
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
+        }
+
+        # High relevance: Network Priority company + SWE I + Bay Area
+        queue["job_network_swe1"] = {
+            "company": "Salesforce",
+            "title": "Software Engineer I",
+            "url": "https://salesforce.com/job/swe1",
+            "location": "San Francisco, CA",
+            "network_priority": True,
+            "reasons": ["needs_review"],
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
+        }
+
+        # Mid relevance: Network Priority, but generic title
+        queue["job_network_eda"] = {
+            "company": "Intel",
+            "title": "EDA Tool Software Engineer",
+            "url": "https://intel.com/job/eda",
+            "location": "Austin, TX",
+            "network_priority": True,
+            "reasons": ["needs_review"],
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
+        }
+
+        digest_res = get_daily_review_digest(state, now, cap=10)
+        assert digest_res is not None
+        items, _ = digest_res
+        assert len(items) >= 2
+        # Highest ranked must be job_network_swe1
+        assert items[0]["title"] == "Software Engineer I"
+        assert items[0]["company"] == "Salesforce"
 
 
 class TestPruneExtended:
