@@ -45,30 +45,56 @@ def _required_section(text: str) -> str:
     preferred = _PREFERRED_HEADER.search(normalized)
     if preferred:
         normalized = normalized[:preferred.start()]
-    return normalized
+    # Inline preferred experience is not a mandatory minimum. Never choose
+    # "4 years preferred" over "0-2 years required" in the same posting.
+    clauses = re.split(r"(?<=[.;])\s+|;\s*", normalized)
+    return " ".join(
+        clause for clause in clauses
+        if not (re.search(r"\b(?:preferred|desired|nice to have)\b", clause, re.IGNORECASE)
+                and _YEAR.search(clause))
+    )
 
 
 def _mentions(span: str, *, degree_context: bool) -> list[tuple[float, str, bool]]:
-    """(lower-bound years, evidence snippet, skill-specific) in a required span."""
+    """(lower-bound years, source snippet, skill-specific) for actual work tenure.
+
+    A bachelor's degree's duration (e.g. "degree (4 years)") is NOT a
+    qualification requiring four years of professional experience.
+    """
     found: list[tuple[float, str, bool]] = []
     for match in _YEAR.finditer(span):
-        after = span[match.end(): match.end() + 100]
-        before = span[max(0, match.start() - 65): match.start()]
-        context = f"{before} {after}".lower()
-        # Ignore ages, company-history numbers and other unrelated quantities.
-        if not degree_context and not any(
-            word in context for word in ("experience", "industry", "professional", "hands-on")
-        ):
+        starts = [span.rfind(ch, 0, match.start()) for ch in ".;\n"]
+        clause_start = max(starts) + 1
+        ends = [span.find(ch, match.end()) for ch in ".;\n"]
+        clause_end = min((x for x in ends if x >= 0), default=len(span))
+        before = span[max(clause_start, match.start() - 75):match.start()]
+        after = span[match.end():min(clause_end, match.end() + 100)]
+        clause = span[clause_start:clause_end].lower()
+
+        has_work_evidence = bool(re.search(
+            r"\b(?:experience|professional|industry|hands-on|work|employment)\b",
+            clause, re.IGNORECASE,
+        ))
+        compact_degree_path = bool(
+            degree_context and
+            re.search(r"(?:\bwith|\bplus|&|\+)\s*$", before, re.IGNORECASE)
+        )
+        duration_only = bool(
+            re.search(r"\b(?:study|studies|coursework|course|curriculum|"
+                      r"degree duration|program duration)\b", after, re.IGNORECASE)
+            and not has_work_evidence
+        )
+        if (not has_work_evidence and not compact_degree_path) or duration_only:
             continue
         quantity = float(match.group("low"))
-        if quantity > 40:  # likely a malformed field rather than career tenure
+        if quantity > 40:
             continue
         if match.group("unit").lower().startswith(("month", "mo")):
             quantity /= 12
-        evidence = span[max(0, match.start() - 90): match.end() + 95].strip()
-        # Interpret only the *nearest* "experience" phrase for this number;
-        # a later, unrelated "2 years with Python" must not relabel an
-        # earlier "4 years of general engineering experience".
+        evidence = span[max(clause_start, match.start() - 90):min(clause_end, match.end() + 95)].strip()
+
+        # Interpret the nearest "experience" phrase, not an unrelated one
+        # later in the same job description.
         first_exp = re.search(r"\bexperience\b", after, re.IGNORECASE)
         skill_specific = False
         if first_exp:
@@ -77,19 +103,37 @@ def _mentions(span: str, *, degree_context: bool) -> list[tuple[float, str, bool
                 r"\s+(?:in|with|using)\s+(?!"
                 r"(?:the\s+)?(?:software\s+(?:engineering|development)|engineering|"
                 r"industry|related\s+field|professional|product\s+development)\b)",
-                tail,
-                re.IGNORECASE,
+                tail, re.IGNORECASE,
             ))
             prefix = after[:first_exp.start()]
             if re.search(
                 r"\b(?:programming|software\s+(?:engineering|development)|"
                 r"professional|industry|engineering)\s*$",
-                prefix,
-                re.IGNORECASE,
+                prefix, re.IGNORECASE,
             ):
                 skill_specific = False
+        elif re.match(r"\s+(?:with|in|using)\s+(?!industry|engineering|software\b)", after, re.IGNORECASE):
+            skill_specific = True
         found.append((quantity, evidence[:240], skill_specific))
     return found
+
+
+def _degree_alternative_between(between: str) -> bool:
+    """Only an OR connecting degree pathways counts as a degree alternative."""
+    ors = list(re.finditer(r"\bor\b", between, re.IGNORECASE))
+    if not ors:
+        return False
+    tail = between[ors[-1].end():].strip().lower()
+    if not tail or tail in {"a", "an"}:
+        return True
+    # "OR 2+ years of professional experience with a Master's" is a
+    # legitimate alternative. "or equivalent experience and 1 year.
+    # Master's degree required" is NOT.
+    return bool(re.fullmatch(
+        r"\d+(?:\.\d+)?\s*\+?\s*(?:years?|yrs?|months?|mos?)"
+        r"(?:\s+.{0,70}?\b(?:with|for)\s+(?:a|an)?)?",
+        tail, re.IGNORECASE,
+    ))
 
 
 def assess_experience_requirements(raw_text: str) -> ExperienceAssessment:
@@ -105,14 +149,14 @@ def assess_experience_requirements(raw_text: str) -> ExperienceAssessment:
     other_degrees = [m for m in degrees if m.group("master") or m.group("phd")]
     has_alternative = False
     if bachelors and other_degrees:
-        for _, b in bachelors:
-            for other in other_degrees:
-                lo, hi = sorted((b.end(), other.start()))
-                if re.search(r"\bor\b|/", required[lo:hi]):
+        for left, right in zip(degrees, degrees[1:]):
+            if (
+                (left.group("bachelor") and (right.group("master") or right.group("phd")))
+                or ((left.group("master") or left.group("phd")) and right.group("bachelor"))
+            ):
+                if _degree_alternative_between(required[left.end():right.start()]):
                     has_alternative = True
                     break
-            if has_alternative:
-                break
 
     if bachelors:
         # An educational degree named with NO tenure requirement is not

@@ -598,7 +598,7 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
             REASON_WORK_AUTH_UNKNOWN,
         ]
         # 3 years experience is a stretch review
-        if min_years_req == 3:
+        if min_years_req is not None and 3 <= min_years_req < 4:
             review_triggers.append(REASON_EXPERIENCE_EXCEEDS_RANGE)
 
         is_review = any(t in reasons for t in review_triggers)

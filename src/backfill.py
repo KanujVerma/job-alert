@@ -42,7 +42,10 @@ def _safe_line(job: Job) -> str | None:
     from src.notifier import sanitize_discord_text
 
     url = (job.url or "").strip()
-    parsed = urlparse(url)
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return None
     if parsed.scheme not in ("https", "http") or not parsed.netloc:
         return None
     # Plain URLs avoid job-title Markdown-link injection or escaped mentions.
