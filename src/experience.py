@@ -75,6 +75,15 @@ def _mentions(span: str, *, degree_context: bool) -> list[tuple[float, str, bool
             quantity /= 12
         evidence = span[max(0, match.start() - 90): match.end() + 95].strip()
         skill_specific = bool(_GENERAL_AFTER.search(after[:85]))
+        # "programming experience in Python" is general programming tenure,
+        # unlike "experience using Kubernetes" as an individual tool.
+        if re.search(
+            r"\b(?:programming|software\s+(?:engineering|development)|"
+            r"professional|industry|engineering)\s+experience\s+(?:in|with|using)\b",
+            after[:85],
+            re.IGNORECASE,
+        ):
+            skill_specific = False
         found.append((quantity, evidence[:240], skill_specific))
     return found
 
@@ -102,6 +111,10 @@ def assess_experience_requirements(raw_text: str) -> ExperienceAssessment:
                 break
 
     if bachelors:
+        # A degree mentioned without any numerical experience condition is
+        # not an ambiguous experience pathway by itself.
+        if not _mentions(required, degree_context=True):
+            return ExperienceAssessment(None, False, None, has_alternative)
         # Each bachelor's clause ends at the next degree alternative.
         candidates: list[tuple[float, str]] = []
         incomplete = False
