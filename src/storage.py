@@ -293,6 +293,23 @@ def clean_review_queue(state: dict) -> int:
     return len(to_remove)
 
 
+ORIGINAL_NETWORK_COMPANIES = {
+    "Amazon",
+    "Apple",
+    "Applied Materials",
+    "CrowdStrike",
+    "Intel",
+    "Micron",
+    "Microsoft",
+    "Microsoft Research",
+    "Oracle",
+    "Plaid",
+    "Salesforce",
+    "SanDisk",
+    "Western Digital",
+}
+
+
 def score_review_item(item: dict) -> int:
     """Score a review queue entry for December 2026 CS graduate new-grad relevance.
 
@@ -305,12 +322,11 @@ def score_review_item(item: dict) -> int:
     url = (item.get("url") or "").lower()
 
     # 1. Network Priority companies (+10)
-    network_companies = {
-        "Plaid", "Oracle", "CrowdStrike", "Salesforce", "Apple", "Amazon",
-        "Microsoft", "NVIDIA", "Western Digital", "Applied Materials",
-        "Qualcomm", "Intel", "AMD"
-    }
-    if company in network_companies or item.get("network_priority"):
+    # Honor explicit network_priority flag if present; fallback to canonical original 13 cohort for legacy records
+    if "network_priority" in item:
+        if item["network_priority"]:
+            score += 10
+    elif company in ORIGINAL_NETWORK_COMPANIES:
         score += 10
 
     # 2. Early-career signals in title/reasons (+15)

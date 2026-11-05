@@ -580,14 +580,51 @@ companies:
         )
 
         with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/mock"}), \
-             patch("src.adapters.workday.WorkdayAdapter.fetch", return_value=[mock_job]):
+             patch("src.adapters.workday.WorkdayAdapter.fetch", return_value=[mock_job]), \
+             patch("src.notifier.Notifier.send_summary", return_value=True) as mock_send_summary:
             rc = do_run(args)
             assert rc == 0
+            # Summary delivery must be invoked for the daily review digest
+            assert mock_send_summary.called
+            summary_kwargs = mock_send_summary.call_args[1]
+            assert "Daily Review Digest" in summary_kwargs.get("title", "")
+            assert "Software Engineer II" in summary_kwargs.get("description", "")
 
         # Reload state: the review job must STILL be present in review_queue!
         reloaded = json.loads(state_file.read_text())
         assert jid in reloaded["review_queue"]
         assert reloaded["review_queue"][jid]["company"] == "Salesforce"
+
+    def test_score_review_item_canonical_cohort_and_explicit_flag(self):
+        from src.storage import score_review_item
+        # 1. Legacy entry (no network_priority field) for canonical original cohort -> gets +10 bonus
+        for cname in ["Micron", "SanDisk", "Microsoft Research", "Apple", "Plaid"]:
+            item = {"company": cname, "title": "Analyst", "location": "Chicago, IL"}
+            # Title has no tech or early-career keywords, location has no tech hub bonus -> score is 10 (network only)
+            assert score_review_item(item) == 10
+
+        # 2. Legacy entry for non-original cohort (NVIDIA, AMD, Qualcomm) -> no network bonus (0)
+        for cname in ["NVIDIA", "AMD", "Qualcomm"]:
+            item = {"company": cname, "title": "Analyst", "location": "Chicago, IL"}
+            assert score_review_item(item) == 0
+
+        # 3. Explicit network_priority=False overrides company name bonus
+        item_disabled = {
+            "company": "Apple",
+            "title": "Analyst",
+            "location": "Chicago, IL",
+            "network_priority": False,
+        }
+        assert score_review_item(item_disabled) == 0
+
+        # 4. Explicit network_priority=True grants bonus even if company name is unknown
+        item_enabled = {
+            "company": "Acme Startup",
+            "title": "Analyst",
+            "location": "Chicago, IL",
+            "network_priority": True,
+        }
+        assert score_review_item(item_enabled) == 10
 
     def test_review_digest_ranks_nonpositive_scores_when_capacity_allows(self):
         from src.storage import get_daily_review_digest
