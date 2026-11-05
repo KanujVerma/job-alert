@@ -206,6 +206,9 @@ def record_review_job(
             "title": job.title,
             "url": job.url,
             "location": job.location or "",
+            "department": job.department,
+            "category": job.category,
+            "raw_text": job.raw_text,
             "network_priority": bool(getattr(job, "network_priority", False)),
             "reasons": reasons,
             "first_seen": now.isoformat(),
@@ -218,6 +221,12 @@ def record_review_job(
             entry["network_priority"] = True
         if job.location and not entry.get("location"):
             entry["location"] = job.location
+        if job.department and not entry.get("department"):
+            entry["department"] = job.department
+        if job.category and not entry.get("category"):
+            entry["category"] = job.category
+        if job.raw_text and not entry.get("raw_text"):
+            entry["raw_text"] = job.raw_text
 
 
 def remove_review_job(state: dict, job_id: str) -> bool:
@@ -245,25 +254,38 @@ def clean_review_queue(state: dict) -> int:
     to_remove = []
     now = datetime.now(timezone.utc)
     for jid, entry in queue.items():
+        dept = entry.get("department")
+        cat = entry.get("category")
+        raw_text = entry.get("raw_text") or f"{entry.get('title', '')} {dept or ''} {cat or ''} {entry.get('location', '')}"
         job = Job(
             id=jid,
             company=entry.get("company", ""),
             title=entry.get("title", ""),
             location=entry.get("location", ""),
-            department=None,
-            category=None,
+            department=dept,
+            category=cat,
             url=entry.get("url", ""),
             source_platform="unknown",
             posted_at=None,
             detected_at=now,
-            raw_text=f"{entry.get('title', '')} {entry.get('location', '')}",
+            raw_text=raw_text,
             role_type="unknown",
             priority="normal",
             matched_keywords=(),
         )
         verdict = classify_eligibility(job)
         if verdict.status == "excluded":
-            to_remove.append(jid)
+            is_definitive = any(
+                r in verdict.reasons
+                for r in ("SENIOR_LEVEL", "NON_US_ONLY", "INTERNSHIP_ROLE", "US_CITIZEN_REQUIRED")
+            )
+            if is_definitive:
+                to_remove.append(jid)
+            elif "NON_TECH_ROLE" in verdict.reasons:
+                had_prior_tech = any("TECHNICAL_ROLE" in r for r in entry.get("reasons", []))
+                has_preserved_context = bool(dept or cat or entry.get("raw_text"))
+                if has_preserved_context and not had_prior_tech:
+                    to_remove.append(jid)
 
     for jid in to_remove:
         del queue[jid]

@@ -248,20 +248,24 @@ def do_run(args) -> int:
             cohort = str(company_cfg.get("cohort", "discovered"))
             referral_status = str(company_cfg.get("referral_status", "unconfirmed" if is_network else "unavailable"))
 
-            # Decouple 7-day backfill from the normal 48-hour freshness filter
-            pipeline_filters = dict(config.filters)
+            # Keep individual alert candidate matching strictly bound to standard freshness (48h)
+            # Decouple widened 7-day backfill candidate set so historical postings (48-168h) do not enter alert_candidates
+            backfill_filters = None
             if is_new_policy_migration:
-                pipeline_filters["freshness_hours"] = max(
+                backfill_filters = dict(config.filters)
+                backfill_filters["freshness_hours"] = max(
                     float(config.filters.get("freshness_hours", 48)), 7 * 24.0
                 )
 
             matched = []
+            backfill_matched = []
             review_count = 0
             excluded_count = 0
             filter_reasons = {}
             loop_now = datetime.now(timezone.utc)
             for job in fetched:
-                filtered_job, reasons = apply_filter_pipeline(job, pipeline_filters, source_config)
+                # Normal pipeline evaluation (standard 48h freshness threshold for individual alerts)
+                filtered_job, reasons = apply_filter_pipeline(job, config.filters, source_config)
                 if filtered_job is not None:
                     import dataclasses
                     filtered_job = dataclasses.replace(
@@ -271,8 +275,24 @@ def do_run(args) -> int:
                         referral_status=referral_status,
                     )
                     matched.append(filtered_job)
+                    if backfill_filters is not None:
+                        backfill_matched.append(filtered_job)
                     remove_review_job(state, job.id)
                 else:
+                    # If pending migration/backfill, check if eligible under widened 7-day backfill freshness
+                    if backfill_filters is not None:
+                        bf_job, _ = apply_filter_pipeline(job, backfill_filters, source_config)
+                        if bf_job is not None:
+                            import dataclasses
+                            bf_job = dataclasses.replace(
+                                bf_job,
+                                network_priority=is_network,
+                                cohort=cohort,
+                                referral_status=referral_status,
+                            )
+                            backfill_matched.append(bf_job)
+                            remove_review_job(state, job.id)
+
                     if any("needs_review" in r for r in reasons):
                         review_count += 1
                         import dataclasses
@@ -298,12 +318,7 @@ def do_run(args) -> int:
                 "excluded": excluded_count,
             }
 
-            # Collect bounded backfill candidates if pending migration
-            if is_new_policy_migration:
-                backfill_candidates = get_backfill_candidates(matched, state, loop_now, lookback_days=7)
-                backfill_jobs.extend(backfill_candidates)
-
-            # Classify against first_seen state
+            # Classify against first_seen state for individual alerts
             freshness_hours = float(config.filters.get("freshness_hours", 48))
             now = loop_now
             alert_candidates = classify_jobs(
@@ -366,6 +381,17 @@ def do_run(args) -> int:
             mark_alerted(actually_alerted, cname, state)
             mark_cap_suppressed(cap_suppressed_jobs, cname, state)
             update_last_checked(cname, state, now)
+
+            # Collect bounded backfill candidates if pending migration
+            # Kept separate from alert_candidates: historical postings (48-168h) appear in backfill summary, not individual alerts
+            if is_new_policy_migration:
+                company_backfill_candidates = get_backfill_candidates(backfill_matched, state, loop_now, lookback_days=7)
+                alerted_urls_this_run = {normalize_url(j.url) for j in actually_alerted}
+                company_backfill_candidates = [
+                    j for j in company_backfill_candidates
+                    if normalize_url(j.url) not in alerted_urls_this_run
+                ]
+                backfill_jobs.extend(company_backfill_candidates)
 
             if getattr(args, "verbose", False):
                 if config.filters.get("mode") == "new_grad_full_time":

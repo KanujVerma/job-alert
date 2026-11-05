@@ -355,3 +355,153 @@ class TestPlaidLeverErrorClassification:
         with pytest.raises(requests.HTTPError) as exc_info:
             list(adapter.fetch())
         assert "404" in str(exc_info.value)
+
+
+class TestBackfillSeparationFromIndividualAlerts:
+    """Requirement: Historical postings (48-168h) must NOT trigger individual alerts or exhaust the per-run alert cap."""
+
+    def test_historical_postings_kept_out_of_individual_alerts(self, tmp_path):
+        import json
+        state_file = tmp_path / "seen_jobs.json"
+        config_file = tmp_path / "companies.yaml"
+        config_file.write_text(
+            """
+defaults:
+  schedule_minutes: 15
+  state_path: """ + str(state_file) + """
+  max_alerts_per_run: 25
+filters:
+  mode: new_grad_full_time
+  freshness_hours: 48
+companies:
+  - name: Salesforce
+    adapter: workday
+    enabled: true
+    config:
+      domain: salesforce.wd12.myworkdayjobs.com
+      path: External_Career_Site
+"""
+        )
+        state = _empty_state()
+        state["first_run_completed_at"] = (_NOW - timedelta(days=2)).isoformat()
+        state["migrations"] = {
+            POLICY_VERSION: {
+                "started_at": (_NOW - timedelta(days=1)).isoformat(),
+                "completed_at": None,
+                "backfill_completed": False,
+            }
+        }
+        state["policy_version"] = POLICY_VERSION
+        state_file.write_text(json.dumps(state))
+
+        job_fresh = _make_dummy_job("fresh_role", posted_days_ago=0.5, company="Salesforce")
+        job_historical = _make_dummy_job("hist_role", posted_days_ago=4.5, company="Salesforce")
+
+        args = MagicMock(
+            config=str(config_file),
+            dry_run=False,
+            verbose=False,
+            company="Salesforce",
+            firehose_first_run=False,
+            summary_first_run=False,
+            rerun_backfill=False,
+        )
+
+        with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/mock"}), \
+             patch("src.adapters.workday.WorkdayAdapter.fetch", return_value=[job_fresh, job_historical]), \
+             patch("src.notifier.Notifier.send_job_alert", return_value=True) as mock_send_alert, \
+             patch("src.notifier.Notifier.send_summary", return_value=True) as mock_send_summary:
+            rc = do_run(args)
+            assert rc == 0
+
+            # Only the fresh role receives an individual alert!
+            assert mock_send_alert.call_count == 1
+            alerted_job = mock_send_alert.call_args[0][0]
+            assert alerted_job.id == job_fresh.id
+
+            # The backfill summary receives the historical role
+            assert mock_send_summary.called
+            summary_kwargs = mock_send_summary.call_args[1]
+            assert "Phase 1 Policy Backfill" in summary_kwargs.get("title", "")
+            assert "hist_role" in summary_kwargs.get("description", "")
+
+
+class TestReviewQueuePreservation:
+    """Requirement: Preserve classification evidence and prevent false pruning of review queue items."""
+
+    def test_clean_review_queue_preserves_department_tech_evidence(self):
+        from src.storage import clean_review_queue, record_review_job
+        state = _empty_state()
+        job = Job(
+            id="dept_swe_1",
+            company="Salesforce",
+            title="Engineer I",
+            location="San Francisco, CA",
+            department="Software Engineering",
+            category=None,
+            url="https://example.com/job/1",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Engineer I. 3 years required. San Francisco, CA.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        record_review_job(state, job, ["eligibility: needs_review: TECHNICAL_ROLE, UNCLEAR_EXPERIENCE"], _NOW)
+
+        # Cleaning review queue must NOT prune this item!
+        pruned = clean_review_queue(state)
+        assert pruned == 0
+        assert "dept_swe_1" in state["review_queue"]
+
+    def test_clean_review_queue_preserves_legacy_item_with_prior_tech(self):
+        from src.storage import clean_review_queue
+        state = _empty_state()
+        state["review_queue"]["legacy_item"] = {
+            "company": "Salesforce",
+            "title": "Engineer I",
+            "location": "San Francisco, CA",
+            "department": None,
+            "category": None,
+            "reasons": ["eligibility: needs_review: TECHNICAL_ROLE, UNCLEAR_EXPERIENCE"],
+            "first_seen": _NOW.isoformat(),
+            "last_seen": _NOW.isoformat(),
+        }
+
+        # Legacy item lacked department in state, but had TECHNICAL_ROLE reason -> must be preserved!
+        pruned = clean_review_queue(state)
+        assert pruned == 0
+        assert "legacy_item" in state["review_queue"]
+
+    def test_clean_review_queue_prunes_definitive_exclusions(self):
+        from src.storage import clean_review_queue
+        state = _empty_state()
+        state["review_queue"]["senior_role"] = {
+            "company": "Salesforce",
+            "title": "Senior Software Engineer",
+            "location": "San Francisco, CA",
+            "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
+            "first_seen": _NOW.isoformat(),
+            "last_seen": _NOW.isoformat(),
+        }
+        state["review_queue"]["intern_role"] = {
+            "company": "Salesforce",
+            "title": "Software Engineering Intern",
+            "location": "San Francisco, CA",
+            "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
+            "first_seen": _NOW.isoformat(),
+            "last_seen": _NOW.isoformat(),
+        }
+        state["review_queue"]["non_us_role"] = {
+            "company": "Salesforce",
+            "title": "Software Engineer",
+            "location": "London, United Kingdom",
+            "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
+            "first_seen": _NOW.isoformat(),
+            "last_seen": _NOW.isoformat(),
+        }
+
+        pruned = clean_review_queue(state)
+        assert pruned == 3
+        assert len(state["review_queue"]) == 0
