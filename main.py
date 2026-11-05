@@ -41,6 +41,7 @@ from src.health import (
 from src.http import HTTPClient
 from src.browser import BrowserClient
 from src.notifier import Notifier
+from src.backfill import deliver_backfill_batch
 from src.filtering import apply_filter_pipeline
 from src.scheduler import run_loop
 
@@ -446,53 +447,20 @@ def do_run(args) -> int:
             description="\n".join(desc_lines),
         )
 
-    # Policy backfill summary (Jobbie 2.1 migration first run or manual rerun)
+    # One bounded, resumable page per run. Never acknowledge a posting whose
+    # direct link was not included in a successfully delivered summary.
     if is_new_policy_migration:
-        unique_backfill: list[Job] = []
-        seen_bf_urls: set[str] = set()
-        for j in backfill_jobs:
-            nurl = normalize_url(j.url)
-            if nurl and nurl in seen_bf_urls:
-                continue
-            if nurl:
-                seen_bf_urls.add(nurl)
-            unique_backfill.append(j)
-
-        if not getattr(args, "dry_run", False) and any_company_succeeded:
-            if unique_backfill:
-                if notifier:
-                    total_bf = len(unique_backfill)
-                    desc_lines = [
-                        f"Found {total_bf} eligible jobs from the last 7 days across monitored sites (showing {min(10, total_bf)}):"
-                    ]
-                    for j in unique_backfill[:10]:
-                        loc_str = f" ({j.location})" if j.location else ""
-                        desc_lines.append(f"• [{j.company}: {j.title}]({j.url}){loc_str}")
-                    try:
-                        sent = notifier.send_summary(
-                            title="📋 Phase 1 Policy Backfill (Last 7 Days)",
-                            description="\n".join(desc_lines),
-                        )
-                    except Exception as exc:
-                        logger.error("Failed to send backfill summary to Discord: %s", exc)
-                        sent = False
-
-                    if sent:
-                        mark_backfill_completed(state, POLICY_VERSION, datetime.now(timezone.utc))
-                        for j in unique_backfill:
-                            mark_alerted([j], j.company, state)
-                            record_alerted_url(j.url, j.company, j.id, state, datetime.now(timezone.utc))
-                    else:
-                        logger.warning("Backfill summary delivery failed or unconfirmed; leaving backfill pending.")
-                else:
-                    logger.warning("No Discord notifier configured; backfill summary cannot be delivered. Leaving backfill pending.")
-            else:
-                # No backfill jobs found across any monitored source; safely mark completed
-                mark_backfill_completed(state, POLICY_VERSION, datetime.now(timezone.utc))
-        elif getattr(args, "dry_run", False):
+        if getattr(args, "dry_run", False):
+            preview_urls = {normalize_url(j.url) for j in backfill_jobs if normalize_url(j.url)}
             print(
-                f"Migration backfill preview: found {len(unique_backfill)} eligible jobs from last 7 days "
-                f"(would send summary capped at 10)."
+                f"Migration backfill preview: {len(preview_urls)} eligible candidates; "
+                "would send up to 10 links, leaving remainder pending."
+            )
+        elif any_company_succeeded:
+            result = deliver_backfill_batch(backfill_jobs, state, notifier)
+            logger.info(
+                "Backfill batch: acknowledged=%d pending=%d completed=%s delivery_attempted=%s",
+                result.delivered, result.remaining, result.completed, result.attempted,
             )
 
     # Daily review digest
