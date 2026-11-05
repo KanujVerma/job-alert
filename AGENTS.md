@@ -46,3 +46,8 @@ If a referenced file is missing, stale, contradictory, or cannot be fetched, rep
 Use only the matching `docs/agent-prompts/PHASE-N-CODE.md` as the short `/code` objective; the detailed source of truth is the phase file. If platform limits a slash-goal to 4,000 characters, DO NOT paste all docs into the command; point the agent at the committed files.
 
 The requested human-controlled rename (`job-alert` -> `jobbie`) is documented in `docs/RENAME.md` and remains an external precondition until verified by GitHub repository metadata.
+
+
+## Owner-selected development workflow (2026-11-05)
+The primary coding assistant MUST implement the requested current phase directly in this GitHub repository whenever its tools permit. Do not replace an implementable code change with repeated Gemini prompts, theoretical reviews, or speculative follow-up questions. Produce a reviewable PR, tests, measured CI, and code review. Gemini may independently REVIEW finished code or perform genuinely tool-blocked tasks, reporting real evidence; it is not the default primary implementer. Continue one releasable phase at a time, carrying forward previously released functionality. The committed /code objectives remain fallback entrypoints, not a substitute for writing code.
+
