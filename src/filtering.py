@@ -32,12 +32,25 @@ US_TECH_CITIES = {
     "cincinnati", "cleveland", "milwaukee", "memphis", "new haven"
 }
 
+US_STATE_NAMES = {
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+    "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+    "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana",
+    "maine", "maryland", "massachusetts", "michigan", "minnesota",
+    "mississippi", "missouri", "montana", "nebraska", "nevada",
+    "new hampshire", "new jersey", "new mexico", "new york",
+    "north carolina", "north dakota", "ohio", "oklahoma", "oregon",
+    "pennsylvania", "rhode island", "south carolina", "south dakota",
+    "tennessee", "texas", "utah", "vermont", "virginia", "washington",
+    "west virginia", "wisconsin", "wyoming", "district of columbia",
+}
+
 _NON_US_COUNTRY_CODES = {
     "in", "ca", "gb", "de", "fr", "au", "jp", "cn", "tw", "sg", "kr",
     "mx", "br", "ie", "nl", "se", "no", "dk", "fi", "ch", "es", "it",
     "pl", "cz", "ro", "hu", "il", "tr", "ae", "sa", "pk", "ph", "id",
     "my", "vn", "th", "hk", "nz", "ar", "co", "cl", "pe", "ng", "ke",
-    "za", "ua", "ru", "bd", "lk", "qa", "kw", "bh", "om", "eg",
+    "za", "ua", "ru", "bd", "lk", "qa", "kw", "bh", "om", "eg", "ge",
 }
 
 _NON_US_COUNTRY_CODES_3 = {
@@ -47,7 +60,7 @@ _NON_US_COUNTRY_CODES_3 = {
     # Europe
     "gbr", "deu", "fra", "irl", "nld", "swe", "nor", "dnk", "fin",
     "che", "esp", "ita", "pol", "cze", "rou", "hun", "bel", "prt",
-    "aut", "hrv", "svk", "grc", "srb",
+    "aut", "hrv", "svk", "grc", "srb", "geo",
     # Americas (non-US)
     "can", "mex", "bra", "arg", "col", "chl", "per", "cri", "pan",
     "gtm", "hnd", "slv", "nic",
@@ -56,7 +69,7 @@ _NON_US_COUNTRY_CODES_3 = {
     "nga", "ken", "zaf", "ukr", "rus", "pak", "bgd", "lka",
 }
 
-NON_US_SIGNALS = {
+NON_US_COUNTRIES = {
     # Countries — major
     "india", "canada", "uk", "united kingdom", "germany", "france", "australia",
     "japan", "china", "singapore", "mexico", "brazil", "ireland", "netherlands",
@@ -74,10 +87,13 @@ NON_US_SIGNALS = {
     "costa rica", "panama", "guatemala", "honduras", "nicaragua", "el salvador",
     # Countries — Europe (additions)
     "austria", "belgium", "portugal", "croatia", "serbia", "greece", "slovakia",
+}
+
+NON_US_CITIES = {
     # Cities — Europe (Western)
     "budapest", "london", "berlin", "paris", "amsterdam", "dublin", "stockholm",
     "oslo", "zurich", "madrid", "rome", "warsaw", "prague", "bucharest",
-    "brussels", "lisbon", "porto",
+    "brussels", "lisbon", "porto", "eindhoven",
     # Cities — Austria
     "vienna", "graz", "villach", "linz", "salzburg",
     # Cities — Southeast Europe
@@ -101,8 +117,14 @@ NON_US_SIGNALS = {
     "cairo", "nairobi", "lagos", "cape town", "johannesburg",
     "buenos aires", "bogota", "santiago", "lima",
     # Cities — EE / Russia
-    "moscow", "kyiv",
+    "moscow", "kyiv", "tbilisi", "batumi", "kutaisi",
 }
+
+NON_US_SIGNALS = (
+    {"emea", "apac", "latam", "europe", "asia", "africa"}
+    | NON_US_COUNTRIES
+    | NON_US_CITIES
+)
 
 
 # ---------------------------------------------------------------------------
@@ -151,10 +173,20 @@ def filter_freshness(job: Job, filters: dict) -> FilterResult:
 
 def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
     """Check a single location string. Returns (is_us, reason) where is_us can be True, False, or None (ambiguous)."""
-    loc_lower = loc_str.lower().strip()
-    loc_parts = [p.strip() for p in loc_lower.split(",")]
+    if not loc_str:
+        return None, "empty location"
 
-    # 2-letter ISO code in "city, region, COUNTRY" (3+ parts, to avoid "Denver, CO")
+    loc_clean = loc_str.strip().strip("()[]{}")
+    # Split camelCase or joined city/codes e.g. 'Santa-ClaraCA' -> 'Santa-Clara CA'
+    loc_clean = re.sub(r"([a-z])([A-Z])", r"\1 \2", loc_clean)
+    loc_lower = loc_clean.lower()
+
+    # Step 1: Regional non-US blocks
+    if re.search(r"\b(?:emea|apac|latam|europe|asia|africa)\b", loc_lower):
+        return False, f"non-US region: {loc_clean}"
+
+    # Step 2: Check comma-separated ISO country codes (e.g. "Bengaluru, Karnataka, IN")
+    loc_parts = [p.strip().strip("()[]{}") for p in loc_lower.split(",")]
     if len(loc_parts) >= 3 and len(loc_parts[-1]) == 2 and loc_parts[-1].isalpha():
         last = loc_parts[-1]
         if last == "us":
@@ -162,7 +194,6 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
         if last in _NON_US_COUNTRY_CODES:
             return False, f"non-US country code: {last.upper()}"
 
-    # 3-letter ISO code in "city, COUNTRY" (2+ parts)
     if len(loc_parts) >= 2 and len(loc_parts[-1]) == 3 and loc_parts[-1].isalpha():
         last3 = loc_parts[-1]
         if last3 == "usa":
@@ -170,27 +201,81 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
         if last3 in _NON_US_COUNTRY_CODES_3:
             return False, f"non-US country code: {last3.upper()}"
 
-    # Explicit US signals
+    # Step 3: Explicit US country signals & US Remote (check before ambiguous foreign city names like Dublin, CA or Paris, TX)
     for us_signal in ("united states", "usa", "u.s."):
         if us_signal in loc_lower:
             return True, f"US confirmed: {us_signal}"
 
-    # Non-US signals
-    for signal in NON_US_SIGNALS:
-        pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
-        if re.search(pattern, loc_lower):
-            return False, f"non-US location: {signal}"
+    if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|remote, us|united states remote|us only)\b", loc_lower):
+        return True, "US Remote confirmed"
 
-    # US tech cities
+    # Step 4: Check fused city/country e.g. EindhovenNLD
+    fused_match = re.match(r"^([a-z\s-]+?)(nld|can|usa|gbr|deu|ind|fra|irl|jpn|chn|aus|sgp)$", loc_lower)
+    if fused_match:
+        suffix = fused_match.group(2)
+        if suffix in _NON_US_COUNTRY_CODES_3 or suffix in _NON_US_COUNTRY_CODES:
+            return False, f"non-US country code suffix: {suffix.upper()}"
+        if suffix in {"usa", "us"}:
+            return True, f"US country code suffix: {suffix.upper()}"
+
+    # Step 5: Authoritative foreign countries & Canadian provinces
+    for part in re.split(r"[\s,\-/–—_]+", loc_lower):
+        part_clean = part.strip()
+        if part_clean in _NON_US_COUNTRY_CODES_3:
+            return False, f"non-US country code: {part_clean.upper()}"
+        if part_clean in {"ab", "bc", "mb", "nb", "nl", "ns", "nt", "nu", "on", "pe", "qc", "sk", "yt"} and ("canada" in loc_lower or "can" in loc_lower):
+            return False, f"Canadian province: {part_clean.upper()}"
+
+    for country in NON_US_COUNTRIES:
+        pattern = r"(?<![a-z])" + re.escape(country) + r"(?![a-z])"
+        if re.search(pattern, loc_lower):
+            return False, f"non-US country: {country}"
+
+    # Step 6: US State Names (e.g. California---San-Francisco, US-Texas-Austin, Paris, Texas)
+    for state_name in US_STATE_NAMES:
+        pattern = r"(?<![a-z])" + re.escape(state_name) + r"(?![a-z])"
+        if re.search(pattern, loc_lower):
+            if state_name == "georgia":
+                # Disambiguate US state Georgia from the country Georgia (Eurasia).
+                # Require explicit US context or a known US Georgia city.
+                has_us_context = bool(
+                    re.search(r"\b(?:us|usa|u\.s\.|united states)\b", loc_lower)
+                    or re.search(
+                        r"\b(?:atlanta|savannah|augusta|alpharetta|athens|columbus|marietta|norcross|macon|roswell|sandy springs)\b",
+                        loc_lower,
+                    )
+                )
+                if has_us_context:
+                    return True, f"US state name: {state_name}"
+                # Without US context, do not confirm US; continue checking other signals (e.g. non-US cities like Tbilisi)
+                continue
+            return True, f"US state name: {state_name}"
+
+    # Step 7: US State Codes (e.g. WA, CA, TX, NY; Paris, TX; London, OH; Dublin, CA)
+    for code in US_STATE_CODES:
+        # Ambiguous 2-letter English words ('in', 'or', 'me', 'ok')
+        if code.lower() in {"in", "or", "me", "ok"}:
+            if re.search(r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])", loc_clean) or re.search(
+                r"(?:,\s*|-\s*)" + re.escape(code.lower()) + r"(?![a-zA-Z])", loc_lower
+            ):
+                return True, f"US state code: {code}"
+        else:
+            # Case-insensitive match for distinct state codes (e.g. Cupertino, ca; Rochester, ny; Paris, TX)
+            if re.search(r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])", loc_clean, re.IGNORECASE):
+                return True, f"US state code: {code}"
+
+    # Step 8: US Tech Cities (replace delimiters with spaces for city matching)
+    loc_spaces = re.sub(r"[\s,\-/–—_]+", " ", loc_lower)
     for city in US_TECH_CITIES:
-        if city in loc_lower:
+        pattern = r"(?<![a-z])" + re.escape(city) + r"(?![a-z])"
+        if re.search(pattern, loc_lower) or re.search(pattern, loc_spaces):
             return True, f"US city match: {city}"
 
-    # US state codes
-    for code in US_STATE_CODES:
-        pattern = r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])"
-        if re.search(pattern, loc_str):
-            return True, f"US state code: {code}"
+    # Step 9: Foreign Cities / Remaining Non-US Signals (e.g. Paris alone, London alone, Berlin, etc.)
+    for city in NON_US_CITIES:
+        pattern = r"(?<![a-z])" + re.escape(city) + r"(?![a-z])"
+        if re.search(pattern, loc_lower):
+            return False, f"non-US location: {city}"
 
     return None, "ambiguous"
 
@@ -236,10 +321,30 @@ def filter_location(job: Job, filters: dict) -> FilterResult:
             if re.search(pattern, combined):
                 return FilterResult(False, f"non-US location: {signal}")
 
-    # Explicit US signals
-    for us_signal in ("united states", "usa", "u.s.", "remote"):
+    # Explicit US signals (never treat bare 'remote' as confirmed US!)
+    for us_signal in ("united states", "usa", "u.s."):
         if us_signal in combined:
             return FilterResult(True, f"US confirmed: {us_signal}")
+
+    if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|remote, us|united states remote|us only)\b", combined):
+        return FilterResult(True, "US Remote confirmed")
+
+    # US state names
+    for state_name in US_STATE_NAMES:
+        pattern = r"(?<![a-z])" + re.escape(state_name) + r"(?![a-z])"
+        if re.search(pattern, combined):
+            if state_name == "georgia":
+                has_us_context = bool(
+                    re.search(r"\b(?:us|usa|u\.s\.|united states)\b", combined)
+                    or re.search(
+                        r"\b(?:atlanta|savannah|augusta|alpharetta|athens|columbus|marietta|norcross|macon|roswell|sandy springs)\b",
+                        combined,
+                    )
+                )
+                if has_us_context:
+                    return FilterResult(True, f"US state name: {state_name}")
+                continue
+            return FilterResult(True, f"US state name: {state_name}")
 
     # US state codes
     for code in US_STATE_CODES:

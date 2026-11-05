@@ -188,6 +188,72 @@ class TestFilterLocation:
         assert result.passes
         assert "country code" in result.reason
 
+    def test_workday_california_san_francisco_passes(self):
+        job = make_job(location="California---San-Francisco", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "state name" in result.reason or "city match" in result.reason
+
+    def test_workday_us_texas_austin_passes(self):
+        job = make_job(location="US-Texas-Austin", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "state name" in result.reason or "city match" in result.reason
+
+    def test_workday_usa_redmond_wa_passes(self):
+        job = make_job(location="USA---Redmond-WA", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert result.passes
+
+    def test_workday_canada_remote_ab_fails(self):
+        job = make_job(location="Canada---Remote-AB", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason or "province" in result.reason
+
+    def test_crowdstrike_remote_can_fails(self):
+        job = make_job(location="(Remote, CAN)", raw_text="software development engineer in test")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_amat_eindhoven_nld_fails(self):
+        job = make_job(location="EindhovenNLD", raw_text="data scientist")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_data_scientist_emea_fails(self):
+        job = make_job(location="EMEA", raw_text="data scientist emea")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_bare_remote_does_not_confirm_us(self):
+        job = make_job(location="Remote", raw_text="software engineer remote")
+        result = filter_location(job, _FILTERS)
+        # Should be ambiguous, NOT 'US confirmed: remote'
+        assert result.reason == "location ambiguous"
+
+    def test_explicit_us_remote_passes(self):
+        job = make_job(location="US Remote", raw_text="software engineer us remote")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "US Remote confirmed" in result.reason
+
+    def test_dublin_california_united_states_passes(self):
+        job = make_job(location="Dublin, California, United States", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "US confirmed" in result.reason
+
+    def test_paris_texas_usa_passes(self):
+        job = make_job(location="Paris, Texas, USA", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "USA" in result.reason or "US confirmed" in result.reason
+
 
 # ---------------------------------------------------------------------------
 # filter_exclude tests
@@ -966,6 +1032,92 @@ class TestLocationFilterNewBugs:
         )
         result = filter_location(job, _FILTERS)
         assert not result.passes
+
+    def test_lowercase_us_state_code_ca_passes(self):
+        """Case-insensitive state code 'ca' must confirm US location."""
+        from src.filtering import _check_single_location
+        job = make_job(
+            location="Cupertino, ca",
+            raw_text="software engineer entry-level cupertino ca",
+        )
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        is_us, reason = _check_single_location("Cupertino, ca")
+        assert is_us is True
+        assert "US state code: CA" in reason
+
+    def test_lowercase_us_state_code_ny_passes(self):
+        """Case-insensitive state code 'ny' must confirm US location."""
+        from src.filtering import _check_single_location
+        job = make_job(
+            location="Rochester, ny",
+            raw_text="software engineer entry-level rochester ny",
+        )
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        is_us, reason = _check_single_location("Rochester, ny")
+        assert is_us is True
+        assert "US state code: NY" in reason
+
+    def test_tbilisi_georgia_fails_non_us(self):
+        """Tbilisi, Georgia must be rejected as non-US."""
+        from src.filtering import _check_single_location
+        job = make_job(
+            location="Tbilisi, Georgia",
+            raw_text="software engineer tbilisi georgia",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        is_us, reason = _check_single_location("Tbilisi, Georgia")
+        assert is_us is False
+
+    def test_tbilisi_ge_country_code_fails(self):
+        """Country code GE must be rejected as non-US country code."""
+        from src.filtering import _check_single_location
+        is_us, reason = _check_single_location("Tbilisi, Didube, GE")
+        assert is_us is False
+        assert "non-US country code: GE" in reason
+
+    def test_unresolved_georgia_alone_is_ambiguous(self):
+        """Unresolved 'Georgia' alone without US context must be ambiguous, not confirmed US."""
+        from src.filtering import _check_single_location
+        is_us, reason = _check_single_location("Georgia")
+        assert is_us is None
+        assert "ambiguous" in reason
+
+    def test_atlanta_georgia_passes_us(self):
+        """Georgia with US context (Atlanta) must be confirmed US."""
+        from src.filtering import _check_single_location
+        is_us, reason = _check_single_location("Atlanta, Georgia")
+        assert is_us is True
+        assert "US state name: georgia" in reason
+
+    def test_paris_tx_passes_us(self):
+        """Paris, TX must be confirmed US via state code TX despite Paris."""
+        from src.filtering import _check_single_location
+        job = make_job(location="Paris, TX", raw_text="software engineer entry-level")
+        assert filter_location(job, _FILTERS).passes
+        is_us, reason = _check_single_location("Paris, TX")
+        assert is_us is True
+        assert "US state code: TX" in reason
+
+    def test_london_oh_passes_us(self):
+        """London, OH must be confirmed US via state code OH despite London."""
+        from src.filtering import _check_single_location
+        job = make_job(location="London, OH", raw_text="software engineer entry-level")
+        assert filter_location(job, _FILTERS).passes
+        is_us, reason = _check_single_location("London, OH")
+        assert is_us is True
+        assert "US state code: OH" in reason
+
+    def test_dublin_ca_passes_us(self):
+        """Dublin, CA must be confirmed US via state code CA despite Dublin."""
+        from src.filtering import _check_single_location
+        job = make_job(location="Dublin, CA", raw_text="software engineer entry-level")
+        assert filter_location(job, _FILTERS).passes
+        is_us, reason = _check_single_location("Dublin, CA")
+        assert is_us is True
+        assert "US state code: CA" in reason
 
 
 # ---------------------------------------------------------------------------

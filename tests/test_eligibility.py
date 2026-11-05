@@ -242,6 +242,133 @@ class TestSpecificAdversarialCases:
         assert verdict.status == "eligible"
         assert REASON_NON_US_ONLY not in verdict.reasons
 
+    def test_parenthesized_level_code_e3_excludes_senior(self):
+        job = Job(
+            id="test-level-e3",
+            company="Applied Materials",
+            title="Software Engineer (E3)",
+            location="Santa Clara, CA",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/e3",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer (E3). 0-2 years experience. Santa Clara, CA.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        assert verdict.status == "excluded"
+        assert REASON_SENIOR_LEVEL in verdict.reasons
+
+    def test_parenthesized_level_code_l4_excludes_senior(self):
+        job = Job(
+            id="test-level-l4",
+            company="Google",
+            title="Software Engineer (L4)",
+            location="Mountain View, CA",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/l4",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer (L4). Mountain View, CA.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        assert verdict.status == "excluded"
+        assert REASON_SENIOR_LEVEL in verdict.reasons
+
+    def test_lowercase_state_code_ca_is_eligible(self):
+        job = Job(
+            id="test-swe1-ca",
+            company="Apple",
+            title="Software Engineer I",
+            location="Cupertino, ca",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/ca1",
+            source_platform="apple_jobs",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer I. 0-2 years experience. Full-time.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        assert verdict.status == "eligible"
+        assert REASON_NON_US_ONLY not in verdict.reasons
+
+    def test_tbilisi_georgia_is_excluded(self):
+        job = Job(
+            id="test-swe1-tbilisi",
+            company="GlobalTech",
+            title="Software Engineer I",
+            location="Tbilisi, Georgia",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/ge1",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer I. 0-2 years experience. Full-time.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        assert verdict.status == "excluded"
+        assert REASON_NON_US_ONLY in verdict.reasons
+
+    def test_unresolved_georgia_alone_is_needs_review(self):
+        job = Job(
+            id="test-swe1-georgia",
+            company="GenericCorp",
+            title="Software Engineer I",
+            location="Georgia",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/ge2",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer I. 0-2 years experience. Full-time.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        # Without US context, unresolved Georgia cannot be confirmed US and must not be marked eligible
+        assert verdict.status == "needs_review"
+
+    def test_state_only_cities_with_shared_foreign_names_are_eligible(self):
+        for loc in ["Paris, TX", "London, OH", "Dublin, CA"]:
+            job = Job(
+                id=f"test-loc-{loc}",
+                company="TechCorp",
+                title="Software Engineer I",
+                location=loc,
+                department="Engineering",
+                category="Software",
+                url=f"https://example.com/job/{loc}",
+                source_platform="workday",
+                posted_at=None,
+                detected_at=_NOW,
+                raw_text="Software Engineer I. Full time. 0-2 years experience.",
+                role_type="unknown",
+                priority="normal",
+                matched_keywords=(),
+            )
+            verdict = classify_eligibility(job)
+            assert verdict.status == "eligible", f"Expected {loc} to be eligible, got {verdict.status}: {verdict.reasons}"
+            assert REASON_NON_US_ONLY not in verdict.reasons
+
 
 class TestPipelineNewGradMode:
     """Test full filter pipeline in new_grad_full_time mode vs legacy mode."""
