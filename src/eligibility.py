@@ -514,10 +514,11 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
                 f"Bachelor's/overall experience requires {min_years_req:g}+ years: "
                 f"{experience_assessment.evidence or 'source requirement'}"
             )
-        elif min_years_req >= 3:
+        elif min_years_req > 2:
             reasons.append(REASON_EXPERIENCE_EXCEEDS_RANGE)
             evidence_spans.append(
-                f"3-year stretch requirement: {experience_assessment.evidence or 'source requirement'}"
+                f"Above-2-year stretch requirement ({min_years_req:g} years): "
+                f"{experience_assessment.evidence or 'source requirement'}"
             )
         elif not experience_assessment.ambiguous:
             reasons.append(REASON_ZERO_TO_TWO_YEARS)
@@ -598,7 +599,7 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
             REASON_WORK_AUTH_UNKNOWN,
         ]
         # 3 years experience is a stretch review
-        if min_years_req is not None and 3 <= min_years_req < 4:
+        if min_years_req is not None and 2 < min_years_req < 4:
             review_triggers.append(REASON_EXPERIENCE_EXCEEDS_RANGE)
 
         is_review = any(t in reasons for t in review_triggers)

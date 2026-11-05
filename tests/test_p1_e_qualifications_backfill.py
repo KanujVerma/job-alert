@@ -367,3 +367,12 @@ def test_bad_bracketed_url_does_not_abort_or_block_valid_job():
     assert not is_url_alerted(broken.url, state)
     assert is_url_alerted(good.url, state)
     assert good.url in sender.payloads[0][1]
+
+
+def test_two_point_five_year_required_minimum_is_review_not_eligible():
+    requirement = "Minimum qualifications: 2.5 years of professional experience required."
+    verdict = classify_eligibility(
+        make_job(87, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "needs_review"
+    assert "EXPERIENCE_EXCEEDS_RANGE" in verdict.reasons
