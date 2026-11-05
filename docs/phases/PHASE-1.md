@@ -99,3 +99,28 @@ Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks a
   - Schedule reality caveat: Actions schedule drift can exceed nominal 15m intervals; gap detection flags runs exceeding 45m without promising sub-15m real-time polling.
 - **Rollback Protocol:**
   - Switch `filters.mode: legacy` in `companies.yaml`. State retains backward compatibility without wiping seen jobs or causing alert storms.
+
+## Phase 1D: Quality and Release Hardening (Jobbie 2.1 Final Release)
+- **Release Status:** Complete & Verified
+- **Sequential PRs Merged to `main`:**
+  1. **P1-D1 (Classification and Coverage):**
+     - PR: [#15](https://github.com/KanujVerma/jobbie/pull/15)
+     - Squash commit: `e1608cf6223d21ef7ebaf2ce565c0e96f0159970`
+     - Corrected level code classifications (E3/IC1/L1/P1 -> new_grad; E4+/L4+/IC3+ -> senior/excluded; E3/L3 with ambiguous exp -> needs_review).
+     - Disambiguated Workday multi-locations with composite `location` and `additionalLocations` parsing.
+     - Resolved geographic disambiguation (Georgia state vs Georgia country, London OH vs London UK, Paris TX vs Paris France).
+  2. **P1-D2 (State and Delivery Correctness):**
+     - PR: [#16](https://github.com/KanujVerma/jobbie/pull/16)
+     - Squash commit: `c9acd1ce69a6866ec88fecab76f7f022718797f1`
+     - Decoupled 7-day backfill freshness from standard 48-hour individual alert threshold, isolating historical postings from consuming the alert cap.
+     - Enforced confirmed delivery invariant (`alerted=True` only when Discord webhook succeeds).
+     - Added `--rerun-backfill` CLI flag for safe reruns without resetting state.
+     - Re-raised Lever adapter HTTP errors (404 classified as failed rather than healthy zero).
+     - Review queue cleanup and prioritization (scoring canonical 13 network priority, early career keywords, tech hubs, and preserving classification evidence).
+  3. **P1-D3 (Automated Verification and Release):**
+     - PR: [#17](https://github.com/KanujVerma/jobbie/pull/17)
+     - Added GitHub Actions CI workflow in `.github/workflows/test.yml` running pytest and config validation on PRs and pushes to main.
+     - Measured actual GitHub Actions cron delivery gaps (ranging from 15m to 8 hours drift) and verified `scheduler_gap_detected` observability in `src/health.py`.
+     - Verified zero state or alert mutation during `--dry-run`.
+- **Final Test Suite:** 654 tests passing cleanly synchronously (`pytest`).
+
