@@ -10,9 +10,9 @@ import re
 from dataclasses import dataclass
 
 _DEGREE = re.compile(
-    r"\b(?P<bachelor>bachelor(?:'?s|s)?|b\.?s\.?|undergraduate)\b"
-    r"|\b(?P<master>master(?:'?s|s)?|m\.?s\.?)\b"
-    r"|\b(?P<phd>ph\.?d\.?|doctorate)\b",
+    r"\b(?P<bachelor>bachelor(?:'?s|s)?|b\.?s\.?|undergraduate)(?!\w)"
+    r"|\b(?P<master>master(?:'?s|s)?|m\.?s\.?)(?!\w)"
+    r"|\b(?P<phd>ph\.?d\.?|doctorate)(?!\w)",
     re.IGNORECASE,
 )
 _YEAR = re.compile(
