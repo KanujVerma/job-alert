@@ -366,17 +366,8 @@ def get_daily_review_digest(
     if not queue:
         return None
 
-    # Score and sort items
-    scored = []
-    for item in queue.values():
-        sc = score_review_item(item)
-        if sc > 0:
-            scored.append((sc, item))
-
-    # If all items had score <= 0 but queue is non-empty, retain items
-    if not scored and queue:
-        scored = [(0, item) for item in queue.values()]
-
+    # Score and sort all items
+    scored = [(score_review_item(item), item) for item in queue.values()]
     scored.sort(key=lambda x: (x[0], x[1].get("last_seen", "")), reverse=True)
     prioritized = [item for _, item in scored]
     return prioritized[:cap], len(queue)

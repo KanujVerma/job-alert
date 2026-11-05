@@ -293,7 +293,28 @@ def do_run(args) -> int:
                             backfill_matched.append(bf_job)
                             remove_review_job(state, job.id)
 
-                    if any("needs_review" in r for r in reasons):
+                    # Check why filtered_job was None
+                    is_needs_review = any("needs_review" in r for r in reasons)
+                    is_excluded = any("excluded" in r for r in reasons) or any("location: dropped" in r for r in reasons)
+
+                    if not is_needs_review and not is_excluded and any("freshness: stale" in r for r in reasons):
+                        # Dropped at Step 0 purely for freshness. Evaluate location & eligibility to check if review is needed
+                        from src.filtering import filter_location
+                        loc_res = filter_location(job, config.filters)
+                        if not loc_res.passes:
+                            is_excluded = True
+                            reasons.append(f"location: {loc_res.reason}")
+                        else:
+                            from src.eligibility import classify_eligibility
+                            verdict = classify_eligibility(job, config.filters)
+                            if verdict.status == "needs_review":
+                                is_needs_review = True
+                                reasons.append(f"eligibility: {verdict.status}: {', '.join(verdict.reasons)}")
+                            elif verdict.status == "excluded":
+                                is_excluded = True
+                                reasons.append(f"eligibility: {verdict.status}: {', '.join(verdict.reasons)}")
+
+                    if is_needs_review:
                         review_count += 1
                         import dataclasses
                         review_job = dataclasses.replace(
@@ -305,7 +326,8 @@ def do_run(args) -> int:
                         record_review_job(state, review_job, reasons, loop_now)
                     else:
                         excluded_count += 1
-                        remove_review_job(state, job.id)
+                        if is_excluded:
+                            remove_review_job(state, job.id)
                 filter_reasons[job.id] = reasons
 
             # Record per-company stats for health reporting

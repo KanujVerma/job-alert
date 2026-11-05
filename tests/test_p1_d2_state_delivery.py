@@ -505,3 +505,109 @@ class TestReviewQueuePreservation:
         pruned = clean_review_queue(state)
         assert pruned == 3
         assert len(state["review_queue"]) == 0
+
+    def test_stale_review_job_preserved_on_refetch(self, tmp_path):
+        import json
+        state_file = tmp_path / "seen_jobs.json"
+        config_file = tmp_path / "companies.yaml"
+        config_file.write_text(
+            """
+defaults:
+  schedule_minutes: 15
+  state_path: """ + str(state_file) + """
+  max_alerts_per_run: 25
+filters:
+  mode: new_grad_full_time
+  freshness_hours: 48
+companies:
+  - name: Salesforce
+    adapter: workday
+    enabled: true
+    config:
+      domain: salesforce.wd12.myworkdayjobs.com
+      path: External_Career_Site
+"""
+        )
+        state = _empty_state()
+        state["first_run_completed_at"] = (_NOW - timedelta(days=5)).isoformat()
+        # Pre-seed a review job that is already in review_queue
+        jid = "salesforce::swe_ambig"
+        state["review_queue"][jid] = {
+            "company": "Salesforce",
+            "title": "Software Engineer II",
+            "location": "San Francisco, CA",
+            "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
+            "first_seen": (_NOW - timedelta(days=3)).isoformat(),
+            "last_seen": (_NOW - timedelta(days=3)).isoformat(),
+        }
+        state_file.write_text(json.dumps(state))
+
+        # Re-fetch the same job, now 3 days old (> 48 hours freshness threshold)
+        mock_job = Job(
+            id=jid,
+            company="Salesforce",
+            title="Software Engineer II",
+            location="San Francisco, CA",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/swe_ambig",
+            source_platform="workday",
+            posted_at=_NOW - timedelta(days=3.0),
+            detected_at=_NOW,
+            raw_text="Software Engineer II. San Francisco, CA.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+
+        args = MagicMock(
+            config=str(config_file),
+            dry_run=False,
+            verbose=False,
+            company="Salesforce",
+            firehose_first_run=False,
+            summary_first_run=False,
+            rerun_backfill=False,
+        )
+
+        with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/mock"}), \
+             patch("src.adapters.workday.WorkdayAdapter.fetch", return_value=[mock_job]):
+            rc = do_run(args)
+            assert rc == 0
+
+        # Reload state: the review job must STILL be present in review_queue!
+        reloaded = json.loads(state_file.read_text())
+        assert jid in reloaded["review_queue"]
+        assert reloaded["review_queue"][jid]["company"] == "Salesforce"
+
+    def test_review_digest_ranks_nonpositive_scores_when_capacity_allows(self):
+        from src.storage import get_daily_review_digest
+        state = _empty_state()
+        # Item 1: High positive score (Apple Swe 1 in SF) -> score > 0
+        state["review_queue"]["job_pos"] = {
+            "company": "Apple",
+            "title": "Software Engineer 1",
+            "location": "San Francisco, CA",
+            "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
+            "first_seen": _NOW.isoformat(),
+            "last_seen": _NOW.isoformat(),
+        }
+        # Item 2: Mixed US/Canada location with penalty -> score < 0 (Apple SWE II SF + Toronto = 10 + 8 + 5 - 30 = -7)
+        state["review_queue"]["job_mixed"] = {
+            "company": "Apple",
+            "title": "Software Engineer II",
+            "location": "San Francisco, CA; Toronto, Canada",
+            "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
+            "first_seen": _NOW.isoformat(),
+            "last_seen": _NOW.isoformat(),
+        }
+
+        # Daily review digest with cap=10 must include BOTH items, ranked by score!
+        res = get_daily_review_digest(state, _NOW, cap=10)
+        assert res is not None
+        items, total = res
+        assert total == 2
+        assert len(items) == 2
+        # Highest score first
+        assert items[0]["title"] == "Software Engineer 1"
+        assert items[1]["title"] == "Software Engineer II"
