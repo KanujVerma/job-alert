@@ -207,8 +207,19 @@ class AppleJobsAdapter(BaseAdapter):
             department = None
 
         # Location
-        loc_span = row.find("span", class_="table--advanced-search__location-sub")
-        location = loc_span.get_text(strip=True) if loc_span else ""
+        loc_div = row.find("div", class_=lambda c: c and "job-title-location" in c)
+        location = ""
+        if loc_div:
+            a11y = loc_div.find("span", class_="a11y")
+            a11y_text = a11y.get_text() if a11y else ""
+            full_text = loc_div.get_text(strip=True)
+            if a11y_text and full_text.startswith(a11y_text):
+                location = full_text[len(a11y_text):].strip()
+            else:
+                location = full_text
+        if not location:
+            loc_span = row.find("span", class_="table--advanced-search__location-sub")
+            location = loc_span.get_text(strip=True) if loc_span else ""
 
         # Posted date
         date_span = row.find("span", class_="job-posted-date")

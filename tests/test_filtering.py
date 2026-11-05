@@ -188,6 +188,60 @@ class TestFilterLocation:
         assert result.passes
         assert "country code" in result.reason
 
+    def test_workday_california_san_francisco_passes(self):
+        job = make_job(location="California---San-Francisco", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "state name" in result.reason or "city match" in result.reason
+
+    def test_workday_us_texas_austin_passes(self):
+        job = make_job(location="US-Texas-Austin", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "state name" in result.reason or "city match" in result.reason
+
+    def test_workday_usa_redmond_wa_passes(self):
+        job = make_job(location="USA---Redmond-WA", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert result.passes
+
+    def test_workday_canada_remote_ab_fails(self):
+        job = make_job(location="Canada---Remote-AB", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason or "province" in result.reason
+
+    def test_crowdstrike_remote_can_fails(self):
+        job = make_job(location="(Remote, CAN)", raw_text="software development engineer in test")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_amat_eindhoven_nld_fails(self):
+        job = make_job(location="EindhovenNLD", raw_text="data scientist")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_data_scientist_emea_fails(self):
+        job = make_job(location="EMEA", raw_text="data scientist emea")
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        assert "non-US" in result.reason
+
+    def test_bare_remote_does_not_confirm_us(self):
+        job = make_job(location="Remote", raw_text="software engineer remote")
+        result = filter_location(job, _FILTERS)
+        # Should be ambiguous, NOT 'US confirmed: remote'
+        assert result.reason == "location ambiguous"
+
+    def test_explicit_us_remote_passes(self):
+        job = make_job(location="US Remote", raw_text="software engineer us remote")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "US Remote confirmed" in result.reason
+
 
 # ---------------------------------------------------------------------------
 # filter_exclude tests

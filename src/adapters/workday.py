@@ -9,13 +9,16 @@ Known companies:
 
 from __future__ import annotations
 
+import html
 import logging
 import re
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from src.adapters.base import BaseAdapter
-from src.filtering import make_job_id
+from src.eligibility import _check_tech_role, _SENIOR_TITLE_PATTERN, _INTERN_TITLE_PATTERN
+from src.filtering import make_job_id, _check_single_location
 from src.models import Job
 
 logger = logging.getLogger(__name__)
@@ -69,6 +72,46 @@ def _extract_official_id(bullet_fields: list) -> str | None:
     for field in bullet_fields or []:
         if isinstance(field, str) and _REQ_ID_RE.match(field):
             return field
+    return None
+
+
+def _parse_workday_location(locations_text: str, external_path: str) -> str:
+    """Normalize location string from locationsText and externalPath."""
+    loc = locations_text.strip() if locations_text else ""
+    if not loc or re.search(r"^\d+\s+locations?$", loc, re.IGNORECASE):
+        m = re.match(r"^/job/([^/]+)/", external_path or "")
+        if m:
+            slug = m.group(1)
+            return slug.replace("---", ", ").replace("--", ", ").replace("-", " ")
+    return loc
+
+
+def _clean_workday_description(html_text: str) -> str:
+    """Unescape HTML entities and strip markup into clean text."""
+    if not html_text:
+        return ""
+    text = html.unescape(html_text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _fetch_workday_detail(
+    http: Any,
+    base_url: str,
+    tenant: str,
+    site: str,
+    external_path: str,
+) -> dict | None:
+    """Retrieve full job detail from Workday CXS detail endpoint."""
+    if not external_path:
+        return None
+    endpoint = f"{base_url}/wday/cxs/{tenant}/{site}{external_path}"
+    try:
+        resp = http.get(endpoint)
+        if resp.status_code == 200:
+            return resp.json().get("jobPostingInfo", {})
+    except Exception as exc:
+        logger.debug("Workday CXS detail fetch failed for %s: %s", external_path, exc)
     return None
 
 
@@ -144,22 +187,55 @@ class WorkdayAdapter(BaseAdapter):
                 posted_at = _parse_posted_on(posted_on, reference_dt=detected_at)
                 department = job_family_group if job_family_group else None
                 category = job_family if job_family else None
+                location = _parse_workday_location(locations_text, external_path)
 
-                raw_text = " ".join(
-                    part for part in [
-                        title.lower(),
-                        locations_text.lower(),
-                        job_family_group.lower(),
-                        job_family.lower(),
-                    ]
-                    if part
-                )
+                raw_parts = [
+                    title.lower(),
+                    location.lower(),
+                    job_family_group.lower(),
+                    job_family.lower(),
+                ]
+                raw_text = " ".join(part for part in raw_parts if part)
+
+                role_type = "unknown"
+
+                # Cheap filter check: only fetch CXS detail for promising candidates
+                is_tech, is_nontech, _ = _check_tech_role(title, department, category)
+                is_senior = bool(_SENIOR_TITLE_PATTERN.search(title))
+                is_intern = bool(_INTERN_TITLE_PATTERN.search(title))
+                is_us, _ = _check_single_location(location)
+
+                if (
+                    is_tech
+                    and not is_nontech
+                    and not is_senior
+                    and not is_intern
+                    and is_us is not False
+                    and self.config.get("fetch_details", True)
+                    and external_path
+                ):
+                    detail = _fetch_workday_detail(self.http, base_url, tenant, site, external_path)
+                    if detail:
+                        clean_desc = _clean_workday_description(detail.get("jobDescription", ""))
+                        time_type = detail.get("timeType")
+                        if clean_desc:
+                            raw_text = f"{clean_desc} {raw_text}"
+                        if time_type:
+                            raw_text = f"{raw_text} {str(time_type).lower()}"
+                            if "intern" in str(time_type).lower():
+                                role_type = "internship"
+                        detail_loc = detail.get("location")
+                        if detail_loc:
+                            location = str(detail_loc)
+                        add_locs = detail.get("additionalLocations") or []
+                        if add_locs:
+                            location = f"{location}; " + "; ".join(str(l) for l in add_locs)
 
                 job_id = make_job_id(
                     company=self.company,
                     source_platform=self.source_platform,
                     title=title,
-                    location=locations_text,
+                    location=location,
                     official_id=official_id,
                 )
 
@@ -167,7 +243,7 @@ class WorkdayAdapter(BaseAdapter):
                     id=job_id,
                     company=self.company,
                     title=title,
-                    location=locations_text,
+                    location=location,
                     department=department,
                     category=category,
                     url=url,
@@ -175,7 +251,7 @@ class WorkdayAdapter(BaseAdapter):
                     posted_at=posted_at,
                     detected_at=detected_at,
                     raw_text=raw_text,
-                    role_type="unknown",
+                    role_type=role_type,
                     priority="normal",
                     matched_keywords=(),
                 )

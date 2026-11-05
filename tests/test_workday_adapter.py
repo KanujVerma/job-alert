@@ -220,6 +220,70 @@ def test_parse_posted_on_posted_3_days_ago():
     assert result == _TODAY - timedelta(days=3)
 
 
+@resp_lib.activate
+def test_detail_fetch_enriches_description_and_role_type():
+    """Workday CXS detail fetch enriches raw_text, role_type, and location."""
+    posting = {
+        "title": "Software Engineer I",
+        "externalPath": "/job/Boise-ID/Software-Engineer-I_JR9999",
+        "locationsText": "1 Location",
+        "postedOn": "Posted Today",
+        "bulletFields": ["JR9999"],
+        "jobFamilyGroup": "Engineering",
+        "jobFamily": "Software Engineering",
+    }
+    resp_lib.add(resp_lib.POST, _ENDPOINT, json={"total": 1, "jobPostings": [posting]}, status=200)
+
+    detail_url = f"{_BASE_URL}/wday/cxs/micron/External/job/Boise-ID/Software-Engineer-I_JR9999"
+    resp_lib.add(
+        resp_lib.GET,
+        detail_url,
+        json={
+            "jobPostingInfo": {
+                "jobDescription": "<p>Build high-scale distributed systems. <b>0-2 years</b> experience required.</p>",
+                "timeType": "Full time",
+                "location": "Boise - Idaho",
+                "additionalLocations": ["San Jose - California"],
+            }
+        },
+        status=200,
+    )
+
+    adapter = _make_adapter()
+    jobs = list(adapter.fetch())
+    assert len(jobs) == 1
+    job = jobs[0]
+    assert "0-2 years" in job.raw_text
+    assert "full time" in job.raw_text
+    assert "Boise - Idaho" in job.location
+    assert "San Jose - California" in job.location
+
+
+@resp_lib.activate
+def test_detail_fetch_failure_falls_back_gracefully():
+    """If CXS detail fetch fails (e.g. 500/404), adapter falls back to summary fields."""
+    posting = {
+        "title": "Software Engineer I",
+        "externalPath": "/job/Boise-ID/Software-Engineer-I_JR9998",
+        "locationsText": "Boise, ID",
+        "postedOn": "Posted Today",
+        "bulletFields": ["JR9998"],
+        "jobFamilyGroup": "Engineering",
+        "jobFamily": "Software Engineering",
+    }
+    resp_lib.add(resp_lib.POST, _ENDPOINT, json={"total": 1, "jobPostings": [posting]}, status=200)
+
+    detail_url = f"{_BASE_URL}/wday/cxs/micron/External/job/Boise-ID/Software-Engineer-I_JR9998"
+    resp_lib.add(resp_lib.GET, detail_url, status=500)
+
+    adapter = _make_adapter()
+    jobs = list(adapter.fetch())
+    assert len(jobs) == 1
+    job = jobs[0]
+    assert job.title == "Software Engineer I"
+    assert job.role_type == "unknown"
+
+
 def test_parse_posted_on_posted_30_plus_days_ago():
     """'Posted 30+ Days Ago' — the + is stripped, treated as exactly 30 days."""
     result = _parse_posted_on("Posted 30+ Days Ago", reference_dt=_REF)

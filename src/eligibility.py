@@ -122,24 +122,52 @@ _NON_TECH_ROLE_TITLES = [
 ]
 
 _SENIOR_TITLE_PATTERN = re.compile(
-    r"\b(?:senior|sr|sr\.|staff|principal|lead|director|manager|head of|vp|chief|architect)\b",
+    r"\b(?:senior|sr|sr\.|staff|principal|lead|director|manager|head of|vp|chief|architect|"
+    r"vice\s+president|president|exec(?:utive)?|fellow|distinguished|"
+    r"smts|pmts|lmts|"
+    r"software\s+(?:development\s+)?engineer\s+(?:3|4|5|6|iii|iv|v|vi)|"
+    r"sde\s+(?:3|4|5|6|iii|iv|v|vi)|swe\s+(?:3|4|5|6|iii|iv|v|vi)|"
+    r"engineer\s+(?:3|4|5|6|iii|iv|v|vi)|developer\s+(?:3|4|5|6|iii|iv|v|vi)|"
+    r"applied\s+scientist\s+(?:3|4|5|6|iii|iv|v|vi)|"
+    r"data\s+engineer\s+(?:3|4|5|6|iii|iv|v|vi)|"
+    r"\(e[3-9]\)|\(l[4-9]\))\b",
     re.IGNORECASE,
 )
 
 _MID_AMBIGUOUS_TITLE_PATTERN = re.compile(
-    r"\b(?:software engineer ii|swe ii|engineer ii|sde ii|developer ii|software engineer 2|swe 2|engineer 2|sde 2)\b",
+    r"\b(?:software engineer ii|swe ii|engineer ii|sde ii|developer ii|"
+    r"software engineer 2|swe 2|engineer 2|sde 2|developer 2|"
+    r"software development engineer ii|software development engineer 2|"
+    r"applied scientist ii|applied scientist 2|data engineer ii|data engineer 2)\b",
     re.IGNORECASE,
 )
 
 _ENTRY_TITLE_PATTERN = re.compile(
-    r"\b(?:software engineer i|swe i|engineer i|sde i|developer i|software engineer 1|swe 1|engineer 1|sde 1|entry level|entry-level|junior|jr|jr\.|associate software engineer|associate engineer)\b",
+    r"\b(?:software engineer i|swe i|engineer i|sde i|developer i|"
+    r"software engineer 1|swe 1|engineer 1|sde 1|developer 1|"
+    r"software development engineer i|software development engineer 1|"
+    r"applied scientist i|applied scientist 1|data engineer i|data engineer 1|"
+    r"entry level|entry-level|junior|jr|jr\.|"
+    r"associate software engineer|associate engineer|associate developer)\b",
     re.IGNORECASE,
 )
 
-_NEW_GRAD_PATTERN = re.compile(
-    r"\b(?:new grad(?:uate)?|university grad(?:uate)?|campus hire|college graduate|recent graduate|graduate program)\b",
+_NEW_GRAD_TITLE_PATTERN = re.compile(
+    r"\b(?:new grad(?:uate)?|university grad(?:uate)?|campus hire|college graduate|recent graduate|"
+    r"(?:early career|university|campus|new grad)\s+graduate program)\b",
     re.IGNORECASE,
 )
+
+_NEW_GRAD_BODY_PATTERN = re.compile(
+    r"\b(?:new grad(?:uate)?\s+(?:role|position|program|engineer|developer|hire|opportunity|cohort)|"
+    r"open to new grads?|recent (?:college|university) graduates?|"
+    r"target(?:ing)?\s+(?:new|recent)\s+graduates?|"
+    r"graduating between|class of 2026|class of 2027)\b",
+    re.IGNORECASE,
+)
+
+# Retain backward-compatible alias
+_NEW_GRAD_PATTERN = _NEW_GRAD_TITLE_PATTERN
 
 _INTERN_TITLE_PATTERN = re.compile(
     r"\b(?:intern(?:ship)?|co-?op|student (?:intern|placement|trainee))\b",
@@ -253,7 +281,7 @@ def _is_us_location(location: str, raw_text: str) -> tuple[bool, bool, bool, str
     Check US vs non-US locations.
     Returns: (has_us, non_us_only, is_generic_remote, evidence)
     """
-    from src.filtering import US_STATE_CODES, US_TECH_CITIES, NON_US_SIGNALS, _NON_US_COUNTRY_CODES, _NON_US_COUNTRY_CODES_3
+    from src.filtering import NON_US_SIGNALS, _check_single_location
 
     loc_str = location or ""
     sub_locations = [s.strip() for s in re.split(r"[;\n|]", loc_str) if s.strip()]
@@ -265,50 +293,17 @@ def _is_us_location(location: str, raw_text: str) -> tuple[bool, bool, bool, str
     evidence = None
 
     for sub in sub_locations:
-        sub_lower = sub.lower()
-        # Check explicit US markers
-        if any(marker in sub_lower for marker in ["united states", "usa", "u.s."]):
+        is_us, reason = _check_single_location(sub)
+        if is_us is True:
             us_found = True
-            evidence = f"US location: {sub}"
-            continue
+            evidence = f"US location: {sub} ({reason})"
+            break
+        elif is_us is False:
+            non_us_found = True
+            if not evidence:
+                evidence = f"Non-US location: {sub} ({reason})"
 
-        if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states)\b", sub_lower):
-            us_found = True
-            evidence = f"US Remote: {sub}"
-            continue
-
-        # Check US states
-        for code in US_STATE_CODES:
-            pat = r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])"
-            if re.search(pat, sub, re.IGNORECASE):
-                # Guard against ISO non-US codes like 'Noida, UP, IN'
-                parts = [p.strip() for p in sub.split(",")]
-                if len(parts) >= 3 and parts[-1].upper() in _NON_US_COUNTRY_CODES:
-                    non_us_found = True
-                    break
-                us_found = True
-                evidence = f"US state code in {sub}: {code}"
-                break
-        if us_found:
-            continue
-
-        # Check US tech cities
-        for city in US_TECH_CITIES:
-            if re.search(r"\b" + re.escape(city) + r"\b", sub_lower):
-                us_found = True
-                evidence = f"US city: {city}"
-                break
-        if us_found:
-            continue
-
-        # Check non-US signals for this sublocation
-        for signal in NON_US_SIGNALS:
-            if re.search(r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])", sub_lower):
-                non_us_found = True
-                evidence = f"Non-US signal: {signal}"
-                break
-
-    # If sublocations had US location, then US is available
+    # If sublocations had confirmed US location, then US is available
     if us_found:
         return True, False, False, evidence
 
@@ -321,8 +316,8 @@ def _is_us_location(location: str, raw_text: str) -> tuple[bool, bool, bool, str
     raw_lower = raw_text.lower() if raw_text else ""
     if "remote" in loc_lower or "remote" in raw_lower:
         # Check if US is specified in raw_text or remote text
-        if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|united states remote|us only)\b", raw_lower):
-            return True, False, False, "US Remote in description"
+        if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|remote, us|united states remote|us only)\b", raw_lower) or re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|remote, us|united states remote|us only)\b", loc_lower):
+            return True, False, False, "US Remote in description/location"
         if any(marker in raw_lower for marker in ["united states", "usa", "u.s."]):
             return True, False, False, "US confirmed in text"
         return False, False, True, "Generic Remote with no US scope"
@@ -487,7 +482,7 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
         career_level = "mid"
         reasons.append(REASON_AMBIGUOUS_LEVEL)
         evidence_spans.append(f"Mid/Ambiguous level title: {title}")
-    elif _NEW_GRAD_PATTERN.search(title_lower) or _NEW_GRAD_PATTERN.search(raw_lower):
+    elif _NEW_GRAD_TITLE_PATTERN.search(title_lower) or _NEW_GRAD_BODY_PATTERN.search(raw_lower):
         is_new_grad = True
         career_level = "new_grad"
         reasons.append(REASON_CONFIRMED_NEW_GRAD)
