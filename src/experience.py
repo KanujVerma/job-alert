@@ -37,6 +37,24 @@ class ExperienceAssessment:
     has_bachelors_alternative: bool = False
 
 
+# A preference can occur in the same sentence as a mandatory requirement.
+# Remove only the *optional numeric expression*, never the whole sentence.
+_NUM_UNIT_TEXT = (
+    r"\d+(?:\.\d+)?(?:\s*(?:-|–|—|to)\s*\d+(?:\.\d+)?)?"
+    r"\s*\+?\s*(?:years?|yrs?|months?|mos?)\b"
+)
+_OPTIONAL_YEARS_AFTER = re.compile(
+    rf"(?<!\w){_NUM_UNIT_TEXT}"
+    r"(?:(?![.,;\n]|\brequired\b|\bmandatory\b).){0,100}?"
+    r"\bpreferred\b",
+    re.IGNORECASE,
+)
+_OPTIONAL_YEARS_BEFORE = re.compile(
+    rf"\bpreferred\s+(?:at\s+least\s+)?{_NUM_UNIT_TEXT}",
+    re.IGNORECASE,
+)
+
+
 def _required_section(text: str) -> str:
     normalized = (text or "").replace("\u2019", "'").replace("\xa0", " ")
     minimum = _MIN_HEADER.search(normalized)
@@ -45,14 +63,11 @@ def _required_section(text: str) -> str:
     preferred = _PREFERRED_HEADER.search(normalized)
     if preferred:
         normalized = normalized[:preferred.start()]
-    # Inline preferred experience is not a mandatory minimum. Never choose
-    # "4 years preferred" over "0-2 years required" in the same posting.
-    clauses = re.split(r"(?<=[.;])\s+|;\s*", normalized)
-    return " ".join(
-        clause for clause in clauses
-        if not (re.search(r"\b(?:preferred|desired|nice to have)\b", clause, re.IGNORECASE)
-                and _YEAR.search(clause))
-    )
+    # "5 years required, Python preferred" MUST retain five years.
+    # "0-2 years required. 4 years preferred" masks only four.
+    normalized = _OPTIONAL_YEARS_AFTER.sub(" ", normalized)
+    normalized = _OPTIONAL_YEARS_BEFORE.sub(" ", normalized)
+    return normalized
 
 
 def _mentions(span: str, *, degree_context: bool) -> list[tuple[float, str, bool]]:

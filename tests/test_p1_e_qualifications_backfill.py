@@ -376,3 +376,51 @@ def test_two_point_five_year_required_minimum_is_review_not_eligible():
     )
     assert verdict.status == "needs_review"
     assert "EXPERIENCE_EXCEEDS_RANGE" in verdict.reasons
+
+
+def test_required_tenure_preserved_when_unrelated_python_is_preferred():
+    raw = (
+        "Minimum qualifications: Bachelor's degree and 5 years of "
+        "professional experience required, Python preferred."
+    )
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years == 5
+    verdict = classify_eligibility(
+        make_job(88, title="Software Engineer, New Grad", description=raw)
+    )
+    assert verdict.status == "excluded"
+
+
+def test_same_sentence_optional_years_dont_override_required_lower_bound():
+    raw = (
+        "Minimum qualifications: Bachelor's degree and 0-2 years of "
+        "professional experience required, 4 years of experience preferred."
+    )
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years == 0
+    verdict = classify_eligibility(
+        make_job(89, title="Software Engineer, New Grad", description=raw)
+    )
+    assert verdict.status == "eligible"
+
+
+def test_newline_separated_preference_does_not_erase_required_experience():
+    raw = (
+        "Minimum qualifications: Bachelor's degree with 5 years of experience required\n"
+        "Python preferred\n4 years experience preferred."
+    )
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years == 5
+    verdict = classify_eligibility(
+        make_job(90, title="Software Engineer, New Grad", description=raw)
+    )
+    assert verdict.status == "excluded"
+
+
+def test_required_minimum_without_explicit_required_word_survives_unrelated_preference():
+    raw = "Minimum qualifications: Bachelor's degree with 5 years of experience, Python preferred."
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years == 5
+    assert classify_eligibility(
+        make_job(91, title="Software Engineer, New Grad", description=raw)
+    ).status == "excluded"
