@@ -194,7 +194,15 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
         if last3 in _NON_US_COUNTRY_CODES_3:
             return False, f"non-US country code: {last3.upper()}"
 
-    # Step 3: Check fused city/country e.g. EindhovenNLD
+    # Step 3: Explicit US country signals & US Remote (check before ambiguous foreign city names like Dublin, CA or Paris, TX)
+    for us_signal in ("united states", "usa", "u.s."):
+        if us_signal in loc_lower:
+            return True, f"US confirmed: {us_signal}"
+
+    if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|remote, us|united states remote|us only)\b", loc_lower):
+        return True, "US Remote confirmed"
+
+    # Step 4: Check fused city/country e.g. EindhovenNLD
     fused_match = re.match(r"^([a-z\s-]+?)(nld|can|usa|gbr|deu|ind|fra|irl|jpn|chn|aus|sgp)$", loc_lower)
     if fused_match:
         suffix = fused_match.group(2)
@@ -203,8 +211,8 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
         if suffix in {"usa", "us"}:
             return True, f"US country code suffix: {suffix.upper()}"
 
-    # Step 4: Tokenize on non-alphanumeric separators (delimited e.g. "Canada---Remote-AB", "(Remote, CAN)")
-    # Check non-US signals first
+    # Step 5: Tokenize on non-alphanumeric separators (delimited e.g. "Canada---Remote-AB", "(Remote, CAN)")
+    # Check non-US signals
     for part in re.split(r"[\s,\-/–—_]+", loc_lower):
         part_clean = part.strip()
         if part_clean in _NON_US_COUNTRY_CODES_3:
@@ -216,15 +224,6 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
         pattern = r"(?<![a-z])" + re.escape(signal) + r"(?![a-z])"
         if re.search(pattern, loc_lower):
             return False, f"non-US location: {signal}"
-
-    # Step 5: Explicit US signals
-    for us_signal in ("united states", "usa", "u.s."):
-        if us_signal in loc_lower:
-            return True, f"US confirmed: {us_signal}"
-
-    # Explicit US Remote variants
-    if re.search(r"\b(?:us remote|remote - us|remote \(us\)|remote, united states|remote, us|united states remote|us only)\b", loc_lower):
-        return True, "US Remote confirmed"
 
     # Step 6: US State Names (e.g. California---San-Francisco, US-Texas-Austin)
     for state_name in US_STATE_NAMES:

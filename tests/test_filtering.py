@@ -242,6 +242,18 @@ class TestFilterLocation:
         assert result.passes
         assert "US Remote confirmed" in result.reason
 
+    def test_dublin_california_united_states_passes(self):
+        job = make_job(location="Dublin, California, United States", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "US confirmed" in result.reason
+
+    def test_paris_texas_usa_passes(self):
+        job = make_job(location="Paris, Texas, USA", raw_text="software engineer")
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        assert "USA" in result.reason or "US confirmed" in result.reason
+
 
 # ---------------------------------------------------------------------------
 # filter_exclude tests
