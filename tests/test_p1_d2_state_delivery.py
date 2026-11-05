@@ -22,10 +22,8 @@ from src.storage import (
 )
 from main import do_run
 
-_NOW = datetime(2026, 11, 4, 18, 0, 0, tzinfo=timezone.utc)
-
-
-def _make_dummy_job(jid: str, posted_days_ago: float, company: str = "Apple") -> Job:
+def _make_dummy_job(jid: str, posted_days_ago: float, company: str = "Apple", now: datetime | None = None) -> Job:
+    ref = now or datetime.now(timezone.utc)
     return Job(
         id=f"{company.lower()}::{jid}",
         company=company,
@@ -35,8 +33,8 @@ def _make_dummy_job(jid: str, posted_days_ago: float, company: str = "Apple") ->
         category="Software",
         url=f"https://example.com/job/{jid}",
         source_platform="workday",
-        posted_at=_NOW - timedelta(days=posted_days_ago),
-        detected_at=_NOW,
+        posted_at=ref - timedelta(days=posted_days_ago),
+        detected_at=ref,
         raw_text="Software Engineer, New Grad. 0-2 years experience. December 2026 graduation. Cupertino, CA.",
         role_type="new-grad",
         priority="normal",
@@ -48,7 +46,8 @@ class TestBackfillFreshnessDecoupling:
     """Requirement: 7-day backfill must not be dropped by the standard 48-hour freshness filter."""
 
     def test_five_day_old_job_passes_under_backfill_freshness(self):
-        job = _make_dummy_job("job_5d", posted_days_ago=5.0)
+        now = datetime.now(timezone.utc)
+        job = _make_dummy_job("job_5d", posted_days_ago=5.0, now=now)
 
         # Standard 48-hour filter drops it
         normal_filters = {"mode": "new_grad_full_time", "freshness_hours": 48}
@@ -64,7 +63,7 @@ class TestBackfillFreshnessDecoupling:
 
         # And get_backfill_candidates includes it
         state = _empty_state()
-        candidates = get_backfill_candidates([filtered_bf], state, _NOW, lookback_days=7)
+        candidates = get_backfill_candidates([filtered_bf], state, now, lookback_days=7)
         assert len(candidates) == 1
         assert candidates[0].id == job.id
 
@@ -96,13 +95,14 @@ companies:
 """
         )
 
+        now = datetime.now(timezone.utc)
         state = _empty_state()
         # Mark first run complete so alerts would normally trigger
-        state["first_run_completed_at"] = (_NOW - timedelta(days=1)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=1)).isoformat()
         import json
         state_file.write_text(json.dumps(state))
 
-        mock_job = _make_dummy_job("job_fresh", posted_days_ago=0.5, company="Salesforce")
+        mock_job = _make_dummy_job("job_fresh", posted_days_ago=0.5, company="Salesforce", now=now)
 
         # Mock adapter to return mock_job, but NO webhook url in environment
         args = MagicMock(
@@ -148,12 +148,13 @@ companies:
       path: External_Career_Site
 """
         )
+        now = datetime.now(timezone.utc)
         state = _empty_state()
-        state["first_run_completed_at"] = (_NOW - timedelta(days=1)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=1)).isoformat()
         import json
         state_file.write_text(json.dumps(state))
 
-        mock_job = _make_dummy_job("job_fresh_fail", posted_days_ago=0.5, company="Salesforce")
+        mock_job = _make_dummy_job("job_fresh_fail", posted_days_ago=0.5, company="Salesforce", now=now)
         args = MagicMock(
             config=str(config_file),
             dry_run=False,
@@ -203,12 +204,13 @@ companies:
       path: External_Career_Site
 """
         )
+        now = datetime.now(timezone.utc)
         state = _empty_state()
-        state["first_run_completed_at"] = (_NOW - timedelta(days=2)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=2)).isoformat()
         # Backfill pending
         state["migrations"] = {
             POLICY_VERSION: {
-                "started_at": (_NOW - timedelta(days=1)).isoformat(),
+                "started_at": (now - timedelta(days=1)).isoformat(),
                 "completed_at": None,
                 "backfill_completed": False,
             }
@@ -216,7 +218,7 @@ companies:
         state["policy_version"] = POLICY_VERSION
         state_file.write_text(json.dumps(state))
 
-        mock_job = _make_dummy_job("job_bf_fail", posted_days_ago=4.0, company="Salesforce")
+        mock_job = _make_dummy_job("job_bf_fail", posted_days_ago=4.0, company="Salesforce", now=now)
         args = MagicMock(
             config=str(config_file),
             dry_run=False,
@@ -261,11 +263,12 @@ companies:
       path: External_Career_Site
 """
         )
+        now = datetime.now(timezone.utc)
         state = _empty_state()
-        state["first_run_completed_at"] = (_NOW - timedelta(days=2)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=2)).isoformat()
         state["migrations"] = {
             POLICY_VERSION: {
-                "started_at": (_NOW - timedelta(days=1)).isoformat(),
+                "started_at": (now - timedelta(days=1)).isoformat(),
                 "completed_at": None,
                 "backfill_completed": False,
             }
@@ -273,7 +276,7 @@ companies:
         state["policy_version"] = POLICY_VERSION
         state_file.write_text(json.dumps(state))
 
-        mock_job = _make_dummy_job("job_bf_success", posted_days_ago=4.0, company="Salesforce")
+        mock_job = _make_dummy_job("job_bf_success", posted_days_ago=4.0, company="Salesforce", now=now)
         args = MagicMock(
             config=str(config_file),
             dry_run=False,
@@ -317,14 +320,15 @@ companies:
       path: External_Career_Site
 """
         )
+        now = datetime.now(timezone.utc)
         state = _empty_state()
-        state["first_run_completed_at"] = (_NOW - timedelta(days=2)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=2)).isoformat()
         # Backfill was previously marked completed
         mark_backfill_completed(state, POLICY_VERSION)
         assert is_backfill_pending(state, POLICY_VERSION) is False
         state_file.write_text(json.dumps(state))
 
-        mock_job = _make_dummy_job("job_rerun", posted_days_ago=3.0, company="Salesforce")
+        mock_job = _make_dummy_job("job_rerun", posted_days_ago=3.0, company="Salesforce", now=now)
         args = MagicMock(
             config=str(config_file),
             dry_run=False,
@@ -382,11 +386,12 @@ companies:
       path: External_Career_Site
 """
         )
+        now = datetime.now(timezone.utc)
         state = _empty_state()
-        state["first_run_completed_at"] = (_NOW - timedelta(days=2)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=2)).isoformat()
         state["migrations"] = {
             POLICY_VERSION: {
-                "started_at": (_NOW - timedelta(days=1)).isoformat(),
+                "started_at": (now - timedelta(days=1)).isoformat(),
                 "completed_at": None,
                 "backfill_completed": False,
             }
@@ -394,8 +399,8 @@ companies:
         state["policy_version"] = POLICY_VERSION
         state_file.write_text(json.dumps(state))
 
-        job_fresh = _make_dummy_job("fresh_role", posted_days_ago=0.5, company="Salesforce")
-        job_historical = _make_dummy_job("hist_role", posted_days_ago=4.5, company="Salesforce")
+        job_fresh = _make_dummy_job("fresh_role", posted_days_ago=0.5, company="Salesforce", now=now)
+        job_historical = _make_dummy_job("hist_role", posted_days_ago=4.5, company="Salesforce", now=now)
 
         args = MagicMock(
             config=str(config_file),
@@ -431,6 +436,7 @@ class TestReviewQueuePreservation:
 
     def test_clean_review_queue_preserves_department_tech_evidence(self):
         from src.storage import clean_review_queue, record_review_job
+        now = datetime.now(timezone.utc)
         state = _empty_state()
         job = Job(
             id="dept_swe_1",
@@ -442,13 +448,13 @@ class TestReviewQueuePreservation:
             url="https://example.com/job/1",
             source_platform="workday",
             posted_at=None,
-            detected_at=_NOW,
+            detected_at=now,
             raw_text="Engineer I. 3 years required. San Francisco, CA.",
             role_type="unknown",
             priority="normal",
             matched_keywords=(),
         )
-        record_review_job(state, job, ["eligibility: needs_review: TECHNICAL_ROLE, UNCLEAR_EXPERIENCE"], _NOW)
+        record_review_job(state, job, ["eligibility: needs_review: TECHNICAL_ROLE, UNCLEAR_EXPERIENCE"], now)
 
         # Cleaning review queue must NOT prune this item!
         pruned = clean_review_queue(state)
@@ -457,6 +463,7 @@ class TestReviewQueuePreservation:
 
     def test_clean_review_queue_preserves_legacy_item_with_prior_tech(self):
         from src.storage import clean_review_queue
+        now = datetime.now(timezone.utc)
         state = _empty_state()
         state["review_queue"]["legacy_item"] = {
             "company": "Salesforce",
@@ -465,8 +472,8 @@ class TestReviewQueuePreservation:
             "department": None,
             "category": None,
             "reasons": ["eligibility: needs_review: TECHNICAL_ROLE, UNCLEAR_EXPERIENCE"],
-            "first_seen": _NOW.isoformat(),
-            "last_seen": _NOW.isoformat(),
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
         }
 
         # Legacy item lacked department in state, but had TECHNICAL_ROLE reason -> must be preserved!
@@ -476,30 +483,31 @@ class TestReviewQueuePreservation:
 
     def test_clean_review_queue_prunes_definitive_exclusions(self):
         from src.storage import clean_review_queue
+        now = datetime.now(timezone.utc)
         state = _empty_state()
         state["review_queue"]["senior_role"] = {
             "company": "Salesforce",
             "title": "Senior Software Engineer",
             "location": "San Francisco, CA",
             "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
-            "first_seen": _NOW.isoformat(),
-            "last_seen": _NOW.isoformat(),
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
         }
         state["review_queue"]["intern_role"] = {
             "company": "Salesforce",
             "title": "Software Engineering Intern",
             "location": "San Francisco, CA",
             "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
-            "first_seen": _NOW.isoformat(),
-            "last_seen": _NOW.isoformat(),
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
         }
         state["review_queue"]["non_us_role"] = {
             "company": "Salesforce",
             "title": "Software Engineer",
             "location": "London, United Kingdom",
             "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
-            "first_seen": _NOW.isoformat(),
-            "last_seen": _NOW.isoformat(),
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
         }
 
         pruned = clean_review_queue(state)
@@ -528,8 +536,9 @@ companies:
       path: External_Career_Site
 """
         )
+        now = datetime.now(timezone.utc)
         state = _empty_state()
-        state["first_run_completed_at"] = (_NOW - timedelta(days=5)).isoformat()
+        state["first_run_completed_at"] = (now - timedelta(days=5)).isoformat()
         # Pre-seed a review job that is already in review_queue
         jid = "salesforce::swe_ambig"
         state["review_queue"][jid] = {
@@ -537,8 +546,8 @@ companies:
             "title": "Software Engineer II",
             "location": "San Francisco, CA",
             "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
-            "first_seen": (_NOW - timedelta(days=3)).isoformat(),
-            "last_seen": (_NOW - timedelta(days=3)).isoformat(),
+            "first_seen": (now - timedelta(days=3)).isoformat(),
+            "last_seen": (now - timedelta(days=3)).isoformat(),
         }
         state_file.write_text(json.dumps(state))
 
@@ -552,8 +561,8 @@ companies:
             category="Software",
             url="https://example.com/job/swe_ambig",
             source_platform="workday",
-            posted_at=_NOW - timedelta(days=3.0),
-            detected_at=_NOW,
+            posted_at=now - timedelta(days=3.0),
+            detected_at=now,
             raw_text="Software Engineer II. San Francisco, CA.",
             role_type="unknown",
             priority="normal",
@@ -582,6 +591,7 @@ companies:
 
     def test_review_digest_ranks_nonpositive_scores_when_capacity_allows(self):
         from src.storage import get_daily_review_digest
+        now = datetime.now(timezone.utc)
         state = _empty_state()
         # Item 1: High positive score (Apple Swe 1 in SF) -> score > 0
         state["review_queue"]["job_pos"] = {
@@ -589,8 +599,8 @@ companies:
             "title": "Software Engineer 1",
             "location": "San Francisco, CA",
             "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
-            "first_seen": _NOW.isoformat(),
-            "last_seen": _NOW.isoformat(),
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
         }
         # Item 2: Mixed US/Canada location with penalty -> score < 0 (Apple SWE II SF + Toronto = 10 + 8 + 5 - 30 = -7)
         state["review_queue"]["job_mixed"] = {
@@ -598,12 +608,12 @@ companies:
             "title": "Software Engineer II",
             "location": "San Francisco, CA; Toronto, Canada",
             "reasons": ["eligibility: needs_review: UNCLEAR_EXPERIENCE"],
-            "first_seen": _NOW.isoformat(),
-            "last_seen": _NOW.isoformat(),
+            "first_seen": now.isoformat(),
+            "last_seen": now.isoformat(),
         }
 
         # Daily review digest with cap=10 must include BOTH items, ranked by score!
-        res = get_daily_review_digest(state, _NOW, cap=10)
+        res = get_daily_review_digest(state, now, cap=10)
         assert res is not None
         items, total = res
         assert total == 2
