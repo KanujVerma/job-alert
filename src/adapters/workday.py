@@ -78,7 +78,7 @@ def _extract_official_id(bullet_fields: list) -> str | None:
 def _parse_workday_location(locations_text: str, external_path: str) -> str:
     """Normalize location string from locationsText and externalPath."""
     loc = locations_text.strip() if locations_text else ""
-    if not loc or re.search(r"^\d+\s+locations?$", loc, re.IGNORECASE):
+    if not loc:
         m = re.match(r"^/job/([^/]+)/", external_path or "")
         if m:
             slug = m.group(1)
@@ -203,7 +203,9 @@ class WorkdayAdapter(BaseAdapter):
                 is_tech, is_nontech, _ = _check_tech_role(title, department, category)
                 is_senior = bool(_SENIOR_TITLE_PATTERN.search(title))
                 is_intern = bool(_INTERN_TITLE_PATTERN.search(title))
-                is_us, _ = _check_single_location(location)
+                is_multi_loc = bool(re.search(r"^\d+\s+locations?$", locations_text.strip(), re.IGNORECASE))
+                # For multi-location postings, keep location ambiguous until detail is fetched
+                is_us = None if is_multi_loc else _check_single_location(location)[0]
 
                 if (
                     is_tech
@@ -225,11 +227,15 @@ class WorkdayAdapter(BaseAdapter):
                             if "intern" in str(time_type).lower():
                                 role_type = "internship"
                         detail_loc = detail.get("location")
-                        if detail_loc:
-                            location = str(detail_loc)
                         add_locs = detail.get("additionalLocations") or []
-                        if add_locs:
-                            location = f"{location}; " + "; ".join(str(l) for l in add_locs)
+                        loc_parts = []
+                        if detail_loc:
+                            loc_parts.append(str(detail_loc))
+                        for l in add_locs:
+                            if l and str(l) not in loc_parts:
+                                loc_parts.append(str(l))
+                        if loc_parts:
+                            location = "; ".join(loc_parts)
 
                 job_id = make_job_id(
                     company=self.company,

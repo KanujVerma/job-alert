@@ -284,6 +284,43 @@ def test_detail_fetch_failure_falls_back_gracefully():
     assert job.role_type == "unknown"
 
 
+@resp_lib.activate
+def test_multi_location_with_non_us_primary_slug_retrieves_us_additional_location():
+    """Multi-location posting with non-US primary slug fetches detail and preserves US location."""
+    posting = {
+        "title": "Software Engineer I",
+        "externalPath": "/job/London---UK/Software-Engineer-I_JR7777",
+        "locationsText": "2 Locations",
+        "postedOn": "Posted Today",
+        "bulletFields": ["JR7777"],
+        "jobFamilyGroup": "Engineering",
+        "jobFamily": "Software Engineering",
+    }
+    resp_lib.add(resp_lib.POST, _ENDPOINT, json={"total": 1, "jobPostings": [posting]}, status=200)
+
+    detail_url = f"{_BASE_URL}/wday/cxs/micron/External/job/London---UK/Software-Engineer-I_JR7777"
+    resp_lib.add(
+        resp_lib.GET,
+        detail_url,
+        json={
+            "jobPostingInfo": {
+                "jobDescription": "<p>0-2 years experience. Open to multiple hubs.</p>",
+                "timeType": "Full time",
+                "location": "London - United Kingdom",
+                "additionalLocations": ["New York - New York"],
+            }
+        },
+        status=200,
+    )
+
+    adapter = _make_adapter()
+    jobs = list(adapter.fetch())
+    assert len(jobs) == 1
+    job = jobs[0]
+    assert "New York - New York" in job.location
+    assert "London - United Kingdom" in job.location
+
+
 def test_parse_posted_on_posted_30_plus_days_ago():
     """'Posted 30+ Days Ago' — the + is stripped, treated as exactly 30 days."""
     result = _parse_posted_on("Posted 30+ Days Ago", reference_dt=_REF)

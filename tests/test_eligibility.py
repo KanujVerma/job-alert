@@ -242,6 +242,48 @@ class TestSpecificAdversarialCases:
         assert verdict.status == "eligible"
         assert REASON_NON_US_ONLY not in verdict.reasons
 
+    def test_parenthesized_level_code_e3_excludes_senior(self):
+        job = Job(
+            id="test-level-e3",
+            company="Applied Materials",
+            title="Software Engineer (E3)",
+            location="Santa Clara, CA",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/e3",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer (E3). 0-2 years experience. Santa Clara, CA.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        assert verdict.status == "excluded"
+        assert REASON_SENIOR_LEVEL in verdict.reasons
+
+    def test_parenthesized_level_code_l4_excludes_senior(self):
+        job = Job(
+            id="test-level-l4",
+            company="Google",
+            title="Software Engineer (L4)",
+            location="Mountain View, CA",
+            department="Engineering",
+            category="Software",
+            url="https://example.com/job/l4",
+            source_platform="workday",
+            posted_at=None,
+            detected_at=_NOW,
+            raw_text="Software Engineer (L4). Mountain View, CA.",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        assert verdict.status == "excluded"
+        assert REASON_SENIOR_LEVEL in verdict.reasons
+
 
 class TestPipelineNewGradMode:
     """Test full filter pipeline in new_grad_full_time mode vs legacy mode."""

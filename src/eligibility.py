@@ -122,15 +122,15 @@ _NON_TECH_ROLE_TITLES = [
 ]
 
 _SENIOR_TITLE_PATTERN = re.compile(
-    r"\b(?:senior|sr|sr\.|staff|principal|lead|director|manager|head of|vp|chief|architect|"
+    r"(?:\b(?:senior|sr|sr\.|staff|principal|lead|director|manager|head of|vp|chief|architect|"
     r"vice\s+president|president|exec(?:utive)?|fellow|distinguished|"
     r"smts|pmts|lmts|"
     r"software\s+(?:development\s+)?engineer\s+(?:3|4|5|6|iii|iv|v|vi)|"
     r"sde\s+(?:3|4|5|6|iii|iv|v|vi)|swe\s+(?:3|4|5|6|iii|iv|v|vi)|"
     r"engineer\s+(?:3|4|5|6|iii|iv|v|vi)|developer\s+(?:3|4|5|6|iii|iv|v|vi)|"
     r"applied\s+scientist\s+(?:3|4|5|6|iii|iv|v|vi)|"
-    r"data\s+engineer\s+(?:3|4|5|6|iii|iv|v|vi)|"
-    r"\(e[3-9]\)|\(l[4-9]\))\b",
+    r"data\s+engineer\s+(?:3|4|5|6|iii|iv|v|vi))\b"
+    r"|(?:\([el][3-9]\)|\[[el][3-9]\]|\b[el][4-9]\b))",
     re.IGNORECASE,
 )
 
