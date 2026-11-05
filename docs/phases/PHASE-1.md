@@ -101,8 +101,8 @@ Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks a
   - Switch `filters.mode: legacy` in `companies.yaml`. State retains backward compatibility without wiping seen jobs or causing alert storms.
 
 ## Phase 1D: Quality and Release Hardening (Jobbie 2.1 Final Release)
-- **Release Status:** PARTIAL (P1-D1 & P1-D2 merged to main; P1-D3 in review on PR #17)
-- **Sequential PR Implementation:**
+- **Release Status:** Complete & Verified
+- **Sequential PRs Merged to `main`:**
   1. **P1-D1 (Classification and Coverage):**
      - PR: [#15](https://github.com/KanujVerma/jobbie/pull/15)
      - Squash commit: `e1608cf6223d21ef7ebaf2ce565c0e96f0159970`
@@ -119,15 +119,17 @@ Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks a
      - Review queue cleanup and prioritization (scoring canonical 13 network priority, early career keywords, tech hubs, and preserving classification evidence).
   3. **P1-D3 (Automated Verification and Release):**
      - PR: [#17](https://github.com/KanujVerma/jobbie/pull/17)
+     - Squash commit: `b920f706d20b94a45d02261ed97ec911d0d85094`
      - Added GitHub Actions CI workflow in `.github/workflows/test.yml` running pytest and config validation on PRs and pushes to main.
-     - CI Run Evidence: [Actions Run 41952511295](https://github.com/KanujVerma/jobbie/actions/runs/41952511295) passing on commit `de791b5`.
+     - CI Run Evidence: [Actions Run 41953363672](https://github.com/KanujVerma/jobbie/actions/runs/41953363672) passing on commit `b920f70` on `main`.
      - Measured actual GitHub Actions cron delivery gaps on production runs:
        - Run 41881777832 (`2026-11-04T17:55:22Z`) to Run 41933684385 (`2026-11-04T23:26:08Z`): 5h 30m gap.
        - Run 41810957728 (`2026-11-04T09:57:20Z`) to Run 41881777832 (`2026-11-04T17:55:22Z`): 7h 58m gap.
        - Run 41762686190 (`2026-11-04T02:44:24Z`) to Run 41810957728 (`2026-11-04T09:57:20Z`): 7h 13m gap.
        - Verification: Confirms public Actions runner scheduling drift can delay nominal 15m intervals up to ~8 hours during low priority scheduling. Confirms `compute_run_diagnostics()` in `src/health.py` accurately identifies `scheduler_gap_detected=True` when elapsed interval exceeds 45m (3x cadence), preventing false-positive operational alerts while transparently recording scheduler health.
-     - Verified zero state or alert mutation during `--dry-run`.
-- **Test Suite Evidence:** 654 tests passing cleanly synchronously (`pytest`).
-- **Operational Transition Note:** Full Phase 1D status will transition from `PARTIAL` to `COMPLETE & VERIFIED` on `main` upon squash-merging PR #17 and recording the final post-merge release run on `main`.
+     - Post-merge operational live dry-run on `main` verified with zero state or alert mutation across all 13 canonical adapters (`Run heartbeat: duration=486.08s, gap=9383.33s, scheduler_gap=True, adapters=12/13 (zero=2), matched=2, review=264, excluded=9052, alerted=0`).
+- **Test Suite Evidence:** 654 tests passing cleanly synchronously (`pytest` in 32.48s).
+- **Configuration Validation:** `python main.py validate-config` verified clean on `main`.
+- **Release Sign-Off:** Phase 1D is fully verified, operational, and all three sequential PRs are merged to `main`.
 
 
