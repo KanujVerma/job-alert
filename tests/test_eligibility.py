@@ -347,6 +347,28 @@ class TestSpecificAdversarialCases:
         # Without US context, unresolved Georgia cannot be confirmed US and must not be marked eligible
         assert verdict.status == "needs_review"
 
+    def test_state_only_cities_with_shared_foreign_names_are_eligible(self):
+        for loc in ["Paris, TX", "London, OH", "Dublin, CA"]:
+            job = Job(
+                id=f"test-loc-{loc}",
+                company="TechCorp",
+                title="Software Engineer I",
+                location=loc,
+                department="Engineering",
+                category="Software",
+                url=f"https://example.com/job/{loc}",
+                source_platform="workday",
+                posted_at=None,
+                detected_at=_NOW,
+                raw_text="Software Engineer I. Full time. 0-2 years experience.",
+                role_type="unknown",
+                priority="normal",
+                matched_keywords=(),
+            )
+            verdict = classify_eligibility(job)
+            assert verdict.status == "eligible", f"Expected {loc} to be eligible, got {verdict.status}: {verdict.reasons}"
+            assert REASON_NON_US_ONLY not in verdict.reasons
+
 
 class TestPipelineNewGradMode:
     """Test full filter pipeline in new_grad_full_time mode vs legacy mode."""

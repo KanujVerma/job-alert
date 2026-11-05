@@ -1083,7 +1083,7 @@ class TestLocationFilterNewBugs:
         from src.filtering import _check_single_location
         is_us, reason = _check_single_location("Georgia")
         assert is_us is None
-        assert "unresolved Georgia" in reason
+        assert "ambiguous" in reason
 
     def test_atlanta_georgia_passes_us(self):
         """Georgia with US context (Atlanta) must be confirmed US."""
@@ -1091,6 +1091,33 @@ class TestLocationFilterNewBugs:
         is_us, reason = _check_single_location("Atlanta, Georgia")
         assert is_us is True
         assert "US state name: georgia" in reason
+
+    def test_paris_tx_passes_us(self):
+        """Paris, TX must be confirmed US via state code TX despite Paris."""
+        from src.filtering import _check_single_location
+        job = make_job(location="Paris, TX", raw_text="software engineer entry-level")
+        assert filter_location(job, _FILTERS).passes
+        is_us, reason = _check_single_location("Paris, TX")
+        assert is_us is True
+        assert "US state code: TX" in reason
+
+    def test_london_oh_passes_us(self):
+        """London, OH must be confirmed US via state code OH despite London."""
+        from src.filtering import _check_single_location
+        job = make_job(location="London, OH", raw_text="software engineer entry-level")
+        assert filter_location(job, _FILTERS).passes
+        is_us, reason = _check_single_location("London, OH")
+        assert is_us is True
+        assert "US state code: OH" in reason
+
+    def test_dublin_ca_passes_us(self):
+        """Dublin, CA must be confirmed US via state code CA despite Dublin."""
+        from src.filtering import _check_single_location
+        job = make_job(location="Dublin, CA", raw_text="software engineer entry-level")
+        assert filter_location(job, _FILTERS).passes
+        is_us, reason = _check_single_location("Dublin, CA")
+        assert is_us is True
+        assert "US state code: CA" in reason
 
 
 # ---------------------------------------------------------------------------
