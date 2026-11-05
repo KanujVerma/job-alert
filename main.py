@@ -221,26 +221,27 @@ def do_run(args) -> int:
             else:
                 company_state.pop("last_error", None)
                 company_state.pop("last_error_at", None)
-                verdict = update_health(
-                    company_state, len(fetched), datetime.now(timezone.utc), stale_after_hours
-                )
-                if verdict and notifier and not getattr(args, "dry_run", False):
-                    if verdict == HEALTH_STALE:
-                        sent = notifier.send_summary(
-                            title="🝝 No postings",
-                            description=(
-                                f"**{cname}** has returned no job postings for over "
-                                f"{stale_after_hours:.0f}h. Either the site has nothing "
-                                f"open, or the adapter is broken — worth a look."
-                            ),
-                        )
-                        if not sent:
-                            company_state["health"]["alerted"] = False
-                    elif verdict == HEALTH_RECOVERED:
-                        notifier.send_summary(
-                            title="✅ Adapter recovered",
-                            description=f"**{cname}** is returning postings again.",
-                        )
+
+            verdict = update_health(
+                company_state, len(fetched), datetime.now(timezone.utc), stale_after_hours
+            )
+            if verdict and notifier and not getattr(args, "dry_run", False):
+                if verdict == HEALTH_STALE:
+                    sent = notifier.send_summary(
+                        title="🗝 No postings",
+                        description=(
+                            f"**{cname}** has returned no job postings for over "
+                            f"{stale_after_hours:.0f}h. Either the site has nothing "
+                            f"open, or the adapter is broken — worth a look."
+                        ),
+                    )
+                    if not sent:
+                        company_state["health"]["alerted"] = False
+                elif verdict == HEALTH_RECOVERED:
+                    notifier.send_summary(
+                        title="✅ Adapter recovered",
+                        description=f"**{cname}** is returning postings again.",
+                    )
 
             # Apply filter pipeline
             source_config = company_cfg.get("config", {})

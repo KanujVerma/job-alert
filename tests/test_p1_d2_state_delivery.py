@@ -360,6 +360,84 @@ class TestPlaidLeverErrorClassification:
             list(adapter.fetch())
         assert "404" in str(exc_info.value)
 
+    def test_failing_adapter_triggers_stale_source_notification(self, tmp_path):
+        import json
+        state_file = tmp_path / "seen_jobs.json"
+        config_file = tmp_path / "companies.yaml"
+        config_file.write_text(
+            """
+defaults:
+  schedule_minutes: 15
+  state_path: """ + str(state_file) + """
+  max_alerts_per_run: 25
+  adapter_stale_after_hours: 48
+filters:
+  mode: new_grad_full_time
+  freshness_hours: 48
+companies:
+  - name: Apple
+    adapter: workday
+    enabled: true
+    config:
+      domain: apple.wd12.myworkdayjobs.com
+      path: External_Career_Site
+  - name: Salesforce
+    adapter: workday
+    enabled: true
+    config:
+      domain: salesforce.wd12.myworkdayjobs.com
+      path: External_Career_Site
+"""
+        )
+        now = datetime.now(timezone.utc)
+        state = _empty_state()
+        state["first_run_completed_at"] = (now - timedelta(days=5)).isoformat()
+        # Seed health for Salesforce as first tracked 50 hours ago (beyond 48h threshold)
+        state["companies"]["Salesforce"] = {
+            "last_checked_at": (now - timedelta(hours=1)).isoformat(),
+            "seen_jobs": {},
+            "health": {
+                "first_tracked_at": (now - timedelta(hours=50)).isoformat(),
+                "last_nonempty_at": None,
+                "alerted": False,
+            },
+        }
+        state_file.write_text(json.dumps(state))
+
+        args = MagicMock(
+            config=str(config_file),
+            dry_run=False,
+            verbose=False,
+            company=None,
+            firehose_first_run=False,
+            summary_first_run=False,
+            rerun_backfill=False,
+        )
+
+        def mock_fetch(self):
+            if self.company == "Salesforce":
+                raise RuntimeError("Connection timeout")
+            return []
+
+        with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/mock"}), \
+             patch("src.adapters.workday.WorkdayAdapter.fetch", autospec=True, side_effect=mock_fetch), \
+             patch("src.notifier.Notifier.send_summary", return_value=True) as mock_send_summary:
+            rc = do_run(args)
+            # Since Apple succeeded (returned 0 postings without error), do_run succeeds (rc == 0)
+            assert rc == 0
+
+            # Stale outage notification must be sent for the failing company!
+            assert mock_send_summary.called
+            summary_kwargs = mock_send_summary.call_args[1]
+            assert "No postings" in summary_kwargs.get("title", "")
+            assert "Salesforce" in summary_kwargs.get("description", "")
+
+        # State records both the health alert and the diagnostic error
+        reloaded = json.loads(state_file.read_text())
+        salesforce_state = reloaded["companies"]["Salesforce"]
+        assert salesforce_state["health"]["alerted"] is True
+        assert "Connection timeout" in salesforce_state.get("last_error", "")
+
 
 class TestBackfillSeparationFromIndividualAlerts:
     """Requirement: Historical postings (48-168h) must NOT trigger individual alerts or exhaust the per-run alert cap."""
