@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import os
+import re
 import tempfile
 import logging
 from datetime import datetime, timedelta, timezone
@@ -204,6 +205,8 @@ def record_review_job(
             "company": job.company,
             "title": job.title,
             "url": job.url,
+            "location": job.location or "",
+            "network_priority": bool(getattr(job, "network_priority", False)),
             "reasons": reasons,
             "first_seen": now.isoformat(),
             "last_seen": now.isoformat(),
@@ -211,6 +214,104 @@ def record_review_job(
     else:
         entry["last_seen"] = now.isoformat()
         entry["reasons"] = reasons
+        if getattr(job, "network_priority", False):
+            entry["network_priority"] = True
+        if job.location and not entry.get("location"):
+            entry["location"] = job.location
+
+
+def remove_review_job(state: dict, job_id: str) -> bool:
+    """Remove a job from state.review_queue (e.g. once matched or definitively excluded).
+
+    Returns True if an entry was removed, False otherwise.
+    """
+    queue = state.get("review_queue", {})
+    if job_id in queue:
+        del queue[job_id]
+        return True
+    return False
+
+
+def clean_review_queue(state: dict) -> int:
+    """Prune items from review_queue that are definitively excluded under current classification rules.
+
+    Returns the number of pruned entries.
+    """
+    queue = state.get("review_queue", {})
+    if not queue:
+        return 0
+
+    from src.eligibility import classify_eligibility
+    to_remove = []
+    now = datetime.now(timezone.utc)
+    for jid, entry in queue.items():
+        job = Job(
+            id=jid,
+            company=entry.get("company", ""),
+            title=entry.get("title", ""),
+            location=entry.get("location", ""),
+            department=None,
+            category=None,
+            url=entry.get("url", ""),
+            source_platform="unknown",
+            posted_at=None,
+            detected_at=now,
+            raw_text=f"{entry.get('title', '')} {entry.get('location', '')}",
+            role_type="unknown",
+            priority="normal",
+            matched_keywords=(),
+        )
+        verdict = classify_eligibility(job)
+        if verdict.status == "excluded":
+            to_remove.append(jid)
+
+    for jid in to_remove:
+        del queue[jid]
+
+    return len(to_remove)
+
+
+def score_review_item(item: dict) -> int:
+    """Score a review queue entry for December 2026 CS graduate new-grad relevance.
+
+    Higher score = higher priority in the daily review digest.
+    """
+    score = 0
+    title = (item.get("title") or "").lower()
+    company = item.get("company") or ""
+    loc = (item.get("location") or "").lower()
+    url = (item.get("url") or "").lower()
+
+    # 1. Network Priority companies (+10)
+    network_companies = {
+        "Plaid", "Oracle", "CrowdStrike", "Salesforce", "Apple", "Amazon",
+        "Microsoft", "NVIDIA", "Western Digital", "Applied Materials",
+        "Qualcomm", "Intel", "AMD"
+    }
+    if company in network_companies or item.get("network_priority"):
+        score += 10
+
+    # 2. Early-career signals in title/reasons (+15)
+    if re.search(r"\b(?:swe 1|swe i|sde 1|sde i|engineer 1|engineer i|software engineer 1|software engineer i|junior|associate|entry|new grad|graduate|campus|university)\b", title):
+        score += 15
+
+    # 3. Core software/tech roles (+8)
+    if re.search(r"\b(?:software|backend|frontend|full[- ]?stack|systems|distributed|platform|infrastructure|firmware|embedded|machine learning|ml|data engineer)\b", title):
+        score += 8
+
+    # 4. US tech hubs / preferred locations (+5)
+    if re.search(r"\b(?:ca|california|san francisco|bay area|san jose|mountain view|sunnyvale|palo alto|seattle|wa|redmond|austin|tx|new york|nyc|ny|boston|ma|remote)\b", f"{loc} {url}"):
+        score += 5
+
+    # 5. Penalties for non-tech or non-US
+    if re.search(r"\b(?:can|canada|uk|india|emea|apac|latam|germany|france|netherlands|ireland|australia)\b", f"{loc} {url}"):
+        score -= 30
+    if re.search(r"\b(?:manager|director|lead|principal|staff|architect)\b", title):
+        score -= 25
+    if re.search(r"\b(?:sales|marketing|recruiter|hr|finance|accountant|warehouse|driver|clerk)\b", title):
+        score -= 25
+
+    return score
 
 
 def get_daily_review_digest(
@@ -219,7 +320,10 @@ def get_daily_review_digest(
     cap: int = 10,
     digest_interval_hours: float = 24.0,
 ) -> tuple[list[dict], int] | None:
-    """Return (items, total_count) for daily review digest if due, or None if throttled."""
+    """Return (items, total_count) for daily review digest if due, or None if throttled.
+
+    Prunes excluded noise and prioritizes highest-relevance early-career opportunities.
+    """
     digest_meta = state.setdefault("review_digest", {"last_sent_at": None})
     last_sent = digest_meta.get("last_sent_at")
     if last_sent is not None:
@@ -234,8 +338,26 @@ def get_daily_review_digest(
     if not queue:
         return None
 
-    items = sorted(queue.values(), key=lambda x: x.get("last_seen", ""), reverse=True)
-    return items[:cap], len(items)
+    # Clean any now-excluded items
+    clean_review_queue(state)
+
+    if not queue:
+        return None
+
+    # Score and sort items
+    scored = []
+    for item in queue.values():
+        sc = score_review_item(item)
+        if sc > 0:
+            scored.append((sc, item))
+
+    # If all items had score <= 0 but queue is non-empty, retain items
+    if not scored and queue:
+        scored = [(0, item) for item in queue.values()]
+
+    scored.sort(key=lambda x: (x[0], x[1].get("last_seen", "")), reverse=True)
+    prioritized = [item for _, item in scored]
+    return prioritized[:cap], len(queue)
 
 
 def _migrate_v1_to_v2(state: dict) -> dict:

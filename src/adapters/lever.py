@@ -34,7 +34,7 @@ class LeverAdapter(BaseAdapter):
             postings = resp.json()
         except (requests.RequestException, ValueError) as exc:
             logger.error("LeverAdapter [%s] fetch failed: %s", slug, exc)
-            return
+            raise
 
         detected_at = datetime.now(tz=timezone.utc)
 

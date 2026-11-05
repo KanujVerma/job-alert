@@ -163,25 +163,23 @@ def test_raw_text_description_truncated_to_500():
 
 
 # ---------------------------------------------------------------------------
-# HTTP error → yields nothing, no exception
+# HTTP error → raises exception so caller classifies failure correctly
 # ---------------------------------------------------------------------------
 
-def test_http_error_yields_nothing():
+def test_http_error_raises_exception():
     adapter = _make_adapter()
     adapter.http.get.side_effect = requests.RequestException("connection refused")
 
-    jobs = list(adapter.fetch())  # must not raise
-    assert jobs == []
+    with pytest.raises(requests.RequestException):
+        list(adapter.fetch())
 
 
-def test_http_404_yields_nothing():
+def test_http_404_raises_http_error():
     adapter = _make_adapter()
-    resp = MagicMock()
-    resp.json.side_effect = requests.HTTPError("404")
-    adapter.http.get.side_effect = requests.HTTPError("404")
+    adapter.http.get.side_effect = requests.HTTPError("404 Client Error: Not Found")
 
-    jobs = list(adapter.fetch())
-    assert jobs == []
+    with pytest.raises(requests.HTTPError):
+        list(adapter.fetch())
 
 
 # ---------------------------------------------------------------------------
