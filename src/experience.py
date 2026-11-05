@@ -10,8 +10,8 @@ import re
 from dataclasses import dataclass
 
 _DEGREE = re.compile(
-    r"\b(?P<bachelor>bachelor(?:'?s|s)?|b\.?s\.?|undergraduate)"
-    r"|\b(?P<master>master(?:'?s|s)?|m\.?s\.?)"
+    r"\b(?P<bachelor>bachelor(?:'?s|s)?|b\.?s\.?|undergraduate)\b"
+    r"|\b(?P<master>master(?:'?s|s)?|m\.?s\.?)\b"
     r"|\b(?P<phd>ph\.?d\.?|doctorate)\b",
     re.IGNORECASE,
 )
@@ -74,16 +74,28 @@ def _mentions(span: str, *, degree_context: bool) -> list[tuple[float, str, bool
         if match.group("unit").lower().startswith(("month", "mo")):
             quantity /= 12
         evidence = span[max(0, match.start() - 90): match.end() + 95].strip()
-        skill_specific = bool(_GENERAL_AFTER.search(after[:85]))
-        # "programming experience in Python" is general programming tenure,
-        # unlike "experience using Kubernetes" as an individual tool.
-        if re.search(
-            r"\b(?:programming|software\s+(?:engineering|development)|"
-            r"professional|industry|engineering)\s+experience\s+(?:in|with|using)\b",
-            after[:85],
-            re.IGNORECASE,
-        ):
-            skill_specific = False
+        # Interpret only the *nearest* "experience" phrase for this number;
+        # a later, unrelated "2 years with Python" must not relabel an
+        # earlier "4 years of general engineering experience".
+        first_exp = re.search(r"\bexperience\b", after, re.IGNORECASE)
+        skill_specific = False
+        if first_exp:
+            tail = after[first_exp.end():first_exp.end() + 70]
+            skill_specific = bool(re.match(
+                r"\s+(?:in|with|using)\s+(?!"
+                r"(?:the\s+)?(?:software\s+(?:engineering|development)|engineering|"
+                r"industry|related\s+field|professional|product\s+development)\b)",
+                tail,
+                re.IGNORECASE,
+            ))
+            prefix = after[:first_exp.start()]
+            if re.search(
+                r"\b(?:programming|software\s+(?:engineering|development)|"
+                r"professional|industry|engineering)\s*$",
+                prefix,
+                re.IGNORECASE,
+            ):
+                skill_specific = False
         found.append((quantity, evidence[:240], skill_specific))
     return found
 
