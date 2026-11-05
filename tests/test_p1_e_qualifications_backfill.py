@@ -303,3 +303,67 @@ def test_bachelors_pathway_with_prefix_four_years_blocks_false_newgrad_alert():
     verdict = classify_eligibility(make_job(45, title=title, description=description))
     assert verdict.status == "excluded"
     assert "EXPERIENCE_EXCEEDS_RANGE" in verdict.reasons
+
+
+def test_unrelated_or_equivalent_does_not_cancel_masters_degree_requirement():
+    requirement = (
+        "Bachelor's degree in Computer Science or equivalent experience "
+        "and 1 year of professional experience. Master's degree required."
+    )
+    assessment = assess_experience_requirements(requirement)
+    assert not assessment.has_bachelors_alternative
+    verdict = classify_eligibility(
+        make_job(81, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "excluded"
+    assert "MASTERS_REQUIRED" in verdict.reasons
+
+
+def test_inline_preferred_tenure_does_not_become_required():
+    requirement = (
+        "Minimum qualifications: Bachelor's degree in CS and 0-2 years of "
+        "professional experience required. 4 years of professional experience preferred."
+    )
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years == 0
+    assert not assessment.ambiguous
+    verdict = classify_eligibility(
+        make_job(82, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "eligible"
+
+
+def test_four_year_degree_duration_is_not_four_years_of_work():
+    requirement = "Bachelor's degree in Computer Science (4 years). No prior work experience required."
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years is None
+    assert not assessment.ambiguous
+    verdict = classify_eligibility(
+        make_job(83, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "eligible"
+
+
+def test_fractional_three_point_five_years_is_review_not_eligible():
+    requirement = "Minimum qualifications: 3.5 years of professional experience required."
+    assessment = assess_experience_requirements(requirement)
+    assert assessment.minimum_years == 3.5
+    verdict = classify_eligibility(
+        make_job(84, title="Software Engineer, New Grad", description=requirement)
+    )
+    assert verdict.status == "needs_review"
+    assert "EXPERIENCE_EXCEEDS_RANGE" in verdict.reasons
+
+
+def test_bad_bracketed_url_does_not_abort_or_block_valid_job():
+    broken = make_job(85, url="https://[invalid/jobs")
+    good = make_job(86)
+    jobs = [broken, good]
+    state = make_state(jobs)
+    sender = FakeSender()
+    result = deliver_backfill_batch(jobs, state, sender, now=NOW)
+    assert result.delivered == 1 and result.remaining == 1
+    assert not result.completed
+    assert not is_url_alerted(broken.url, state)
+    assert is_url_alerted(good.url, state)
+    assert good.url in sender.payloads[0][1]
