@@ -50,7 +50,7 @@ _NON_US_COUNTRY_CODES = {
     "mx", "br", "ie", "nl", "se", "no", "dk", "fi", "ch", "es", "it",
     "pl", "cz", "ro", "hu", "il", "tr", "ae", "sa", "pk", "ph", "id",
     "my", "vn", "th", "hk", "nz", "ar", "co", "cl", "pe", "ng", "ke",
-    "za", "ua", "ru", "bd", "lk", "qa", "kw", "bh", "om", "eg",
+    "za", "ua", "ru", "bd", "lk", "qa", "kw", "bh", "om", "eg", "ge",
 }
 
 _NON_US_COUNTRY_CODES_3 = {
@@ -60,7 +60,7 @@ _NON_US_COUNTRY_CODES_3 = {
     # Europe
     "gbr", "deu", "fra", "irl", "nld", "swe", "nor", "dnk", "fin",
     "che", "esp", "ita", "pol", "cze", "rou", "hun", "bel", "prt",
-    "aut", "hrv", "svk", "grc", "srb",
+    "aut", "hrv", "svk", "grc", "srb", "geo",
     # Americas (non-US)
     "can", "mex", "bra", "arg", "col", "chl", "per", "cri", "pan",
     "gtm", "hnd", "slv", "nic",
@@ -116,7 +116,7 @@ NON_US_SIGNALS = {
     "cairo", "nairobi", "lagos", "cape town", "johannesburg",
     "buenos aires", "bogota", "santiago", "lima",
     # Cities — EE / Russia
-    "moscow", "kyiv",
+    "moscow", "kyiv", "tbilisi", "batumi", "kutaisi",
 }
 
 
@@ -229,6 +229,19 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
     for state_name in US_STATE_NAMES:
         pattern = r"(?<![a-z])" + re.escape(state_name) + r"(?![a-z])"
         if re.search(pattern, loc_lower):
+            if state_name == "georgia":
+                # Disambiguate US state Georgia from the country Georgia (Eurasia).
+                # Require explicit US context or a known US Georgia city.
+                has_us_context = bool(
+                    re.search(r"\b(?:us|usa|u\.s\.|united states)\b", loc_lower)
+                    or re.search(
+                        r"\b(?:atlanta|savannah|augusta|alpharetta|athens|columbus|marietta|norcross|macon|roswell|sandy springs)\b",
+                        loc_lower,
+                    )
+                )
+                if has_us_context:
+                    return True, f"US state name: {state_name}"
+                return None, f"ambiguous location: {loc_clean} (unresolved Georgia)"
             return True, f"US state name: {state_name}"
 
     # Step 7: US Tech Cities (replace delimiters with spaces for city matching)
@@ -240,9 +253,16 @@ def _check_single_location(loc_str: str) -> tuple[bool | None, str]:
 
     # Step 8: US State Codes (e.g. WA, CA, TX, NY)
     for code in US_STATE_CODES:
-        pattern = r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])"
-        if re.search(pattern, loc_clean):
-            return True, f"US state code: {code}"
+        # Ambiguous 2-letter English words ('in', 'or', 'me', 'ok')
+        if code.lower() in {"in", "or", "me", "ok"}:
+            if re.search(r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])", loc_clean) or re.search(
+                r"(?:,\s*|-\s*)" + re.escape(code.lower()) + r"(?![a-zA-Z])", loc_lower
+            ):
+                return True, f"US state code: {code}"
+        else:
+            # Case-insensitive match for distinct state codes (e.g. Cupertino, ca; Rochester, ny)
+            if re.search(r"(?<![a-zA-Z])" + re.escape(code) + r"(?![a-zA-Z])", loc_clean, re.IGNORECASE):
+                return True, f"US state code: {code}"
 
     return None, "ambiguous"
 

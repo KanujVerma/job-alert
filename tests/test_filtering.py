@@ -1033,6 +1033,65 @@ class TestLocationFilterNewBugs:
         result = filter_location(job, _FILTERS)
         assert not result.passes
 
+    def test_lowercase_us_state_code_ca_passes(self):
+        """Case-insensitive state code 'ca' must confirm US location."""
+        from src.filtering import _check_single_location
+        job = make_job(
+            location="Cupertino, ca",
+            raw_text="software engineer entry-level cupertino ca",
+        )
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        is_us, reason = _check_single_location("Cupertino, ca")
+        assert is_us is True
+        assert "US state code: CA" in reason
+
+    def test_lowercase_us_state_code_ny_passes(self):
+        """Case-insensitive state code 'ny' must confirm US location."""
+        from src.filtering import _check_single_location
+        job = make_job(
+            location="Rochester, ny",
+            raw_text="software engineer entry-level rochester ny",
+        )
+        result = filter_location(job, _FILTERS)
+        assert result.passes
+        is_us, reason = _check_single_location("Rochester, ny")
+        assert is_us is True
+        assert "US state code: NY" in reason
+
+    def test_tbilisi_georgia_fails_non_us(self):
+        """Tbilisi, Georgia must be rejected as non-US."""
+        from src.filtering import _check_single_location
+        job = make_job(
+            location="Tbilisi, Georgia",
+            raw_text="software engineer tbilisi georgia",
+        )
+        result = filter_location(job, _FILTERS)
+        assert not result.passes
+        is_us, reason = _check_single_location("Tbilisi, Georgia")
+        assert is_us is False
+
+    def test_tbilisi_ge_country_code_fails(self):
+        """Country code GE must be rejected as non-US country code."""
+        from src.filtering import _check_single_location
+        is_us, reason = _check_single_location("Tbilisi, Didube, GE")
+        assert is_us is False
+        assert "non-US country code: GE" in reason
+
+    def test_unresolved_georgia_alone_is_ambiguous(self):
+        """Unresolved 'Georgia' alone without US context must be ambiguous, not confirmed US."""
+        from src.filtering import _check_single_location
+        is_us, reason = _check_single_location("Georgia")
+        assert is_us is None
+        assert "unresolved Georgia" in reason
+
+    def test_atlanta_georgia_passes_us(self):
+        """Georgia with US context (Atlanta) must be confirmed US."""
+        from src.filtering import _check_single_location
+        is_us, reason = _check_single_location("Atlanta, Georgia")
+        assert is_us is True
+        assert "US state name: georgia" in reason
+
 
 # ---------------------------------------------------------------------------
 # Preferred-location word-boundary regression tests
