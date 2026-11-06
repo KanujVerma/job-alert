@@ -69,7 +69,19 @@ def _required_section(text: str) -> str:
     # required section rather than truncating the posting at first preference.
     headers = list(_QUALIFICATION_HEADER.finditer(normalized))
     if headers:
+        # Mandatory eligibility text can precede the very first section
+        # heading.  For example a JD may start with "Bachelor's degree
+        # and 5 years of professional experience required" and then
+        # introduce "Preferred Qualifications".  Dropping that preamble
+        # silently makes an ineligible job appear eligible.
         retained: list[str] = []
+        preamble = normalized[:headers[0].start()].strip()
+        if preamble and re.search(
+            r"\\b(?:bachelor|master|ph\\.?d|doctorate|degree|must|require[ds]?|"
+            r"minimum|at\\s+least|qualifications?|requirements?)\\b",
+            preamble, re.IGNORECASE,
+        ):
+            retained.append(preamble)
         for i, header in enumerate(headers):
             kind = header.group("kind").lower()
             if kind not in {"minimum", "basic", "required"}:

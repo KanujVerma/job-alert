@@ -472,3 +472,38 @@ def test_only_preferred_section_does_not_create_required_experience():
     assessment = assess_experience_requirements(requirement)
     assert assessment.minimum_years is None
     assert not assessment.ambiguous
+
+
+def test_mandatory_experience_before_first_preferred_header_is_retained():
+    raw = (
+        "Bachelor's degree in Computer Science and 5 years of professional "
+        "experience required. Preferred Qualifications: Python."
+    )
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years == 5
+    assert classify_eligibility(
+        make_job(95, title="Software Engineer, New Grad", description=raw)
+    ).status == "excluded"
+
+
+def test_unheaded_mandatory_and_multiple_later_sections_are_all_retained():
+    raw = (
+        "Bachelor's degree and 4+ years of relevant professional experience required. "
+        "Preferred Qualifications: 8 years of specialized Python experience. "
+        "Required Qualifications: familiarity with code review practices."
+    )
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years == 4
+    assert classify_eligibility(
+        make_job(96, title="Software Engineer, New Grad", description=raw)
+    ).status == "excluded"
+
+
+def test_only_preferred_header_does_not_pick_up_company_history_preamble():
+    raw = (
+        "Our company has served customers for 20 years. "
+        "Preferred Qualifications: 8+ years professional experience."
+    )
+    assessment = assess_experience_requirements(raw)
+    assert assessment.minimum_years is None
+    assert not assessment.ambiguous
