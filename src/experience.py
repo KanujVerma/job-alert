@@ -77,8 +77,8 @@ def _required_section(text: str) -> str:
         retained: list[str] = []
         preamble = normalized[:headers[0].start()].strip()
         if preamble and re.search(
-            r"\\b(?:bachelor|master|ph\\.?d|doctorate|degree|must|require[ds]?|"
-            r"minimum|at\\s+least|qualifications?|requirements?)\\b",
+            r"\b(?:bachelor|master|ph\.?d|doctorate|degree|must|require[ds]?|"
+            r"minimum|at\s+least|qualifications?|requirements?)\b",
             preamble, re.IGNORECASE,
         ):
             retained.append(preamble)
