@@ -1,0 +1,240 @@
+diff --git a/docs/CONTRACTS.md b/docs/CONTRACTS.md
+index ecc7cc0..7424867 100644
+--- a/docs/CONTRACTS.md
++++ b/docs/CONTRACTS.md
+@@ -40,3 +40,16 @@ Commands require authorized user, validation, rate limits and audit; feedback ca
+ 
+ ## Migration rules
+ Every schema migration needs idempotent upgrader, backup/export, rollback note, dry-run fixtures, and no plaintext secrets. Existing `state/seen_jobs.json` contains historical alerted flags; migration may preserve but not erase it. A bounded `policy_version`-scoped backfill is the only way to surface previously seen newly eligible jobs without a notification storm.
++
++## P2-A optional Job metadata (backward-compatible)
++`source_url`, `source_board`, `source_job_id`, `source_internal_job_id`,
++`source_updated_at`, `posted_at_kind`, `employment_type`,
++`description_complete`, `compensation` have defaults, preserving old constructors.
++Known source internship/contract/part-time beats title-based new-grad guesses.
++New-source unknown employment without explicit full-time evidence or missing
++description requires review. Old adapters default these fields to None and retain
++existing behavior. Structured source facts persist in the review queue.
++`CompensationRange` stores Decimal salary/pay bounds, explicit currency, nullable
++interval and source field/tier label. Never sum equity/bonus or annualize an
++unknown interval. Greenhouse post and internal IDs remain distinct.
++`updated_at` is not `posted_at`; Ashby `publishedAt` is labeled last published.
+diff --git a/docs/HANDOFF.md b/docs/HANDOFF.md
+index 222fa96..436ec7d 100644
+--- a/docs/HANDOFF.md
++++ b/docs/HANDOFF.md
+@@ -49,3 +49,14 @@ Do not claim that simply adding documentation updates production behavior. Never
+ 
+ ## Handoff guard edge cases
+ A functional change includes source files moved/deleted from `src/`, tests and ALL test fixtures (including HTML) in `tests/`. A PR guard must inspect BOTH old and new rename paths and reject deleted/empty required docs. This was identified in PR #19's review and corrected in [PR #21](https://github.com/KanujVerma/jobbie/pull/21), merged as `dbb309a6b30bbf90cf4fa2d887052467d8760720`. [CI #42331100940](https://github.com/KanujVerma/jobbie/actions/runs/42331100940): 727 passing tests; Codex finished review with no findings. The next code task is [P2-A issue #20](https://github.com/KanujVerma/jobbie/issues/20), after Phase 1's live gate.
++
++## Active implementation: Phase 2A
++Branch `feat/p2-a-public-job-boards`; issue #20. Code implements public-only
++Greenhouse/Ashby adapters using existing HTTPClient, fixed endpoints, safe URLs,
++bounded parsing/detail fallback, explicit date/compensation/source facts, and
++structured employment/description safety gates. `companies.yaml` remains byte
++identical: 15 configured, original 13 enabled. Local 803 tests passed. Remote
++CI, review and live-read receipts must be read from the actual PR, not assumed.
++The exact remaining verification and merge procedure is
++[PHASE-2A-VERIFY.md](agent-prompts/PHASE-2A-VERIFY.md). Do not repeat implementation
++or start P2-B; first close verification gaps on the existing P2-A branch.
+diff --git a/docs/IMPLEMENTED_ARCHITECTURE.md b/docs/IMPLEMENTED_ARCHITECTURE.md
+index 4781ea2..0624620 100644
+--- a/docs/IMPLEMENTED_ARCHITECTURE.md
++++ b/docs/IMPLEMENTED_ARCHITECTURE.md
+@@ -42,3 +42,11 @@ Legacy company polling must remain runnable even if later data feed, AI, private
+ 
+ ## Provider boundary (future only)
+ Source adapters -> normalized record -> hard eligibility -> ranking -> evidence-backed LLM interpretation -> human approval for documents/outbound actions -> tracking. No single model may declare that an email was sent, job is open, candidate has a credential, or applicant is hired without independently verified evidence.
++
++## P2-A branch addition (not yet production-enabled)
++`GreenhouseAdapter` and `AshbyAdapter` -> shared `public_board` validation/GET
++normalization -> optional immutable Job source facts -> existing tri-state
++eligibility, storage, notifier. No new database/service. Explicit source employment
++and incomplete-description flags prevent false full-time alerts; review queue
++retains these facts. `scripts/verify_public_boards.py` runs the same adapters
++read-only with metadata-only receipts, not `main.do_run` or any webhook.
+diff --git a/docs/RELEASE_LOG.md b/docs/RELEASE_LOG.md
+index 95df3f6..b39714e 100644
+--- a/docs/RELEASE_LOG.md
++++ b/docs/RELEASE_LOG.md
+@@ -32,3 +32,14 @@ Every functional PR must append a concise entry naming its PR slot, actual commi
+ ## 2026-11-06: handoff documentation and follow-up gate hardening
+ - [PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged `7458d18299b1ab36b25a221990ef2fd6d265252c` with canonical current state, cold-agent handoff, release log, accurate README and initial CI doc guard. 725 tests passed on PR CI; subsequent Codex review found test HTML and git-renamed source paths bypassing the guard.
+ - [PR #21](https://github.com/KanujVerma/jobbie/pull/21) merged `dbb309a6b30bbf90cf4fa2d887052467d8760720` and actually changes `scripts/check_handoff_docs.py` + `tests/test_handoff_gate.py` to count HTML fixtures and include source deletion paths on rename (`--no-renames`). [CI #42331100940](https://github.com/KanujVerma/jobbie/actions/runs/42331100940) **727 passing**, Codex final review with no findings. This is documentation CI hardening, no new runtime job sources or code changes to the scanner.
++
++## 2026-11-06: P2-A implementation (branch, not a release claim)
++- Branch `feat/p2-a-public-job-boards`, baseline `d98afe7367`; issue #20.
++- Public Greenhouse/Ashby adapters; registry/config, optional immutable source
++  metadata, typed employment exclusions, preserved pay units/date meaning,
++  read-only smoke CLI and disabled example targets. No source code copied from
++  external repos; existing HTTPClient/BaseAdapter reused against official APIs.
++- Local full regression: **803 passed in 32.68s** (76 new adapter/pipeline tests).
++- Remote CI/review and live GET receipts remain to be captured on the PR.
++  No new production employers enabled, no Discord test messages, no historical
++  state edits. The temporary source-export workflow is removed before PR review.
+diff --git a/docs/STATUS.md b/docs/STATUS.md
+index 6c6bd41..224f26c 100644
+--- a/docs/STATUS.md
++++ b/docs/STATUS.md
+@@ -11,7 +11,8 @@
+ | P1-A/B/C (#12–14) | Merged | Historical synthetic fixtures, first review failure; see logs | Live manual Actions run #41915003368, 0 eligible at that time | Superseded by P1D/E |
+ | P1-D1/D2/D3 (#15–17) | Merged | 654 tests in CI; final Codex review of #17 completed | Scheduled jobs subsequently delivered recorded alerts; see state heartbeats | Avoid treating those first Intel matches as verified suitable |
+ | **P1-E (#18)** | **Merged** to `main` at `9c9365ae` | **716 passing tests**, [Actions #42329594922](https://github.com/KanujVerma/jobbie/actions/runs/42329594922) on state-reconciled branch; Codex completed review of same code at `69acbe23` with no major findings | **No post-merge eligible job alert proof recorded in this audit.** Source changes merged; wait for a scheduled run/authorized live check | Verify production scanner with new code and review actual new-grad relevance |
+-| **Phase 2** | PLANNED; no adapters or catalogue added by this status update | Not applicable | Not deployed | **P2-A** Greenhouse/Ashby read-only adapters after Phase 1E operational gate |
++| **Phase 2A** | Implemented on `feat/p2-a-public-job-boards`; not yet merged/enabled | Local full suite: **803 passed**; remote CI/review pending | Read-only smoke pending; no new active employers | Latest source CI, code review and read-only receipt; Phase 1 live gate remains |
++| Phase 2B/C | PLANNED | Not applicable | Not deployed | Separate reviewed phases; no feeds/database in P2-A |
+ | Phases 3–6 | PLANNED | Not applicable | Not deployed | Sequential dependencies in `docs/PHASES.md` |
+ 
+ ## What actually works today
+@@ -42,3 +43,13 @@ No new agent needs past ChatGPT conversation, locally stored resumes, or private
+ 
+ ## Documentation continuity follow-up (2026-11-06)
+ [PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged at `7458d18299b1ab36b25a221990ef2fd6d265252c` (725 tests), publishing current status, architecture and agent handoff. Codex subsequently found HTML-fixture and rename-path bypasses, fixed by [PR #21](https://github.com/KanujVerma/jobbie/pull/21), merged at `dbb309a6b30bbf90cf4fa2d887052467d8760720` with [727 passing CI tests](https://github.com/KanujVerma/jobbie/actions/runs/42331100940) and a completed Codex review **with no findings**. This changes documentation/CI only; P1-E's post-merge Job Alerts scan remains a separate live-verification gate. **Next code issue: [P2-A #20](https://github.com/KanujVerma/jobbie/issues/20)** after [Phase 1 #6](https://github.com/KanujVerma/jobbie/issues/6) is satisfied.
++
++## P2-A implementation checkpoint
++Owner explicitly requested implementation now. Greenhouse/Ashby adapters, typed
++source facts, config validators and regression tests are implemented in the
++P2-A branch. No existing employer config or production state has changed.
++The earlier Phase 1 live gate stays open; adapter staging does not claim it
++satisfied. Full local regression: 803 passed (727 existing + 76 new), 32.68s.
++See [P2-A implementation](implementation/P2-A.md),
++[source contracts](sources/P2-A_PUBLIC_APIS.md), and
++[Gemini verifier runbook](agent-prompts/PHASE-2A-VERIFY.md).
+diff --git a/docs/agent-prompts/PHASE-2A-VERIFY.md b/docs/agent-prompts/PHASE-2A-VERIFY.md
+new file mode 100644
+index 0000000..af6b4c0
+--- /dev/null
++++ b/docs/agent-prompts/PHASE-2A-VERIFY.md
+@@ -0,0 +1,81 @@
++# Gemini completion checklist: P2-A implementation (not a rewrite)
++
++Read AGENTS.md, STATUS.md, HANDOFF.md, this file, implementation/P2-A.md,
++phases/PHASE-2.md, sources/P2-A_PUBLIC_APIS.md, CONTRACTS.md and SECURITY.md.
++Use the **open P2-A PR** linked from issue #20. The branch is
++`feat/p2-a-public-job-boards`. Do NOT start P2-B or P2-C.
++
++## Exact ownership
++The adapters, tests, normalization, config/registry integration, smoke CLI and
++source docs are already implemented. Your job is to verify the latest exact
++head, fix only a reproduced defect, and finish access-dependent/live gates.
++Do not redesign the project, disable tests, broaden eligibility, reset state,
++change the original 13 employers, enable a speculative board or send emails.
++
++## 1. Establish exact checkout and approvals
++1. Read issue #20, Phase 1 issue #6, the P2-A PR body/review threads and actual
++   GitHub Actions results. Record the exact current head SHA.
++2. `git fetch origin`; `git checkout feat/p2-a-public-job-boards`;
++   `git pull --ff-only`; `git status --short`. Do not discard uncommitted work.
++3. Verify branch still excludes production `companies.yaml` and
++   `state/seen_jobs.json` changes. A subsequent state-only main commit must not
++   be overwritten when updating the branch. Use normal merge, never force main.
++
++## 2. Deterministic validation
++Use Python 3.12; `pip install -r requirements-dev.txt`.
++Run and preserve exact output:
++```
++python main.py validate-config
++python -m compileall -q src scripts
++pytest -q
++python scripts/check_handoff_docs.py --base origin/main --head HEAD
++```
++Tests must cover both adapters, structured employment exclusions, missing
++fields, prospect/unlisted exclusion, stable IDs, shared 429/timeout handling,
++invalid URLs/redirects/truncated lists, salary source units and dry-run state
++invariance. Failed tests block merge; do not report a stale head as passing.
++
++## 3. Read-only live adapter proof (NO Discord)
++Use a fresh nonexisting output path, never any file under `state/`:
++```
++python scripts/verify_public_boards.py --allow-network \
++  --manifest examples/p2a-public-boards.yaml \
++  --output /tmp/jobbie-p2a-<EXACT_HEAD_SHA>-<UNIQUE_SUFFIX>.json
++```
++Replace `<EXACT_HEAD_SHA>` with `git rev-parse HEAD`; replace `<UNIQUE_SUFFIX>`
++with the current UTC timestamp. Check JSON and actual request receipts:
++- Both platform results observed_nonempty/observed_empty, not error hidden as 0.
++- `state_and_config_unchanged: true`, `discord_sent: false`,
++  `production_enabled: false`, correct source SHA.
++- Public source URLs match recorded employer boards; no unlisted Ashby job,
++  prospect Greenhouse post or guessed salary/date is exposed.
++- Empty board is valid fetch evidence, NOT proof of an eligible opening.
++- API refusal/403/429/network blockage: record BLOCKED_LIVE and exact error.
++  Do not use proxies, login credentials, unofficial endpoints or fake fixtures.
++The P2-A read-only Actions workflow produces the same receipt when it can
++reach both endpoints. Compare source SHA; do not substitute an old run.
++
++## 4. Phase 1 prerequisite and rollout
++Phase 1 issue #6 still requires post-P1-E runtime verification. Inspect a
++scheduled `Job Alerts` run whose source includes commit `9c9365ae`; ensure no
++runtime regression and source health is accurately reported. The old 15-minute
++cron is best effort and can drift hours; do not call it fixed. If none exists,
++record that the P2-A code is implemented/tested but production rollout remains
++blocked. Do not force a live backfill to generate messages.
++
++Do NOT enable the two example companies merely because they parse. Keep the
++15 existing configurations / 13 enabled, all original referral states unchanged.
++Enabling any specific employer requires source verification, explicit scope,
++controlled dry-run and owner approval. It is a separate config change.
++
++## 5. Review, merge and exact handoff
++- Obtain completed independent code review of the latest source (e.g.
++  `@codex review`); address findings with tests and rerun CI. Usage limit is a
++  blocker, not an approval. Review comments on old hashes do not approve new code.
++- If checks/review/allowed live gates pass, merge the P2-A PR normally, verify
++  merged SHA and post-merge CI. Otherwise leave PR open with precise blockers.
++- Update STATUS/HANDOFF/RELEASE_LOG in the same follow-up PR and issue #20 with
++  implemented/tested/live-read/production-enabled as separate statements.
++- Final report: PR URL, actual head/merge SHA, test count and command output,
++  CI/review URLs, per-board live counts and receipt, unchanged-state evidence,
++  exact remaining blockers. Do NOT start another phase.
+diff --git a/docs/implementation/P2-A.md b/docs/implementation/P2-A.md
+new file mode 100644
+index 0000000..8dd4e23
+--- /dev/null
++++ b/docs/implementation/P2-A.md
+@@ -0,0 +1,28 @@
++# P2-A implementation plan and contracts
++
++Base inspected: `d98afe73674925f8aaeb9d6fe21df0b077375689` (727-test baseline).
++Scope: public Greenhouse + Ashby read-only adapters, registry/config validation,
++structured source facts, safe normalization, regression + read-only smoke tests.
++Production `companies.yaml`, job-alerts workflow and state remain unchanged.
++
++1. Add `src/adapters/public_board.py` for endpoint/config, URL, response bounds,
++   HTML, date and compensation normalization. Fixed public API hosts; no login,
++   arbitrary endpoint overrides, application submissions or redirects.
++2. Add `GreenhouseAdapter` / `AshbyAdapter`; preserve distinct source post IDs,
++   descriptions, multi-location information, nullable dates and public URLs.
++   Greenhouse prospect posts and Ashby unlisted posts are not discoverable jobs.
++   Neither published list contract documents pagination: do not invent cursors;
++   fail if a response advertises incomplete coverage.
++3. Add optional source metadata to frozen Job without breaking old constructors.
++   Explicit source employment type beats title guesses; missing/incomplete
++   descriptions or unknown source employment must not produce verified alerts.
++4. Add configuration validation and registry imports; no new active employers.
++5. Fixture tests plus normal filter/notifier/dedup/do_run integration tests.
++6. Standalone read-only smoke CLI emits metadata-only JSON receipts and hashes
++   production config/state before/after. No credentials, writes to state or
++   webhook sends. Approved demo manifests stay outside production config.
++7. Update STATUS/HANDOFF/RELEASE_LOG and precise Gemini checklist before PR.
++
++No P2-B feed ingestion, P2-C database, AI or private candidate data.
++The older Phase 1 post-merge live gate is still unverified; owner requested
++implementation now, but activation/merge release gates remain explicit.
+diff --git a/docs/phases/PHASE-2.md b/docs/phases/PHASE-2.md
+index d42462c..f0204eb 100644
+--- a/docs/phases/PHASE-2.md
++++ b/docs/phases/PHASE-2.md
+@@ -33,3 +33,11 @@ STATUS PLANNED. Prerequisite: P1-E CI/review merged (done) plus a documented pos
+ 8. Update `docs/STATUS.md`, `docs/HANDOFF.md`, `docs/RELEASE_LOG.md` and adapter contract docs, then PR review. P2-B is blocked until P2-A merged and tested. P2-C requires source rights, canonical state dual-write and 72-hour shadow evidence.
+ 
+ This scope is about **adding read-only discovery adapters**, not a Cloudflare migration, LLM matching, automated application submission, or resume processing.
++
++## P2-A implementation handoff
++Owner explicitly requested implementation on an isolated branch before the old
++post-P1-E production gate was observed. This authorizes staging, not automatic
++activation or a fabricated RELEASED status. Implementation and acceptance matrix:
++[implementation/P2-A.md](../implementation/P2-A.md). Exact verifier workflow:
++[PHASE-2A-VERIFY.md](../agent-prompts/PHASE-2A-VERIFY.md). Original 13-company
++production configuration remains unchanged; examples are disabled outside it.
