@@ -18,6 +18,7 @@ from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 import requests
 from bs4 import BeautifulSoup
+from bs4.element import Comment, Declaration, Doctype, ProcessingInstruction
 
 from src.http import HTTPClient
 from src.models import CompensationRange
@@ -179,8 +180,28 @@ def description(value: object, *, is_html: bool) -> tuple[str, bool]:
         soup = BeautifulSoup(value, "html.parser")
         for node in soup(["script", "style", "iframe", "template", "noscript"]):
             node.decompose()
-        # Preserve qualification headings and item boundaries for the classifier.
-        value = soup.get_text("\n", strip=True)
+        # HTML whitespace inside a text node is layout, not a requirement
+        # boundary. Inline formatting must not split "5 years" from "of
+        # professional experience": only block elements and <br> add breaks.
+        for node in list(soup.find_all(string=True)):
+            if isinstance(node, (Comment, Declaration, Doctype, ProcessingInstruction)):
+                node.extract()
+            else:
+                node.replace_with(re.sub(r"\s+", " ", str(node)))
+        for node in soup.find_all("br"):
+            node.replace_with("\n")
+        for node in soup.find_all([
+            "p", "div", "li", "ul", "ol", "section", "article", "header",
+            "footer", "h1", "h2", "h3", "h4", "h5", "h6", "tr", "dt",
+            "dd", "table", "blockquote", "pre",
+        ]):
+            node.insert_before("\n")
+            node.insert_after("\n")
+        value = "\n".join(
+            re.sub(r"[ \t]+", " ", line).strip()
+            for line in soup.get_text(" ", strip=False).splitlines()
+            if line.strip()
+        )
     complete = bool(value) and len(value) <= MAX_DESCRIPTION_CHARS
     return value[:MAX_DESCRIPTION_CHARS], complete
 
