@@ -32,7 +32,8 @@ def functional_source_changed(path: str) -> bool:
     if path in FUNCTIONAL_ROOT_FILES:
         return True
     if path.startswith(("src/", "tests/")):
-        return path.endswith((".py", ".json", ".yaml", ".yml", ".toml"))
+        # All source and fixture formats affect runtime/test behavior, HTML included.
+        return True
     if path.startswith("scripts/"):
         return path.endswith((".py", ".sh", ".ts", ".js"))
     if path.startswith(".github/workflows/"):
@@ -72,7 +73,7 @@ def missing_handoff_documents(
 def changed_paths(base_ref: str, head_ref: str) -> set[str]:
     """Compare full PR diff from merge base. Fail closed if checkout is shallow."""
     result = subprocess.run(
-        ["git", "diff", "--name-only", f"{base_ref}...{head_ref}"],
+        ["git", "diff", "--name-only", "--no-renames", f"{base_ref}...{head_ref}"],
         check=True,
         capture_output=True,
         text=True,
