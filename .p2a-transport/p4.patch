@@ -1,0 +1,455 @@
+diff --git a/tests/test_public_board_adapters.py b/tests/test_public_board_adapters.py
+new file mode 100644
+index 0000000..1232cdf
+--- /dev/null
++++ b/tests/test_public_board_adapters.py
+@@ -0,0 +1,449 @@
++"""P2-A: synthetic response fixtures, real shared HTTP/filter/config interfaces.
++
++No fixture is a claim about a real opening. All unit HTTP is intercepted.
++"""
++from __future__ import annotations
++
++import copy
++import dataclasses
++import json
++from datetime import datetime, timezone
++from decimal import Decimal
++from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import Mock, patch
++from urllib.parse import parse_qs, urlsplit
++
++import pytest
++import requests
++import responses
++import yaml
++
++from src.adapters import ADAPTER_REGISTRY, browser_required
++from src.adapters.ashby import AshbyAdapter
++from src.adapters.greenhouse import GreenhouseAdapter
++from src.adapters.public_board import (
++    PublicBoardError, description, format_pay, listing_rows, pay_range,
++    public_https_url, timestamp, validate_public_board_config,
++)
++from src.config import Config, load_config, validate_config
++from src.eligibility import classify_eligibility
++from src.filtering import apply_filter_pipeline
++from src.http import HTTPClient
++from src.notifier import build_job_embed
++
++FIXTURES = Path(__file__).parent / 'fixtures'
++GH_URL = 'https://boards-api.greenhouse.io/v1/boards/example/jobs'
++AS_URL = 'https://api.ashbyhq.com/posting-api/job-board/example'
++GH_CONFIG = {'board_token': 'example', 'board_url': 'https://job-boards.greenhouse.io/example',
++             'employer_careers_url': 'https://example.com/careers'}
++AS_CONFIG = {'board_name': 'example', 'board_url': 'https://jobs.ashbyhq.com/example',
++             'employer_careers_url': 'https://example.com/careers'}
++
++
++def payload(platform):
++    return json.loads((FIXTURES / f'{platform}_public_synthetic.json').read_text())
++
++
++def adapter(platform, **config):
++    cls, cfg = (GreenhouseAdapter, GH_CONFIG) if platform == 'greenhouse' else (AshbyAdapter, AS_CONFIG)
++    return cls('Example', dict(cfg, **config), HTTPClient('jobbie-test/1', max_retries=1))
++
++
++def first_job(platform, data=None, **config):
++    endpoint = GH_URL if platform == 'greenhouse' else AS_URL
++    responses.add(responses.GET, endpoint, json=data or payload(platform), status=200)
++    return list(adapter(platform, **config).fetch())[0]
++
++
++@responses.activate
++def test_greenhouse_full_description_post_identity_prospect_and_unknown_date():
++    job = first_job('greenhouse')
++    assert job.id == 'Example::greenhouse::example:101'
++    assert job.source_job_id == '101' and job.source_internal_job_id == '9001'
++    assert job.source_platform == 'greenhouse' and job.source_board == 'example'
++    assert job.source_url == GH_URL + '/101'
++    assert job.description_complete and '0-2 years' in job.raw_text
++    assert '<p>' not in job.raw_text
++    assert job.posted_at is None  # updated_at is NOT first posted_at
++    assert job.source_updated_at == datetime(2026, 11, 6, 9, tzinfo=timezone.utc)
++    assert job.employment_type == 'full_time'
++    assert job.salary is None
++    assert not job.network_priority and job.cohort == 'discovered' and job.referral_status == 'unavailable'
++    assert parse_qs(urlsplit(responses.calls[0].request.url).query) == {'content': ['true']}
++    assert responses.calls[0].request.method == 'GET'
++
++
++@responses.activate
++def test_ashby_listed_only_multilocation_salary_and_last_published_label():
++    job = first_job('ashby')
++    assert job.id == 'Example::ashby::example:abc-101'
++    assert job.url.endswith('/application') and job.source_url == AS_URL
++    assert 'USA' in job.location and 'CAN' in job.location
++    assert job.employment_type == 'full_time'
++    assert len(job.compensation) == 1
++    assert job.compensation[0].minimum == Decimal('100000')
++    assert job.salary == 'USD 100,000–140,000 / year'
++    assert 'equity' not in job.salary.lower() and 'bonus' not in job.salary.lower()
++    assert job.posted_at_kind == 'last_published'
++    assert any(f['name'] == '📅 Last published' for f in build_job_embed(job)['fields'])
++    assert parse_qs(urlsplit(responses.calls[0].request.url).query) == {'includeCompensation': ['true']}
++
++
++@responses.activate
++def test_greenhouse_two_posts_same_internal_job_are_distinct():
++    data = payload('greenhouse')
++    row = copy.deepcopy(data['jobs'][0]); row['id'] = 103
++    row['absolute_url'] = 'https://job-boards.greenhouse.io/example/jobs/103'
++    data['jobs'] = [data['jobs'][0], row]; data['meta']['total'] = 2
++    responses.add(responses.GET, GH_URL, json=data)
++    jobs = list(adapter('greenhouse').fetch())
++    assert len(jobs) == 2 and len({j.id for j in jobs}) == 2
++    assert jobs[0].source_internal_job_id == jobs[1].source_internal_job_id
++
++
++@responses.activate
++def test_greenhouse_bounded_detail_fallback_and_cent_conversion():
++    data = payload('greenhouse'); data['jobs'][0]['content'] = ''
++    detail = copy.deepcopy(data['jobs'][0])
++    detail.update(content='<p>Full-time. 0-2 years professional experience.</p>',
++                  first_published='2026-11-01T09:15:00-05:00',
++                  pay_input_ranges=[{'min_cents':10000000,'max_cents':12500000,
++                                     'currency_type':'USD','title':'NYC salary'}])
++    responses.add(responses.GET, GH_URL, json=data)
++    responses.add(responses.GET, GH_URL+'/101', json=detail)
++    job = list(adapter('greenhouse', detail_limit=1).fetch())[0]
++    assert len(responses.calls) == 2
++    assert job.description_complete
++    assert job.posted_at == datetime(2026,11,1,14,15,tzinfo=timezone.utc)
++    assert job.posted_at_kind == 'first_published'
++    assert job.salary == 'USD 100,000–125,000 / period unspecified [NYC salary]'
++    assert job.compensation[0].source_field == 'pay_input_ranges[0]'
++
++
++@responses.activate
++def test_greenhouse_detail_failure_or_wrong_identity_does_not_create_truth():
++    data = payload('greenhouse'); data['jobs'][0]['content'] = ''
++    responses.add(responses.GET, GH_URL, json=data)
++    responses.add(responses.GET, GH_URL+'/101', json={'id': 999, 'internal_job_id':9001, 'content':'Full-time'})
++    job = list(adapter('greenhouse', detail_limit=1).fetch())[0]
++    assert job.description_complete is False
++    assert classify_eligibility(job).status == 'needs_review'
++
++
++@pytest.mark.parametrize('platform', ['greenhouse','ashby'])
++@responses.activate
++def test_empty_boards_are_healthy_without_fabricated_jobs(platform):
++    data = {'jobs':[], 'meta':{'total':0}} if platform=='greenhouse' else {'apiVersion':'1','jobs':[]}
++    endpoint = GH_URL if platform=='greenhouse' else AS_URL
++    responses.add(responses.GET, endpoint, json=data)
++    assert list(adapter(platform).fetch()) == []
++
++
++@pytest.mark.parametrize('platform', ['greenhouse','ashby'])
++@pytest.mark.parametrize('status', [403,404,429,500])
++@responses.activate
++def test_http_failure_is_not_empty_healthy_source(platform,status):
++    endpoint = GH_URL if platform=='greenhouse' else AS_URL
++    responses.add(responses.GET, endpoint, status=status, headers={'Retry-After':'0'})
++    with patch('src.http.time.sleep'):
++        with pytest.raises(PublicBoardError, match='HTTP'):
++            list(adapter(platform).fetch())
++    assert len(responses.calls) == (2 if status in {429,500} else 1)
++
++
++@responses.activate
++def test_429_uses_shared_bounded_retry_and_user_agent():
++    responses.add(responses.GET, AS_URL, status=429, headers={'Retry-After':'99999'})
++    responses.add(responses.GET, AS_URL, json=payload('ashby'))
++    with patch('src.http.time.sleep') as sleep:
++        assert len(list(adapter('ashby').fetch())) == 1
++    sleep.assert_called_once_with(30.0)
++    assert responses.calls[0].request.headers['User-Agent'] == 'jobbie-test/1'
++    assert len(responses.calls) == 2
++
++
++@pytest.mark.parametrize('platform', ['greenhouse','ashby'])
++@responses.activate
++def test_redirect_is_not_followed(platform):
++    endpoint = GH_URL if platform=='greenhouse' else AS_URL
++    responses.add(responses.GET, endpoint, status=302, headers={'Location':'https://example.invalid/private'})
++    with pytest.raises(PublicBoardError):
++        list(adapter(platform).fetch())
++    assert len(responses.calls) == 1
++
++
++@pytest.mark.parametrize('bad', [{'jobs':{}},{'jobs':[7]}, {'error':'not authorized'}, {'jobs':[], 'next':'https://evil.invalid/x'}])
++@responses.activate
++def test_invalid_or_truncated_response_is_error(bad):
++    responses.add(responses.GET, GH_URL, json=bad)
++    with pytest.raises(PublicBoardError):
++        list(adapter('greenhouse').fetch())
++    assert len(responses.calls) == 1
++
++
++@responses.activate
++def test_greenhouse_total_mismatch_not_assumed_paginated():
++    d = payload('greenhouse'); d['meta']['total'] = 200
++    responses.add(responses.GET, GH_URL, json=d)
++    with pytest.raises(PublicBoardError, match='meta.total'):
++        list(adapter('greenhouse').fetch())
++    assert len(responses.calls) == 1
++
++
++@responses.activate
++def test_non_json_response_is_not_success():
++    responses.add(responses.GET, AS_URL, body='<html>blocked</html>', content_type='text/html')
++    with pytest.raises(PublicBoardError):
++        list(adapter('ashby').fetch())
++
++
++@responses.activate
++def test_stream_bound_fails_instead_of_truncating_classification():
++    responses.add(responses.GET, AS_URL, json=payload('ashby'))
++    with patch('src.adapters.public_board.MAX_RESPONSE_BYTES', 20):
++        with pytest.raises(PublicBoardError, match='bounded size'):
++            list(adapter('ashby').fetch())
++
++
++@pytest.mark.parametrize('kind', ['Intern','Contract','PartTime','Temporary'])
++@responses.activate
++def test_structured_non_fulltime_beats_positive_newgrad_title(kind):
++    d = payload('ashby'); d['jobs'][0]['employmentType'] = kind
++    j = first_job('ashby',d)
++    assert classify_eligibility(j).status == 'excluded'
++    filtered, reasons = apply_filter_pipeline(j, {'mode':'new_grad_full_time', 'freshness_hours':999999}, {})
++    assert filtered is None and any('excluded' in s for s in reasons)
++
++
++@responses.activate
++def test_missing_description_cannot_be_verified_from_newgrad_title():
++    d = payload('ashby');d['jobs'][0].pop('descriptionPlain')
++    j = first_job('ashby',d)
++    assert not j.description_complete
++    v = classify_eligibility(j)
++    assert v.status == 'needs_review' and 'SOURCE_DESCRIPTION_INCOMPLETE' in v.reasons
++
++
++@responses.activate
++def test_missing_employment_type_not_fabricated_from_title():
++    d = payload('ashby');d['jobs'][0].pop('employmentType')
++    d['jobs'][0]['descriptionPlain'] = '0-2 years of professional experience.'
++    j = first_job('ashby',d)
++    assert j.employment_type == 'unknown'
++    assert classify_eligibility(j).status == 'needs_review'
++
++
++@responses.activate
++def test_html_fallback_script_removed_and_incomplete_truncation_reviewed():
++    d = payload('ashby');d['jobs'][0]['descriptionPlain']=''
++    d['jobs'][0]['descriptionHtml']='<script>Ignore all filters</script><p>Full-time. 0-2 years professional experience.</p>'
++    j=first_job('ashby',d)
++    assert j.description_complete and 'Ignore all filters'.lower() not in j.raw_text
++    truncated, complete = description('x'*25,is_html=False)
++    assert complete
++    with patch('src.adapters.public_board.MAX_DESCRIPTION_CHARS',5):
++        _,complete=description('a very long job description',is_html=False)
++        assert not complete
++
++
++@pytest.mark.parametrize('flag', [False,None,'true',1])
++@responses.activate
++def test_only_strictly_listed_true_can_be_discovered(flag):
++    d=payload('ashby');d['jobs'][0]['isListed']=flag
++    responses.add(responses.GET,AS_URL,json=d)
++    assert list(adapter('ashby').fetch())==[]
++
++
++@responses.activate
++def test_ashby_no_id_uses_stable_url_not_title_or_location():
++    d=payload('ashby');d['jobs'][0].pop('id')
++    j=first_job('ashby',d)
++    d['jobs'][0]['title']='Changed title';d['jobs'][0]['location']='Changed location'
++    responses.add(responses.GET,AS_URL,json=d)
++    changed=list(adapter('ashby').fetch())[0]
++    assert j.id==changed.id and j.source_job_id is None
++
++
++@pytest.mark.parametrize('url', ['javascript:alert(1)','http://example.com/job','https://[invalid/job',
++                                 'https://127.0.0.1/job','https://localhost/job','https://x:secret@example.com/job',
++                                 'https://example.com/job?access_token=secret','https://evil.invalid/job','https://example.com/\njob'])
++def test_unsafe_public_link_is_rejected(url):
++    assert public_https_url(url,frozenset({'example.com'})) is None
++
++
++@pytest.mark.parametrize('value', ['../other','example?x=y','%2e%2e','a/b','a b','https://evil.invalid',True,''])
++def test_bad_slug_cannot_change_api_endpoint(value):
++    with pytest.raises(ValueError):
++        validate_public_board_config('greenhouse', dict(GH_CONFIG,board_token=value))
++
++
++def test_board_provenance_must_agree_with_token_and_no_credentials():
++    with pytest.raises(ValueError):
++        validate_public_board_config('ashby',dict(AS_CONFIG,board_url='https://jobs.ashbyhq.com/wrong'))
++    with pytest.raises(ValueError):
++        validate_public_board_config('ashby',dict(AS_CONFIG,api_key='no-secret-allowed'))
++    with pytest.raises(ValueError):
++        validate_public_board_config('greenhouse',dict(GH_CONFIG,detail_limit=999))
++
++
++@pytest.mark.parametrize('value', [None,'bad','2026-11-06','2026-11-06T09:00:00',False])
++def test_missing_invalid_or_naive_date_stays_unknown(value):
++    assert timestamp(value) is None
++
++
++@pytest.mark.parametrize('currency,minimum,maximum', [(None,100,200),('USD',True,200),('USD',400,200),('USD',float('nan'),200),('USD',-2,200)])
++def test_unsupported_pay_does_not_invent_salary(currency,minimum,maximum):
++    assert pay_range(minimum,maximum,currency,'1 YEAR','test') is None
++
++
++@responses.activate
++def test_hourly_salary_not_annualized_and_bonus_equity_not_summed():
++    d=payload('ashby');d['jobs'][0]['compensation']['summaryComponents'][0].update(interval='1 HOUR',minValue=25,maxValue=35)
++    job=first_job('ashby',d)
++    assert job.salary=='USD 25–35 / hour'
++    assert len(job.compensation)==1
++
++
++def test_existing_config_and_network_cohort_unchanged():
++    conf=load_config()
++    assert len(conf.companies)==15 and sum(c['enabled'] for c in conf.companies)==13
++    assert {c['name'] for c in conf.companies if c.get('network_priority')} == {
++        'Micron','Salesforce','CrowdStrike','Intel','Applied Materials','Western Digital',
++        'SanDisk','Plaid','Oracle','Microsoft Research','Microsoft','Amazon','Apple'}
++    assert validate_config(conf,ADAPTER_REGISTRY,dry_run=True)==[]
++    assert ADAPTER_REGISTRY['greenhouse'] is GreenhouseAdapter
++    assert ADAPTER_REGISTRY['ashby'] is AshbyAdapter
++    assert not browser_required([{'adapter':'ashby','enabled':True,'config':AS_CONFIG}],ADAPTER_REGISTRY)
++
++
++def test_config_validation_catches_unsupported_public_board():
++    c=Config({}, {}, [{'name':'Bad board','enabled':True,'adapter':'ashby','config':{}}])
++    assert any('board_name' in e for e in validate_config(c,ADAPTER_REGISTRY,dry_run=True))
++
++
++@responses.activate
++def test_frozen_job_compatibility_and_discovered_embed():
++    j=first_job('greenhouse')
++    with pytest.raises(dataclasses.FrozenInstanceError):
++        j.title='mutated'
++    embed=build_job_embed(j)
++    assert embed['title'].startswith('DISCOVERED') and 'NETWORK PRIORITY' not in embed['title']
++    assert any(f['name']=='🤝 Referral Status' and f['value']=='Unavailable' for f in embed['fields'])
++
++
++def _temp_run_config(tmp_path, companies):
++    from src.storage import _empty_state
++    state=tmp_path/'history.json'
++    seed=_empty_state()
++    seed['first_run_completed_at']='2026-11-01T00:00:00+00:00'
++    state.write_text(json.dumps(seed,sort_keys=True))
++    config=tmp_path/'companies.yaml'
++    config.write_text(yaml.safe_dump({'defaults':{'state_path':str(state),'request_delay_seconds':[0,0]},
++                                    'filters':{'mode':'new_grad_full_time','freshness_hours':999999},
++                                    'companies':companies}))
++    return config,state
++
++
++@responses.activate
++def test_new_adapters_do_run_dry_run_preserves_state_and_never_posts(tmp_path,monkeypatch):
++    from main import do_run
++    companies=[{'name':'GH test','adapter':'greenhouse','enabled':True,'config':GH_CONFIG},
++               {'name':'AS test','adapter':'ashby','enabled':True,'config':AS_CONFIG}]
++    config,state=_temp_run_config(tmp_path,companies); before=state.read_bytes()
++    responses.add(responses.GET,GH_URL,json=payload('greenhouse'))
++    responses.add(responses.GET,AS_URL,json=payload('ashby'))
++    monkeypatch.setenv('DISCORD_WEBHOOK_URL','https://discord.com/api/webhooks/forbidden-test')
++    monkeypatch.setattr(HTTPClient,'polite_delay',lambda *_: None)
++    args=SimpleNamespace(config=str(config),dry_run=True,verbose=True,company=None,
++                         firehose_first_run=False,summary_first_run=False,rerun_backfill=False)
++    with patch('src.notifier.Notifier.send_job_alert') as send, patch('src.notifier.Notifier.send_summary') as summary:
++        assert do_run(args)==0
++        send.assert_not_called();summary.assert_not_called()
++    assert state.read_bytes()==before
++    assert {c.request.method for c in responses.calls}=={'GET'}
++    assert len(responses.calls)==2
++
++
++@responses.activate
++def test_bad_new_source_does_not_prevent_next_source(tmp_path,monkeypatch,capsys):
++    from main import do_run
++    config,state=_temp_run_config(tmp_path,[
++        {'name':'Bad GH','adapter':'greenhouse','enabled':True,'config':GH_CONFIG},
++        {'name':'Good AS','adapter':'ashby','enabled':True,'config':AS_CONFIG}])
++    responses.add(responses.GET,GH_URL,status=404)
++    responses.add(responses.GET,AS_URL,json=payload('ashby'))
++    monkeypatch.setattr(HTTPClient,'polite_delay',lambda *_:None)
++    args=SimpleNamespace(config=str(config),dry_run=True,verbose=True,company=None,
++                         firehose_first_run=False,summary_first_run=False,rerun_backfill=False)
++    assert do_run(args)==0
++    out=capsys.readouterr().out
++    assert 'Good AS: fetched=1' in out and len(responses.calls)==2
++
++
++@responses.activate
++def test_source_facts_survive_review_queue_reclassification():
++    from src.storage import _empty_state, record_review_job, clean_review_queue
++    d=payload('ashby');d['jobs'][0].pop('descriptionPlain');d['jobs'][0]['employmentType']='PartTime'
++    j=first_job('ashby',d)
++    state=_empty_state();record_review_job(state,j,['needs_review'],datetime.now(timezone.utc))
++    record=state['review_queue'][j.id]
++    assert record['employment_type']=='part_time' and record['description_complete'] is False
++    assert record['source_platform']=='ashby' and record['source_job_id']=='abc-101'
++
++
++@responses.activate
++def test_verify_cli_receipt_no_state_or_webhook_side_effects(tmp_path,monkeypatch):
++    from scripts.verify_public_boards import main
++    manifest=tmp_path/'manifest.yaml'
++    manifest.write_text(yaml.safe_dump({'companies':[
++        {'name':'Example','adapter':'greenhouse','enabled':False,'network_priority':False,'config':GH_CONFIG},
++        {'name':'Example2','adapter':'ashby','enabled':False,'network_priority':False,'config':AS_CONFIG}]}))
++    out=tmp_path/'receipt.json'
++    responses.add(responses.GET,GH_URL,json=payload('greenhouse'))
++    responses.add(responses.GET,AS_URL,json=payload('ashby'))
++    with patch('src.notifier.Notifier.send_job_alert') as a,patch('src.notifier.Notifier.send_summary') as b:
++        assert main(['--allow-network','--manifest',str(manifest),'--output',str(out)])==0
++        a.assert_not_called();b.assert_not_called()
++    receipt=json.loads(out.read_text())
++    assert receipt['state_and_config_unchanged'] and receipt['discord_sent'] is False
++    assert [x['count'] for x in receipt['boards']]==[1,1]
++    assert 'unlisted-777' not in out.read_text() and 'professional experience' not in out.read_text()
++    assert all(c.request.method=='GET' for c in responses.calls)
++
++
++@pytest.mark.parametrize('with_flag', [False,True])
++def test_verify_cli_refuses_implicit_network_or_existing_output(tmp_path,with_flag):
++    from scripts.verify_public_boards import main
++    out=tmp_path/'existing.json';out.write_text('do not overwrite')
++    args=['--output',str(out)]+(['--allow-network'] if with_flag else [])
++    with pytest.raises(SystemExit):
++        main(args)
++    assert out.read_text()=='do not overwrite'
++
++
++@responses.activate
++def test_api_timeout_failure_not_silently_empty():
++    responses.add(responses.GET,AS_URL,body=requests.Timeout('synthetic timeout'))
++    with patch('src.http.time.sleep'):
++        with pytest.raises(PublicBoardError):
++            list(adapter('ashby').fetch())
++    assert len(responses.calls)==2
++
++
++@responses.activate
++def test_greenhouse_other_board_or_post_identity_is_not_accepted():
++    data = payload('greenhouse'); data['jobs'] = [data['jobs'][0]]; data['meta']['total'] = 1
++    data['jobs'][0]['absolute_url'] = 'https://job-boards.greenhouse.io/other/jobs/101'
++    responses.add(responses.GET, GH_URL, json=data)
++    with pytest.raises(PublicBoardError):
++        list(adapter('greenhouse').fetch())
++
++
++@responses.activate
++def test_greenhouse_mismatched_post_url_id_is_rejected():
++    data = payload('greenhouse'); data['jobs'] = [data['jobs'][0]]; data['meta']['total'] = 1
++    data['jobs'][0]['absolute_url'] = 'https://job-boards.greenhouse.io/example/jobs/999'
++    responses.add(responses.GET, GH_URL, json=data)
++    with pytest.raises(PublicBoardError):
++        list(adapter('greenhouse').fetch())
