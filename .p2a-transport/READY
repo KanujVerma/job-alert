@@ -1,0 +1,3 @@
+P2-A implementation patch assembled from locally tested files.
+Expected SHA256: a4dd449a47e94324515e039beefc39c4254a53fd7fd0c7c2d081119bf916614d
+Apply only on feat/p2-a-public-job-boards; never main. Run full tests before committing.
