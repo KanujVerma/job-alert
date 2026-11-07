@@ -1,0 +1,410 @@
+diff --git a/docs/sources/P2-A_PUBLIC_APIS.md b/docs/sources/P2-A_PUBLIC_APIS.md
+new file mode 100644
+index 0000000..6181911
+--- /dev/null
++++ b/docs/sources/P2-A_PUBLIC_APIS.md
+@@ -0,0 +1,67 @@
++# P2-A source contracts and allowed read-only verification
++
++Audited 2026-11-06 (America/Chicago). Technical API documentation is not a
++blanket license to redistribute another employer's data. P2-A only performs
++bounded public GETs for personal discovery. No authenticated endpoints,
++login automation, application submissions, unlisted-post exposure or raw
++job-description dataset export. No third-party source code was copied: these
++adapters reuse Jobbie's existing MIT-licensed BaseAdapter/HTTPClient and official
++API contracts. Future feed licensing remains P2-B.
++
++## Greenhouse
++- Official contract: https://docs.greenhouse.io/job-board
++- `GET https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs?content=true`
++  is public and unauthenticated. It lists all posts; no cursor/page parameter
++  is documented for this endpoint. If a response advertises pagination or a
++  mismatched `meta.total`, fail rather than claiming complete coverage.
++- `id` = public POST identity. `internal_job_id` = underlying job identity;
++  null explicitly means a prospect/general-interest post, not an opening.
++- `content=true` supplies HTML description/departments/offices. Metadata may
++  expose employment type; absence remains unknown. HTML entities can be
++  double-encoded; normalize markup without erasing qualification headings.
++- `updated_at` is NOT posting time. Only `first_published`, when provided,
++  becomes `posted_at`. Otherwise preserve date as unknown and retain update
++  timestamp separately.
++- A missing description can use the fixed public detail route
++  `/jobs/{post_id}?pay_transparency=true`, bounded by `detail_limit` (0 by
++  default, maximum 10). Detail identity must match the list record.
++- `pay_input_ranges` is cents + explicit currency. This API's shown contract
++  does not establish an interval; display `period unspecified`, not annual
++  base pay. No hourly-to-annual conversion or equity/bonus summation.
++- Own-company smoke token: `greenhouse`, hosted board
++  https://job-boards.greenhouse.io/greenhouse redirects to its employer careers
++  page https://www.greenhouse.com/careers/opportunities (observed via browser).
++
++## Ashby
++- Official contract: https://developers.ashbyhq.com/docs/public-job-posting-api
++- Public GET:
++  `https://api.ashbyhq.com/posting-api/job-board/{JOB_BOARD_NAME}?includeCompensation=true`
++- Not the authenticated `POST jobPosting.list` API, not jobsRead credentials.
++- Only `isListed: true` is discoverable. False/missing/nonboolean flags never
++  expose direct-link-only jobs. No guessing of private URLs.
++- `descriptionPlain` preferred; HTML fallback. Structured primary/secondary
++  locations retained; `isRemote` by itself is not proof of US eligibility.
++- Employment `FullTime`, `Intern`, `PartTime`, `Contract`, `Temporary` mapped
++  explicitly. Non-full-time source facts override a positive new-grad title.
++- `publishedAt` is **last published**, not necessarily originally posted.
++  Discord labels it `Last published`; missing/naive/invalid date stays unknown.
++- API ID when present; documented response may omit it. Fallback ID is a hash
++  of the source job URL, NOT a mutable title/location. No title-based merging.
++- Salary components only; keep explicit currency and interval. Tier labels
++  preserved; never add Bonus or EquityPercentage into cash salary. Missing
++  currency/invalid amounts produce no salary assertion.
++- Own-company smoke board `Ashby` is an explicit example in official docs:
++  https://jobs.ashbyhq.com/Ashby; employer page
++  https://www.ashbyhq.com/careers. It is a smoke target, not an enabled employer.
++
++## Operational safety / live evidence
++`examples/p2a-public-boards.yaml` has both targets `enabled: false`,
++`network_priority: false`. It is NOT read by production `companies.yaml`.
++`scripts/verify_public_boards.py --allow-network` selects these explicitly for
++read-only checks, emits metadata-only receipts and verifies production config
++and state hashes remain unchanged. No webhook is constructed or called.
++
++Live receipts must name exact code SHA, platform, board URL, timestamp, source
++count, missing-field counts, and test result. Record actual Actions results in
++STATUS/RELEASE_LOG; a JSON fixture or a fetched documentation page is NOT proof
++that the implemented adapter fetched a live board.
+diff --git a/examples/p2a-public-boards.yaml b/examples/p2a-public-boards.yaml
+new file mode 100644
+index 0000000..f0f7313
+--- /dev/null
++++ b/examples/p2a-public-boards.yaml
+@@ -0,0 +1,26 @@
++# Read-only smoke fixtures using the API providers' own public careers boards.
++# NOT imported by production companies.yaml; disabled here to prevent accidents.
++# Evidence: docs/sources/P2-A_PUBLIC_APIS.md. No implied referral.
++companies:
++  - name: Greenhouse (read-only example)
++    adapter: greenhouse
++    enabled: false
++    network_priority: false
++    cohort: discovered
++    referral_status: unavailable
++    config:
++      board_token: greenhouse
++      board_url: https://job-boards.greenhouse.io/greenhouse
++      employer_careers_url: https://www.greenhouse.com/careers/opportunities
++      detail_limit: 0
++  - name: Ashby (read-only example)
++    adapter: ashby
++    enabled: false
++    network_priority: false
++    cohort: discovered
++    referral_status: unavailable
++    config:
++      board_name: Ashby
++      board_url: https://jobs.ashbyhq.com/Ashby
++      employer_careers_url: https://www.ashbyhq.com/careers
++      detail_limit: 0
+diff --git a/scripts/verify_public_boards.py b/scripts/verify_public_boards.py
+new file mode 100644
+index 0000000..03a86cc
+--- /dev/null
++++ b/scripts/verify_public_boards.py
+@@ -0,0 +1,129 @@
++#!/usr/bin/env python3
++"""Read-only P2-A verification; no state writes, webhooks, credentials or POSTs.
++
++Example (output must not already exist):
++python scripts/verify_public_boards.py --allow-network --output /tmp/p2a-smoke.json
++
++Writes metadata-only receipts, not copyrighted job-description datasets. A
++successful read is not evidence that any posting suits the candidate or that
++an application/Discord notification was sent.
++"""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import logging
++import os
++import subprocess
++import sys
++from collections import Counter
++from datetime import datetime, timezone
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++if str(ROOT) not in sys.path:
++    sys.path.insert(0, str(ROOT))
++
++import yaml
++
++from src.adapters import ADAPTER_REGISTRY
++from src.adapters.public_board import validate_public_board_config
++from src.eligibility import classify_eligibility
++from src.http import HTTPClient
++from src.notifier import build_job_embed
++
++
++def digest(path: Path) -> str | None:
++    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
++
++
++def source_sha() -> str:
++    try:
++        return subprocess.check_output(['git','rev-parse','HEAD'], cwd=ROOT, text=True).strip()
++    except (OSError, subprocess.CalledProcessError):
++        return os.getenv('GITHUB_SHA', 'unknown')
++
++
++def verify(manifest: Path) -> tuple[dict, int]:
++    """Only invoke the new public adapters; intentionally never call main.do_run."""
++    targets = yaml.safe_load(manifest.read_text()).get('companies')
++    if not isinstance(targets,list) or not 1 <= len(targets) <= 2:
++        raise ValueError('read-only smoke manifest must contain 1–2 explicit targets')
++    before = {p: digest(ROOT/p) for p in ('companies.yaml','state/seen_jobs.json')}
++    receipts = []
++    result = {'kind':'P2-A_READ_ONLY_RECEIPT','source_sha':source_sha(),
++              'started_at':datetime.now(timezone.utc).isoformat(),
++              'manifest_sha256':digest(manifest), 'network_methods':['GET'],
++              'state_and_config_before':before, 'boards':receipts,
++              'discord_sent':False, 'production_enabled':False}
++    exit_code = 0
++    try:
++        for target in targets:
++            if not isinstance(target,dict) or target.get('adapter') not in ('greenhouse','ashby'):
++                raise ValueError('only Greenhouse/Ashby public sources are accepted')
++            if target.get('enabled') is not False or target.get('network_priority') is not False:
++                raise ValueError('smoke entries must be disabled and explicitly non-network-priority')
++            platform = target['adapter']
++            cfg = validate_public_board_config(platform, target.get('config',{}))
++            receipt = {'platform':platform,'board':cfg.slug,'board_url':cfg.board_url,
++                       'employer_careers_url':cfg.employer_careers_url}
++            receipts.append(receipt)
++            client = HTTPClient('jobbie-p2a-readonly-verification/1', timeout=15, max_retries=1)
++            try:
++                jobs = list(ADAPTER_REGISTRY[platform](target['name'],target['config'],client).fetch())
++                verdicts = Counter(classify_eligibility(j).status for j in jobs)
++                # Rendering an embed is local; never instantiate or call Notifier.
++                sample = jobs[0] if jobs else None
++                if sample:
++                    embed = build_job_embed(sample)
++                    assert embed['title'].startswith('DISCOVERED')
++                    assert not sample.network_priority
++                receipt.update(status='observed_nonempty' if jobs else 'observed_empty',
++                               count=len(jobs), eligibility_counts=dict(verdicts),
++                               missing_description=sum(j.description_complete is False for j in jobs),
++                               missing_posted_at=sum(j.posted_at is None for j in jobs),
++                               samples=[{'source_job_id':j.source_job_id,'job_url':j.url,
++                                         'date_kind':j.posted_at_kind} for j in jobs[:3]])
++            except Exception as exc:
++                exit_code = 1
++                receipt.update(status='failed',error_type=type(exc).__name__)
++                logging.error('%s read-only validation failed (%s)', platform,type(exc).__name__)
++            finally:
++                client.session.close()
++    finally:
++        after = {p:digest(ROOT/p) for p in before}
++        result['state_and_config_after'] = after
++        result['state_and_config_unchanged'] = before == after
++        result['finished_at'] = datetime.now(timezone.utc).isoformat()
++        if before != after:
++            exit_code = 1
++            result['error'] = 'PRODUCTION_STATE_OR_CONFIG_MUTATED'
++    result['result'] = 'passed' if not exit_code else 'failed'
++    return result,exit_code
++
++
++def main(argv: list[str] | None = None) -> int:
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--allow-network',action='store_true',help='explicitly permit public read-only GETs')
++    parser.add_argument('--manifest',type=Path,default=ROOT/'examples/p2a-public-boards.yaml')
++    parser.add_argument('--output',required=True,type=Path)
++    args=parser.parse_args(argv)
++    if not args.allow_network:
++        parser.error('--allow-network is required; no implicit network probe')
++    output=args.output.resolve()
++    if output.exists() or output.is_relative_to((ROOT/'state').resolve()):
++        parser.error('output must be a new non-state file; existing files cannot be overwritten')
++    # Never import .env or consume/send a webhook configured in the environment.
++    result,code=verify(args.manifest)
++    output.parent.mkdir(parents=True,exist_ok=True)
++    with output.open('x') as f:
++        json.dump(result,f,indent=2);f.write('\n')
++    print(json.dumps({'result':result['result'],'counts':[
++        {'platform':b['platform'],'status':b['status'],'count':b.get('count')}
++        for b in result['boards']], 'state_and_config_unchanged':result['state_and_config_unchanged']}))
++    return code
++
++
++if __name__=='__main__':
++    raise SystemExit(main())
+diff --git a/src/adapters/__init__.py b/src/adapters/__init__.py
+index 460987e..75733d7 100644
+--- a/src/adapters/__init__.py
++++ b/src/adapters/__init__.py
+@@ -45,6 +45,13 @@ from src.adapters.eightfold_pcsx import EightfoldPCSXAdapter  # noqa: E402
+ ADAPTER_REGISTRY["eightfold_pcsx"] = EightfoldPCSXAdapter
+ 
+ 
++from src.adapters.greenhouse import GreenhouseAdapter  # noqa: E402
++from src.adapters.ashby import AshbyAdapter  # noqa: E402
++
++ADAPTER_REGISTRY["greenhouse"] = GreenhouseAdapter
++ADAPTER_REGISTRY["ashby"] = AshbyAdapter
++
++
+ def browser_required(
+     companies: Iterable[Mapping], registry: Mapping[str, type[BaseAdapter]]
+ ) -> bool:
+diff --git a/src/adapters/ashby.py b/src/adapters/ashby.py
+new file mode 100644
+index 0000000..bc47996
+--- /dev/null
++++ b/src/adapters/ashby.py
+@@ -0,0 +1,132 @@
++"""Ashby *public* Job Postings API. No jobPosting.list/jobsRead credentials.
++
++https://developers.ashbyhq.com/docs/public-job-posting-api
++Only isListed=true is a discoverable posting. Missing fields remain unknown.
++"""
++from __future__ import annotations
++
++import hashlib
++import logging
++import re
++from collections.abc import Iterator
++from datetime import datetime, timezone
++from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
++
++from src.adapters.base import BaseAdapter
++from src.adapters.public_board import (
++    PublicBoardError, description, format_pay, listing_rows, pay_range,
++    postal_address, public_https_url, read_public_json, text, timestamp,
++    unique_parts, validate_public_board_config,
++)
++from src.models import Job
++
++logger = logging.getLogger(__name__)
++_TYPES = {"FullTime": "full_time", "PartTime": "part_time", "Intern": "internship",
++          "Contract": "contract", "Temporary": "temporary"}
++
++
++def _identity(row: dict, job_url: str, board: str) -> tuple[str, str | None]:
++    source_id = row.get("id")
++    if isinstance(source_id, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", source_id):
++        return f"{board}:{source_id}", source_id
++    # The documented response does not promise an id field. Stable URL-based
++    # fallback does not vary with title, description, location or tracking tags.
++    parsed = urlsplit(job_url)
++    query = urlencode([(k, v) for k, v in parse_qsl(parsed.query) if not k.lower().startswith("utm_")])
++    canonical = urlunsplit((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), query, ""))
++    return f"{board}:url-{hashlib.sha256(canonical.encode()).hexdigest()[:24]}", None
++
++
++def _compensation(value: object) -> tuple:
++    if not isinstance(value, dict):
++        return ()
++    result = []
++    tiers = value.get("compensationTiers")
++    groups = []
++    if isinstance(tiers, list) and tiers:
++        groups = [(t.get("components"), f"compensation.compensationTiers[{i}].components", t.get("title"))
++                  for i, t in enumerate(tiers) if isinstance(t, dict)]
++    else:
++        groups = [(value.get("summaryComponents"), "compensation.summaryComponents", "")]
++    for components, path, label in groups:
++        for i, c in enumerate(components if isinstance(components, list) else []):
++            if not isinstance(c, dict) or c.get("compensationType") != "Salary":
++                continue  # no equity/bonus or opaque combined total treated as cash salary
++            interval = c.get("interval") if isinstance(c.get("interval"), str) else None
++            interval = interval if interval in {"1 YEAR", "1 MONTH", "1 HOUR"} else None
++            r = pay_range(c.get("minValue"), c.get("maxValue"), c.get("currencyCode"),
++                          interval, f"{path}[{i}]", label)
++            if r:
++                result.append(r)
++    return tuple(result)
++
++
++class AshbyAdapter(BaseAdapter):
++    source_platform = "ashby"
++
++    @staticmethod
++    def validate_source_config(config: dict) -> None:
++        validate_public_board_config("ashby", config)
++
++    def fetch(self) -> Iterator[Job]:
++        cfg = validate_public_board_config("ashby", self.config)
++        endpoint = f"https://api.ashbyhq.com/posting-api/job-board/{cfg.slug}"
++        payload = read_public_json(self.http, endpoint, {"includeCompensation": "true"})
++        if payload.get("apiVersion") != "1":
++            raise PublicBoardError("unsupported/missing Ashby public API version")
++        rows = listing_rows(payload)
++        now = datetime.now(timezone.utc)
++        jobs: list[Job] = []
++        seen: set[str] = set()
++        bad = 0
++        for row in rows:
++            if row.get("isListed") is not True:
++                continue  # private-by-link/unlisted/unknown is never discovered publicly
++            title = text(row.get("title"))
++            job_url = public_https_url(row.get("jobUrl"), cfg.allowed_job_hosts)
++            apply_url = public_https_url(row.get("applyUrl"), cfg.allowed_job_hosts)
++            url = apply_url or job_url
++            if not title or len(title) > 4096 or not url or not job_url:
++                bad += 1
++                continue
++            # Hosted URLs must identify this configured board. Custom employer
++            # hosts, when explicitly approved in config, are display-only links.
++            if any(urlsplit(u).hostname == "jobs.ashbyhq.com" and
++                   urlsplit(u).path.strip("/").split("/")[0] != cfg.slug
++                   for u in (url, job_url)):
++                bad += 1
++                continue
++            identity, source_id = _identity(row, job_url, cfg.slug)
++            if identity in seen:
++                continue
++            seen.add(identity)
++            plain = text(row.get("descriptionPlain"))
++            desc, complete = description(plain if plain else row.get("descriptionHtml"), is_html=not bool(plain))
++            locations = [text(row.get("location")), postal_address(row.get("address"))]
++            secondary = row.get("secondaryLocations")
++            for item in secondary if isinstance(secondary, list) else []:
++                if isinstance(item, dict):
++                    locations += [text(item.get("location")), postal_address(item.get("address"))]
++            location = unique_parts(locations)
++            department, category = text(row.get("department")), text(row.get("team"))
++            kind = _TYPES.get(row.get("employmentType"), "unknown") if isinstance(row.get("employmentType"), str) else "unknown"
++            published = timestamp(row.get("publishedAt"))
++            pay = _compensation(row.get("compensation"))
++            jobs.append(Job(
++                id=f"{self.company}::ashby::{identity}", company=self.company,
++                title=title, location=location, department=department or None,
++                category=category or None, url=url, source_platform=self.source_platform,
++                posted_at=published, detected_at=now,
++                raw_text="\n".join([desc, title, location, department, category]).lower(),
++                role_type="internship" if kind == "internship" else "unknown",
++                priority="normal", matched_keywords=(),
++                source_url=endpoint, source_board=cfg.slug, source_job_id=source_id,
++                posted_at_kind="last_published" if published else "unknown",
++                employment_type=kind, description_complete=complete,
++                compensation=pay, salary=format_pay(pay),
++            ))
++        if bad:
++            logger.warning("Ashby dropped %d records missing valid listed-post identity/title/URL", bad)
++            if not jobs:
++                raise PublicBoardError("Ashby response contained invalid postings, not a healthy empty board")
++        yield from jobs
+diff --git a/src/adapters/base.py b/src/adapters/base.py
+index f71dcf4..6118ecb 100644
+--- a/src/adapters/base.py
++++ b/src/adapters/base.py
+@@ -31,6 +31,7 @@ class BaseAdapter(ABC):
+         Yield normalized Job objects.
+         - Set role_type hint if this is a known intern-only source.
+         - Include official job ID if source provides one.
+-        - Populate raw_text from available list-response fields only (no extra HTTP).
+-        - Never raise — log errors and yield nothing on failure.
++        - Populate raw_text from public source evidence; bounded detail fallbacks allowed.
++        - Source failures should propagate to the caller for failed-vs-empty health.
++        - Legacy adapters may still log and return; new adapters must not mask errors.
+         """
