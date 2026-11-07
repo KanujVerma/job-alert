@@ -401,6 +401,33 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
                 if employment_type == "unknown":
                     unknowns.append("employment_type")
 
+    # P2-A optional source facts. Old Job constructors default to None and keep
+    # existing behavior; new public sources must not turn missing data into truth.
+    explicit_type = job.employment_type
+    source_exclusions = {
+        "internship": REASON_INTERNSHIP_ROLE, "co_op": REASON_CO_OP_ROLE,
+        "part_time": REASON_PART_TIME_ROLE, "contract": REASON_CONTRACT_ROLE,
+        "temporary": REASON_CONTRACT_ROLE,
+    }
+    if explicit_type in source_exclusions:
+        employment_type = "contract" if explicit_type == "temporary" else explicit_type
+        reasons.append(source_exclusions[explicit_type])
+        evidence_spans.append(f"Structured source employment type: {explicit_type}")
+    elif explicit_type == "full_time":
+        # Do not erase an explicit internship/contract/title exclusion.
+        if not any(r in reasons for r in source_exclusions.values()):
+            employment_type = "full_time"
+            unknowns = [u for u in unknowns if u != "employment_type"]
+    elif explicit_type == "unknown":
+        # A new-grad title alone is NOT evidence of full-time employment.
+        if not re.search(r"\b(?:full[\s-]?time|permanent)\b", raw_lower):
+            employment_type = "unknown"
+            unknowns.append("employment_type")
+            reasons.append("SOURCE_EMPLOYMENT_UNKNOWN")
+    if job.description_complete is False:
+        unknowns.append("full_job_description")
+        reasons.append("SOURCE_DESCRIPTION_INCOMPLETE")
+
     # 2. Tech Role Classification
     is_tech, is_explicit_nontech, tech_evidence = _check_tech_role(title, job.department, job.category)
     if is_explicit_nontech and not is_tech:
@@ -595,6 +622,8 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
             REASON_AMBIGUOUS_LEVEL,
             REASON_EXPERIENCE_UNSPECIFIED,
             REASON_EXPERIENCE_PATHWAY_UNKNOWN,
+            "SOURCE_EMPLOYMENT_UNKNOWN",
+            "SOURCE_DESCRIPTION_INCOMPLETE",
             REASON_LOCATION_UNKNOWN,
             REASON_WORK_AUTH_UNKNOWN,
         ]

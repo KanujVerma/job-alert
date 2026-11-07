@@ -45,6 +45,13 @@ from src.adapters.eightfold_pcsx import EightfoldPCSXAdapter  # noqa: E402
 ADAPTER_REGISTRY["eightfold_pcsx"] = EightfoldPCSXAdapter
 
 
+from src.adapters.greenhouse import GreenhouseAdapter  # noqa: E402
+from src.adapters.ashby import AshbyAdapter  # noqa: E402
+
+ADAPTER_REGISTRY["greenhouse"] = GreenhouseAdapter
+ADAPTER_REGISTRY["ashby"] = AshbyAdapter
+
+
 def browser_required(
     companies: Iterable[Mapping], registry: Mapping[str, type[BaseAdapter]]
 ) -> bool:

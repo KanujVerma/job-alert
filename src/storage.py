@@ -210,6 +210,12 @@ def record_review_job(
             "category": job.category,
             "raw_text": job.raw_text,
             "network_priority": bool(getattr(job, "network_priority", False)),
+            "source_platform": job.source_platform,
+            "source_url": job.source_url,
+            "source_board": job.source_board,
+            "source_job_id": job.source_job_id,
+            "employment_type": job.employment_type,
+            "description_complete": job.description_complete,
             "reasons": reasons,
             "first_seen": now.isoformat(),
             "last_seen": now.isoformat(),
@@ -217,6 +223,12 @@ def record_review_job(
     else:
         entry["last_seen"] = now.isoformat()
         entry["reasons"] = reasons
+        # Preserve structured source evidence for later review reclassification.
+        for key in ("source_platform", "source_url", "source_board", "source_job_id",
+                    "employment_type", "description_complete"):
+            value = getattr(job, key)
+            if value is not None:
+                entry[key] = value
         if getattr(job, "network_priority", False):
             entry["network_priority"] = True
         if job.location and not entry.get("location"):
@@ -265,7 +277,12 @@ def clean_review_queue(state: dict) -> int:
             department=dept,
             category=cat,
             url=entry.get("url", ""),
-            source_platform="unknown",
+            source_platform=entry.get("source_platform") or "unknown",
+            source_url=entry.get("source_url"),
+            source_board=entry.get("source_board"),
+            source_job_id=entry.get("source_job_id"),
+            employment_type=entry.get("employment_type"),
+            description_complete=entry.get("description_complete"),
             posted_at=None,
             detected_at=now,
             raw_text=raw_text,

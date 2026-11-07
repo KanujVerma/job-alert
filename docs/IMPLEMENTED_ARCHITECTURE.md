@@ -42,3 +42,11 @@ Legacy company polling must remain runnable even if later data feed, AI, private
 
 ## Provider boundary (future only)
 Source adapters -> normalized record -> hard eligibility -> ranking -> evidence-backed LLM interpretation -> human approval for documents/outbound actions -> tracking. No single model may declare that an email was sent, job is open, candidate has a credential, or applicant is hired without independently verified evidence.
+
+## P2-A branch addition (not yet production-enabled)
+`GreenhouseAdapter` and `AshbyAdapter` -> shared `public_board` validation/GET
+normalization -> optional immutable Job source facts -> existing tri-state
+eligibility, storage, notifier. No new database/service. Explicit source employment
+and incomplete-description flags prevent false full-time alerts; review queue
+retains these facts. `scripts/verify_public_boards.py` runs the same adapters
+read-only with metadata-only receipts, not `main.do_run` or any webhook.

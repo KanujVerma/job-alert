@@ -1,0 +1,40 @@
+{
+  "jobs": [
+    {
+      "id": 101,
+      "internal_job_id": 9001,
+      "title": "Software Engineer, New Grad",
+      "updated_at": "2026-11-06T09:00:00Z",
+      "absolute_url": "https://job-boards.greenhouse.io/example/jobs/101",
+      "location": {
+        "name": "New York, NY, USA"
+      },
+      "content": "&lt;h2&gt;Minimum Qualifications&lt;/h2&gt;&lt;p&gt;Full-time. Bachelor's degree and 0-2 years of professional experience.&lt;/p&gt;",
+      "departments": [
+        {
+          "name": "Engineering"
+        }
+      ],
+      "offices": [
+        {
+          "location": "New York, NY, USA"
+        }
+      ],
+      "metadata": [
+        {
+          "name": "Employment Type",
+          "value": "Full-time"
+        }
+      ]
+    },
+    {
+      "id": 102,
+      "internal_job_id": null,
+      "title": "General interest application",
+      "absolute_url": "https://job-boards.greenhouse.io/example/jobs/102"
+    }
+  ],
+  "meta": {
+    "total": 2
+  }
+}

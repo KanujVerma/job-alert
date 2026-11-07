@@ -33,3 +33,11 @@ STATUS PLANNED. Prerequisite: P1-E CI/review merged (done) plus a documented pos
 8. Update `docs/STATUS.md`, `docs/HANDOFF.md`, `docs/RELEASE_LOG.md` and adapter contract docs, then PR review. P2-B is blocked until P2-A merged and tested. P2-C requires source rights, canonical state dual-write and 72-hour shadow evidence.
 
 This scope is about **adding read-only discovery adapters**, not a Cloudflare migration, LLM matching, automated application submission, or resume processing.
+
+## P2-A implementation handoff
+Owner explicitly requested implementation on an isolated branch before the old
+post-P1-E production gate was observed. This authorizes staging, not automatic
+activation or a fabricated RELEASED status. Implementation and acceptance matrix:
+[implementation/P2-A.md](../implementation/P2-A.md). Exact verifier workflow:
+[PHASE-2A-VERIFY.md](../agent-prompts/PHASE-2A-VERIFY.md). Original 13-company
+production configuration remains unchanged; examples are disabled outside it.

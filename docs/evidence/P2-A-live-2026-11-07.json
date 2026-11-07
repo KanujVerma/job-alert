@@ -1,0 +1,84 @@
+{
+  "kind": "P2-A_READ_ONLY_RECEIPT",
+  "source_sha": "00111df2b1a09be5b487723be8a0df1c5e79bffe",
+  "started_at": "2026-11-07T05:21:30.835016+00:00",
+  "manifest_sha256": "44841606971ef6f2ef9f810cfc225e4f006ac7d4ba9bc6fe634ddf7833c30e26",
+  "network_methods": [
+    "GET"
+  ],
+  "state_and_config_before": {
+    "companies.yaml": "077cf59d2e2a5a6eb9889ad79b54b96d0e97183f28d33ac84ddb39bea8c971d4",
+    "state/seen_jobs.json": "56f31d43a988bb7f25771aefeea19d5429a3c7eebb892de9b70f014b3f69aeb4"
+  },
+  "boards": [
+    {
+      "platform": "greenhouse",
+      "board": "greenhouse",
+      "board_url": "https://job-boards.greenhouse.io/greenhouse",
+      "employer_careers_url": "https://www.greenhouse.com/careers/opportunities",
+      "status": "observed_nonempty",
+      "count": 19,
+      "eligibility_counts": {
+        "excluded": 19
+      },
+      "missing_description": 0,
+      "missing_posted_at": 0,
+      "samples": [
+        {
+          "source_job_id": "8126988",
+          "job_url": "https://job-boards.greenhouse.io/greenhouse/jobs/8126988?gh_jid=8126988",
+          "date_kind": "first_published"
+        },
+        {
+          "source_job_id": "8279752",
+          "job_url": "https://job-boards.greenhouse.io/greenhouse/jobs/8279752?gh_jid=8279752",
+          "date_kind": "first_published"
+        },
+        {
+          "source_job_id": "8234044",
+          "job_url": "https://job-boards.greenhouse.io/greenhouse/jobs/8234044?gh_jid=8234044",
+          "date_kind": "first_published"
+        }
+      ]
+    },
+    {
+      "platform": "ashby",
+      "board": "Ashby",
+      "board_url": "https://jobs.ashbyhq.com/Ashby",
+      "employer_careers_url": "https://www.ashbyhq.com/careers",
+      "status": "observed_nonempty",
+      "count": 73,
+      "eligibility_counts": {
+        "excluded": 73
+      },
+      "missing_description": 3,
+      "missing_posted_at": 0,
+      "samples": [
+        {
+          "source_job_id": "7458d4e9-da2e-47bd-98cb-adfda43d42b2",
+          "job_url": "https://jobs.ashbyhq.com/Ashby/7458d4e9-da2e-47bd-98cb-adfda43d42b2/application",
+          "date_kind": "last_published"
+        },
+        {
+          "source_job_id": "86a60834-ba64-484d-9658-afa1bc97a957",
+          "job_url": "https://jobs.ashbyhq.com/Ashby/86a60834-ba64-484d-9658-afa1bc97a957/application",
+          "date_kind": "last_published"
+        },
+        {
+          "source_job_id": "f40ef345-82a8-4956-9150-193b4fdf8183",
+          "job_url": "https://jobs.ashbyhq.com/Ashby/f40ef345-82a8-4956-9150-193b4fdf8183/application",
+          "date_kind": "last_published"
+        }
+      ]
+    }
+  ],
+  "discord_sent": false,
+  "production_enabled": false,
+  "state_and_config_after": {
+    "companies.yaml": "077cf59d2e2a5a6eb9889ad79b54b96d0e97183f28d33ac84ddb39bea8c971d4",
+    "state/seen_jobs.json": "56f31d43a988bb7f25771aefeea19d5429a3c7eebb892de9b70f014b3f69aeb4"
+  },
+  "state_and_config_unchanged": true,
+  "finished_at": "2026-11-07T05:21:32.974531+00:00",
+  "result": "passed"
+}

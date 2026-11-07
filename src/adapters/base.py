@@ -31,6 +31,7 @@ class BaseAdapter(ABC):
         Yield normalized Job objects.
         - Set role_type hint if this is a known intern-only source.
         - Include official job ID if source provides one.
-        - Populate raw_text from available list-response fields only (no extra HTTP).
-        - Never raise — log errors and yield nothing on failure.
+        - Populate raw_text from public source evidence; bounded detail fallbacks allowed.
+        - Source failures should propagate to the caller for failed-vs-empty health.
+        - Legacy adapters may still log and return; new adapters must not mask errors.
         """
