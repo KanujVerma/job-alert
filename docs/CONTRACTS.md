@@ -40,3 +40,16 @@ Commands require authorized user, validation, rate limits and audit; feedback ca
 
 ## Migration rules
 Every schema migration needs idempotent upgrader, backup/export, rollback note, dry-run fixtures, and no plaintext secrets. Existing `state/seen_jobs.json` contains historical alerted flags; migration may preserve but not erase it. A bounded `policy_version`-scoped backfill is the only way to surface previously seen newly eligible jobs without a notification storm.
+
+## P2-A optional Job metadata (backward-compatible)
+`source_url`, `source_board`, `source_job_id`, `source_internal_job_id`,
+`source_updated_at`, `posted_at_kind`, `employment_type`,
+`description_complete`, `compensation` have defaults, preserving old constructors.
+Known source internship/contract/part-time beats title-based new-grad guesses.
+New-source unknown employment without explicit full-time evidence or missing
+description requires review. Old adapters default these fields to None and retain
+existing behavior. Structured source facts persist in the review queue.
+`CompensationRange` stores Decimal salary/pay bounds, explicit currency, nullable
+interval and source field/tier label. Never sum equity/bonus or annualize an
+unknown interval. Greenhouse post and internal IDs remain distinct.
+`updated_at` is not `posted_at`; Ashby `publishedAt` is labeled last published.

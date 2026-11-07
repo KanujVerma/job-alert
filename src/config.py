@@ -89,6 +89,17 @@ def validate_config(
         if "config" not in company:
             errors.append(f"Company '{cname}' missing 'config' field")
 
+    # Public-source adapters validate board provenance and bounded configuration
+    # without making requests. Existing adapters need no schema migration.
+    for company in config.companies:
+        adapter_cls = adapter_registry.get(company.get("adapter"))
+        validator = getattr(adapter_cls, "validate_source_config", None)
+        if callable(validator):
+            try:
+                validator(company.get("config", {}))
+            except (TypeError, ValueError) as error:
+                errors.append(f"Company '{company.get('name')}': {error}")
+
     # 4. DISCORD_WEBHOOK_URL must be set (unless dry_run)
     if not dry_run:
         webhook = os.getenv("DISCORD_WEBHOOK_URL", "")

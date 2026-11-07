@@ -49,3 +49,14 @@ Do not claim that simply adding documentation updates production behavior. Never
 
 ## Handoff guard edge cases
 A functional change includes source files moved/deleted from `src/`, tests and ALL test fixtures (including HTML) in `tests/`. A PR guard must inspect BOTH old and new rename paths and reject deleted/empty required docs. This was identified in PR #19's review and corrected in [PR #21](https://github.com/KanujVerma/jobbie/pull/21), merged as `dbb309a6b30bbf90cf4fa2d887052467d8760720`. [CI #42331100940](https://github.com/KanujVerma/jobbie/actions/runs/42331100940): 727 passing tests; Codex finished review with no findings. The next code task is [P2-A issue #20](https://github.com/KanujVerma/jobbie/issues/20), after Phase 1's live gate.
+
+## Active implementation: Phase 2A
+Branch `feat/p2-a-public-job-boards`; issue #20. Code implements public-only
+Greenhouse/Ashby adapters using existing HTTPClient, fixed endpoints, safe URLs,
+bounded parsing/detail fallback, explicit date/compensation/source facts, and
+structured employment/description safety gates. `companies.yaml` remains byte
+identical: 15 configured, original 13 enabled. Local 803 tests passed. Remote
+CI, review and live-read receipts must be read from the actual PR, not assumed.
+The exact remaining verification and merge procedure is
+[PHASE-2A-VERIFY.md](agent-prompts/PHASE-2A-VERIFY.md). Do not repeat implementation
+or start P2-B; first close verification gaps on the existing P2-A branch.

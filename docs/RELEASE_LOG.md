@@ -32,3 +32,14 @@ Every functional PR must append a concise entry naming its PR slot, actual commi
 ## 2026-11-06: handoff documentation and follow-up gate hardening
 - [PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged `7458d18299b1ab36b25a221990ef2fd6d265252c` with canonical current state, cold-agent handoff, release log, accurate README and initial CI doc guard. 725 tests passed on PR CI; subsequent Codex review found test HTML and git-renamed source paths bypassing the guard.
 - [PR #21](https://github.com/KanujVerma/jobbie/pull/21) merged `dbb309a6b30bbf90cf4fa2d887052467d8760720` and actually changes `scripts/check_handoff_docs.py` + `tests/test_handoff_gate.py` to count HTML fixtures and include source deletion paths on rename (`--no-renames`). [CI #42331100940](https://github.com/KanujVerma/jobbie/actions/runs/42331100940) **727 passing**, Codex final review with no findings. This is documentation CI hardening, no new runtime job sources or code changes to the scanner.
+
+## 2026-11-06: P2-A implementation (branch, not a release claim)
+- Branch `feat/p2-a-public-job-boards`, baseline `d98afe7367`; issue #20.
+- Public Greenhouse/Ashby adapters; registry/config, optional immutable source
+  metadata, typed employment exclusions, preserved pay units/date meaning,
+  read-only smoke CLI and disabled example targets. No source code copied from
+  external repos; existing HTTPClient/BaseAdapter reused against official APIs.
+- Local full regression: **803 passed in 32.68s** (76 new adapter/pipeline tests).
+- Remote CI/review and live GET receipts remain to be captured on the PR.
+  No new production employers enabled, no Discord test messages, no historical
+  state edits. The temporary source-export workflow is removed before PR review.

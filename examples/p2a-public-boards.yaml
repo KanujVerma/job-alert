@@ -1,0 +1,26 @@
+# Read-only smoke fixtures using the API providers' own public careers boards.
+# NOT imported by production companies.yaml; disabled here to prevent accidents.
+# Evidence: docs/sources/P2-A_PUBLIC_APIS.md. No implied referral.
+companies:
+  - name: Greenhouse (read-only example)
+    adapter: greenhouse
+    enabled: false
+    network_priority: false
+    cohort: discovered
+    referral_status: unavailable
+    config:
+      board_token: greenhouse
+      board_url: https://job-boards.greenhouse.io/greenhouse
+      employer_careers_url: https://www.greenhouse.com/careers/opportunities
+      detail_limit: 0
+  - name: Ashby (read-only example)
+    adapter: ashby
+    enabled: false
+    network_priority: false
+    cohort: discovered
+    referral_status: unavailable
+    config:
+      board_name: Ashby
+      board_url: https://jobs.ashbyhq.com/Ashby
+      employer_careers_url: https://www.ashbyhq.com/careers
+      detail_limit: 0

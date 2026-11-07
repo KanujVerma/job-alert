@@ -11,7 +11,8 @@
 | P1-A/B/C (#12–14) | Merged | Historical synthetic fixtures, first review failure; see logs | Live manual Actions run #41915003368, 0 eligible at that time | Superseded by P1D/E |
 | P1-D1/D2/D3 (#15–17) | Merged | 654 tests in CI; final Codex review of #17 completed | Scheduled jobs subsequently delivered recorded alerts; see state heartbeats | Avoid treating those first Intel matches as verified suitable |
 | **P1-E (#18)** | **Merged** to `main` at `9c9365ae` | **716 passing tests**, [Actions #42329594922](https://github.com/KanujVerma/jobbie/actions/runs/42329594922) on state-reconciled branch; Codex completed review of same code at `69acbe23` with no major findings | **No post-merge eligible job alert proof recorded in this audit.** Source changes merged; wait for a scheduled run/authorized live check | Verify production scanner with new code and review actual new-grad relevance |
-| **Phase 2** | PLANNED; no adapters or catalogue added by this status update | Not applicable | Not deployed | **P2-A** Greenhouse/Ashby read-only adapters after Phase 1E operational gate |
+| **Phase 2A** | Implemented on `feat/p2-a-public-job-boards`; not yet merged/enabled | Local full suite: **803 passed**; remote CI/review pending | Read-only smoke pending; no new active employers | Latest source CI, code review and read-only receipt; Phase 1 live gate remains |
+| Phase 2B/C | PLANNED | Not applicable | Not deployed | Separate reviewed phases; no feeds/database in P2-A |
 | Phases 3–6 | PLANNED | Not applicable | Not deployed | Sequential dependencies in `docs/PHASES.md` |
 
 ## What actually works today
@@ -42,3 +43,13 @@ No new agent needs past ChatGPT conversation, locally stored resumes, or private
 
 ## Documentation continuity follow-up (2026-11-06)
 [PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged at `7458d18299b1ab36b25a221990ef2fd6d265252c` (725 tests), publishing current status, architecture and agent handoff. Codex subsequently found HTML-fixture and rename-path bypasses, fixed by [PR #21](https://github.com/KanujVerma/jobbie/pull/21), merged at `dbb309a6b30bbf90cf4fa2d887052467d8760720` with [727 passing CI tests](https://github.com/KanujVerma/jobbie/actions/runs/42331100940) and a completed Codex review **with no findings**. This changes documentation/CI only; P1-E's post-merge Job Alerts scan remains a separate live-verification gate. **Next code issue: [P2-A #20](https://github.com/KanujVerma/jobbie/issues/20)** after [Phase 1 #6](https://github.com/KanujVerma/jobbie/issues/6) is satisfied.
+
+## P2-A implementation checkpoint
+Owner explicitly requested implementation now. Greenhouse/Ashby adapters, typed
+source facts, config validators and regression tests are implemented in the
+P2-A branch. No existing employer config or production state has changed.
+The earlier Phase 1 live gate stays open; adapter staging does not claim it
+satisfied. Full local regression: 803 passed (727 existing + 76 new), 32.68s.
+See [P2-A implementation](implementation/P2-A.md),
+[source contracts](sources/P2-A_PUBLIC_APIS.md), and
+[Gemini verifier runbook](agent-prompts/PHASE-2A-VERIFY.md).

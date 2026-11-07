@@ -160,12 +160,16 @@ def build_job_embed(job: Job) -> dict:
     else:
         ref_val = ref_title
 
+    posted_label = {
+        "first_published": "📅 First published", "last_published": "📅 Last published",
+    }.get(job.posted_at_kind, "📅 Posted")
+
     fields = [
         {"name": "📍 Location", "value": sanitize_discord_text(job.location or "Not specified", 256), "inline": True},
         {"name": "🏢 Company", "value": sanitize_discord_text(company_field_val, 256), "inline": True},
         {"name": "📋 Verification", "value": verif_str, "inline": True},
         {"name": "🤝 Referral Status", "value": ref_val, "inline": True},
-        {"name": "📅 Posted", "value": posted_str, "inline": True},
+        {"name": posted_label, "value": posted_str, "inline": True},
         {"name": "🕐 Detected", "value": detected_str, "inline": True},
         {
             "name": "🏷️ Tags",
