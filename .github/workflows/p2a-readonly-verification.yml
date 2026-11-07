@@ -1,0 +1,46 @@
+name: P2A public boards (read-only)
+'on':
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/verify_public_boards.py'
+      - 'examples/p2a-public-boards.yaml'
+      - '.github/workflows/p2a-readonly-verification.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p2a-readonly-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public-read:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install runtime dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Read only the two explicit public vendor boards
+        env:
+          DISCORD_WEBHOOK_URL: ''
+          USER_AGENT_CONTACT_EMAIL: ''
+        run: |
+          python scripts/verify_public_boards.py --allow-network \
+            --manifest examples/p2a-public-boards.yaml \
+            --output "$RUNNER_TEMP/p2a-readonly-receipt.json"
+      - name: Preserve metadata-only verification receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p2a-readonly-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/p2a-readonly-receipt.json
+          if-no-files-found: warn
+          retention-days: 7
