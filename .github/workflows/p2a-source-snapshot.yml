@@ -1,0 +1,22 @@
+name: P2A source snapshot (temporary development only)
+'on':
+  push:
+    branches: [feat/p2-a-public-job-boards]
+    paths: [.github/workflows/p2a-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Export tracked public source only (no git credentials or environment)
+        run: git archive --format=tar.gz -o "$RUNNER_TEMP/jobbie-source.tar.gz" HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p2a-source-${{ github.sha }}
+          path: ${{ runner.temp }}/jobbie-source.tar.gz
+          retention-days: 1
