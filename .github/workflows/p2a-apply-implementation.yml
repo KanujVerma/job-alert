@@ -1,0 +1,67 @@
+name: P2A implementation staging (temporary)
+'on':
+  push:
+    branches: [feat/p2-a-public-job-boards]
+    paths: [.p2a-transport/READY]
+permissions:
+  contents: write
+jobs:
+  apply-tested-patch:
+    if: github.ref == 'refs/heads/feat/p2-a-public-job-boards'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/p2-a-public-job-boards
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify and apply exact staged implementation
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib, subprocess
+          expected = [
+              '246e878059ee3df0d339742b325086f5f7463df8717aff7a6d42a984613f9150',
+              '527749fb4bc0a41c530d579b53750a50915fc3ba70f357ac78f918ca61e0d818',
+              'ab9762d681ad08763cd61e7816b1ce08fb304fab2bd16538a2d5c9e380c85562',
+              '7fa6202af022db68de5ee8dbbc2b3ba7ce80fe67887a39227313203efb030fee',
+              '4aa9b8d938c9af2d669d45bab2ce911c6e24a414f95eea547a03954ee42a0d2d',
+          ]
+          pieces = []
+          for i, sha in enumerate(expected):
+              data = pathlib.Path(f'.p2a-transport/p{i}.patch').read_bytes()
+              assert hashlib.sha256(data).hexdigest() == sha, f'Patch {i} checksum mismatch'
+              pieces.append(data)
+          patch = b''.join(pieces)
+          assert len(patch) < 150000
+          assert hashlib.sha256(patch).hexdigest() == 'a4dd449a47e94324515e039beefc39c4254a53fd7fd0c7c2d081119bf916614d'
+          subprocess.run(['git','merge-base','--is-ancestor','d98afe73674925f8aaeb9d6fe21df0b077375689','HEAD'],check=True)
+          names = subprocess.run(['git','apply','--numstat','-'],input=patch,check=True,capture_output=True).stdout.decode().splitlines()
+          for record in names:
+              name = record.split('\t',2)[2]
+              assert name.startswith(('src/','tests/','docs/','examples/','scripts/')), name
+              assert '..' not in pathlib.PurePosixPath(name).parts
+          before = {name: hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() for name in ('companies.yaml','state/seen_jobs.json')}
+          subprocess.run(['git','apply','--check','-'],input=patch,check=True)
+          subprocess.run(['git','apply','-'],input=patch,check=True)
+          subprocess.run(['git','diff','--check'],check=True)
+          assert before == {name: hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() for name in before}
+          PY
+      - name: Verify implementation before source commit
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python main.py validate-config
+          python -m compileall -q src scripts
+          pytest -q
+      - name: Commit only implementation paths on the feature branch
+        run: |
+          test "${GITHUB_REF}" = 'refs/heads/feat/p2-a-public-job-boards'
+          git config user.name 'jobbie-implementation-bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src tests docs examples scripts
+          git diff --cached --check
+          git diff --cached --name-only
+          git commit -m 'feat(p2-a): implement tested public Greenhouse and Ashby discovery adapters'
+          git push origin HEAD:feat/p2-a-public-job-boards
