@@ -1,62 +1,47 @@
-# Agent restart / zero-chat-context handoff
+# Agent restart handoff: complete context without chat history
 
-**Authoritative fast entrypoint for any coding model or new maintainer.** If this document conflicts with current code, GitHub issues, or latest verified CI, do NOT guess: establish current facts and update this file in a documentation PR. It is NOT a substitute for `AGENTS.md` policies.
+Read this file and [STATUS.md](STATUS.md) before changing Jobbie. Then read [AGENTS.md](../AGENTS.md), [DECISIONS.md](DECISIONS.md), [PRODUCT.md](PRODUCT.md), [PHASES.md](PHASES.md), the active phase, [CONTRACTS.md](CONTRACTS.md), [SECURITY.md](SECURITY.md), [OPERATIONS.md](OPERATIONS.md), [EVALS.md](EVALS.md) and [OPEN_SOURCE.md](OPEN_SOURCE.md). Current runtime and future architecture are intentionally separate in IMPLEMENTED_ARCHITECTURE.md and ARCHITECTURE.md.
 
-## First 10 minutes: reproducible takeover
-1. Confirm actual GitHub repository **`KanujVerma/jobbie`** (not `job-alert`), visibility, default branch and commit. Existing legacy GitHub links may redirect; keep new refs canonical.
-2. Read `AGENTS.md` then `docs/STATUS.md` for audited phase/evidence; inspect open PRs and [phase tracker #6](https://github.com/KanujVerma/jobbie/issues/6).
-3. Read `docs/DECISIONS.md`, `docs/PRODUCT.md`, `docs/PHASES.md` and the CURRENT single-phase file `docs/phases/PHASE-N.md`; do not infer that planned features are implemented.
-4. Read `docs/ARCHITECTURE.md` and `docs/IMPLEMENTED_ARCHITECTURE.md` to separate actual runtime from future architecture; `docs/CONTRACTS.md` for data/status invariants.
-5. Check `.github/workflows/test.yml` and `job-alerts.yml` last runs; scheduled cron may be hours late. Read `state/seen_jobs.json` metadata only: do not reset/edit/force backfill in public Git state.
-6. Read `docs/OPERATIONS.md`, `docs/EVALS.md`, `docs/SECURITY.md` and `docs/OPEN_SOURCE.md` for live checks, data rights, privacy and rollback.
-7. Check git status and open PR heads before editing. State-only commits advance `main` regularly; use a branch and bring in latest main without overwriting state.
-8. Run `python main.py validate-config` and `pytest -q` (install `requirements-dev.txt`). Use targeted `python main.py run --company NAME --dry-run --verbose` only when allowed; **never use the live webhook just to prove a unit test**.
-9. Before writing code, identify one PR slot, acceptance fixture matrix, file interfaces, source permissions and rollback. Implement directly where tools allow; Gemini can independently check or handle genuine tool blockers.
-10. Open one reviewed PR with exact tests/results/SHAs and status. **Update `STATUS.md` + `HANDOFF.md` + `RELEASE_LOG.md` in the SAME PR.**
+## Current task: finish verification/merge of implemented P2-A
+- Repository: `KanujVerma/jobbie`; branch `feat/p2-a-public-job-boards`; **PR #23**, issue #20.
+- Source work is written, tested and publicly read-verified. Do NOT rebuild it or begin P2-B/C.
+- Reviewed source commit: `5e56bc668a6615002b5ac0fbe8592b2a84987162`.
+- **812 full-suite tests pass** at https://github.com/KanujVerma/jobbie/actions/runs/42342377756 .
+- Real read-only check https://github.com/KanujVerma/jobbie/actions/runs/42342377775 fetched **19 Greenhouse + 73 Ashby** jobs. All were excluded by the candidate classifier. This proves API fetch/normalization, not actual suitable openings or Discord delivery.
+- Codex review completed at that source commit with no findings: PR #23 summary comment 6702690334. Initial review caught inline HTML splitting required tenure; source fix plus seven regressions resolved it.
+- Config and state were unchanged by the smoke. New example employers are disabled and outside production `companies.yaml`.
+- **Remaining:** latest-head check/review consistency, Phase 1 issue #6 post-P1-E live gate, conditional merge, post-merge verification and accurate status update. PR is left open until those gates are satisfied.
+- Exact Gemini checklist: [agent-prompts/PHASE-2A-VERIFY.md](agent-prompts/PHASE-2A-VERIFY.md).
+- Evidence, including synthetic merge SHA explanation: [evidence/P2-A-VERIFICATION.md](evidence/P2-A-VERIFICATION.md).
 
-## Right now: exact next job
-- **Latest fully merged source work:** P1-E PR #18, source release commit `9c9365ae5f3d936b20fc8a90c7ac22a5e0c6ff42`; 716 tests in CI `42329594922` on a branch reconciled with then-current production state.
-- **Remaining verification:** Observe source code on a subsequent scheduled Actions run (post merge), confirm no runtime regression and no candidate alerts falsely labeled verified. Update Phase 1 status with actual run ID. If none exists, keep `BLOCKED_LIVE`, do not fake success.
-- **Next IMPLEMENTATION slot after this gate:** `P2-A` Greenhouse/Ashby read-only adapters; no new private datastore, AI, resume tailoring or email.
-- **P2-A exact tests:** official/public board token and employer-domain validation; pagination and 429/404/timeout behavior; full description, employment/location and compensation where supplied; direct apply URL; no hallucinated status; keeps original 13 network flag and stops on unpermitted source. See `docs/phases/PHASE-2.md`.
-- **Dependency rule:** P2-B after P2-A reviewed/merged; P2-C after P2-B; Phase 3 after Phase 2 released. Stop with a sourced blocker when integration rights or live proof cannot be obtained.
+## Takeover procedure
+1. Query GitHub repo metadata, current main HEAD, PR #23 state/head/base, checks, and all review discussions. Do not assume a branch is unmerged if someone already completed it.
+2. Fetch origin, inspect working tree; never discard local work. If PR is open, check out `feat/p2-a-public-job-boards` and fast-forward. If already merged, verify the real main merge and follow post-merge checks instead of duplicating work.
+3. Inspect `git diff origin/main...HEAD -- companies.yaml state/seen_jobs.json .github/workflows/job-alerts.yml`. The implementation must not alter these production files. Reconcile any newer main state commits without overwriting history.
+4. Run `python main.py validate-config`, `python -m compileall -q src scripts`, `pytest -q`, and `python scripts/check_handoff_docs.py --base origin/main --head HEAD` on the actual checkout using Python 3.12 and requirements-dev.txt.
+5. Read source docs and the actual PR's metadata-only live receipt. When code changes, rerun the live smoke with a fresh /tmp receipt and explicit `--allow-network`; do not substitute old fixture/receipt results for the new SHA.
+6. Verify issue #6's production prerequisite through actual scheduled run evidence containing P1-E code. No synthetic job alerts or state resets to manufacture proof. If unavailable, record BLOCKED_LIVE and leave PR open.
+7. Merge only green, independently reviewed code with gates satisfied; then confirm main CI and update the three handoff docs with actual merge evidence. Keep all newly added employers disabled absent separately authorized activation.
 
-## Code ownership / map
-| Area | Actual file | Contract |
+## As-built code map
+| Area | Files | Invariant |
 |---|---|---|
-| Jobs/config/CLI | `main.py`, `companies.yaml`, `src/config.py` | one job scan; 13 enabled original entries; dry-run no network sends/state writes |
-| Employer fetch | `src/adapters/*.py` | `BaseAdapter.fetch()` yields normalized immutable `Job` |
-| Job model | `src/models.py` | frozen `Job`, no fabricated compensation or citizenship status |
-| Eligibility | `src/filtering.py`, `src/eligibility.py`, `src/experience.py` | tri-state; cite evidence; bachelor's-path minimum; unknown -> review |
-| Notifications | `src/notifier.py` | webhook success only; star indicates original network, not actual referral |
-| Delivery + dedup | `src/storage.py`, `src/backfill.py` | canonical URL dedup; no unshown or failed-sends marked alerted |
-| Health | `src/health.py` | failed vs zero, actual scan durations and schedule gaps |
-| Tests | `tests/`, `.github/workflows/test.yml` | reproducible tests; CI result is not a live employer verification |
-| Future features | `docs/phases/PHASE-3.md` through `PHASE-6.md` | planned, absent until code/release evidence exists |
+| Legacy poll orchestration | main.py, companies.yaml, src/config.py | 13 enabled original companies; dry-run no state writes/webhooks |
+| Employer fetch | src/adapters/*.py | BaseAdapter + shared HTTPClient; failures are not fabricated empty success |
+| New public boards | greenhouse.py, ashby.py, public_board.py | GET-only fixed endpoints; listed jobs, safe IDs/URLs, bounded reads |
+| Source facts | src/models.py | frozen Job, optional fields preserve old constructors; explicit salary units |
+| Eligibility | filtering.py, eligibility.py, experience.py | tri-state; required qualifications and source employment override title guesses |
+| Delivery | notifier.py, storage.py, backfill.py | accurate date labels, canonical URL dedup, acknowledge only delivered visible links |
+| Health | src/health.py | actual failed/empty distinction and scheduler gap evidence |
+| P2-A tests | tests/test_public_board_adapters.py, test_public_board_html.py | 85 new cases plus existing 727-suite baseline |
+| Read-only live check | scripts/verify_public_boards.py, examples/p2a-public-boards.yaml | no production config enabling, no Notifier calls, hashes before/after |
 
-## Locked constraints
-- Personal single user. Dec 2026 UW–Madison BS CS, Jan 2027 target start; full-time US SWE/new-grad/related roles; no internships; $100k+ base is preferred, not hard requirement.
-- SF Bay highest geography priority; CA/NYC/Chicago/TX/FL alternatives; other eligible US jobs searchable.
-- US lawful permanent resident, no sponsorship needed; not a US citizen. Never infer clearance or naturalization.
-- Original 13 network-priority sources are enumerated in `docs/PRODUCT.md` and `companies.yaml`. All original statuses UNCONFIRMED; no fabricated referral availability.
-- Never commit secrets, raw resumes or family contacts. Private GitHub repo reading requires per-repo owner consent; reading is distinct from public disclosure.
-- No unapproved outbound messages/applications; LinkedIn sending manual; no hidden paid API costs. Jobright proprietary scraping/reverse engineering not authorized.
+## Locked product constraints
+Personal single user; Dec 2026 UW–Madison BS CS; January 2027 target start; full-time US new-grad/SWE/related technical roles; internships excluded. $100k annual base is preferred, not a hard cutoff. SF Bay Area first, other CA/NYC/Chicago/TX/FL prioritized. US authorized without sponsorship; permanent residence is not citizenship. Original 13 network sources retain a separate UNCONFIRMED referral status. Do not add unrelated titles just to increase match counts.
 
-## Handoff completion packet for every PR
-Write exact: phase/PR slot; what changed and why; reviewed SHAs; test command/output; CI URL; observed live run URL (or `BLOCKED_LIVE`); code/data contract deltas; provider/source rights; migration and rollback; remaining risk; next PR owner can start without asking questions. Log immutable history in `docs/RELEASE_LOG.md` and replace `docs/STATUS.md`'s live snapshot.
+Private resumes, family contacts, credentials and private GitHub code never go in public commits/logs. Private repository reading requires explicit allowlist approval; reading is not outward-disclosure approval. No auto-apply, unauthorized Jobright/LinkedIn scraping, unsolicited founder emails, or unapproved paid inference. Later phases use approved evidence for matching/tailoring and exact owner approval for outbound messages.
 
-Do not claim that simply adding documentation updates production behavior. Never schedule or promise background work without an authorized scheduler.
+## Future plan and change control
+P2-B permitted curated feeds, P2-C canonical catalogue/dedup/shadow migration, P3 private profile + Discord commands, P4 natural evidence-locked PDF/DOCX tailoring, P5 startup research/approved outreach, P6 application events/reminders/feedback. Each has a bounded phase document and PR sequence; none is deployed merely because a spec exists.
 
-## Handoff guard edge cases
-A functional change includes source files moved/deleted from `src/`, tests and ALL test fixtures (including HTML) in `tests/`. A PR guard must inspect BOTH old and new rename paths and reject deleted/empty required docs. This was identified in PR #19's review and corrected in [PR #21](https://github.com/KanujVerma/jobbie/pull/21), merged as `dbb309a6b30bbf90cf4fa2d887052467d8760720`. [CI #42331100940](https://github.com/KanujVerma/jobbie/actions/runs/42331100940): 727 passing tests; Codex finished review with no findings. The next code task is [P2-A issue #20](https://github.com/KanujVerma/jobbie/issues/20), after Phase 1's live gate.
-
-## Active implementation: Phase 2A
-Branch `feat/p2-a-public-job-boards`; issue #20. Code implements public-only
-Greenhouse/Ashby adapters using existing HTTPClient, fixed endpoints, safe URLs,
-bounded parsing/detail fallback, explicit date/compensation/source facts, and
-structured employment/description safety gates. `companies.yaml` remains byte
-identical: 15 configured, original 13 enabled. Local 803 tests passed. Remote
-CI, review and live-read receipts must be read from the actual PR, not assumed.
-The exact remaining verification and merge procedure is
-[PHASE-2A-VERIFY.md](agent-prompts/PHASE-2A-VERIFY.md). Do not repeat implementation
-or start P2-B; first close verification gaps on the existing P2-A branch.
+EVERY functional PR updates STATUS.md, HANDOFF.md and RELEASE_LOG.md together, plus any affected contracts/architecture/security/operations. CI checks missing/deleted/empty/symlinked handoff files, HTML fixture changes and renamed source paths. The guard checks presence, not factual truth. Record exact tests, reviewer SHA, actual source/run URLs, blockers and next step; no private chat memory is required.

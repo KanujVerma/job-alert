@@ -33,13 +33,16 @@ Every functional PR must append a concise entry naming its PR slot, actual commi
 - [PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged `7458d18299b1ab36b25a221990ef2fd6d265252c` with canonical current state, cold-agent handoff, release log, accurate README and initial CI doc guard. 725 tests passed on PR CI; subsequent Codex review found test HTML and git-renamed source paths bypassing the guard.
 - [PR #21](https://github.com/KanujVerma/jobbie/pull/21) merged `dbb309a6b30bbf90cf4fa2d887052467d8760720` and actually changes `scripts/check_handoff_docs.py` + `tests/test_handoff_gate.py` to count HTML fixtures and include source deletion paths on rename (`--no-renames`). [CI #42331100940](https://github.com/KanujVerma/jobbie/actions/runs/42331100940) **727 passing**, Codex final review with no findings. This is documentation CI hardening, no new runtime job sources or code changes to the scanner.
 
-## 2026-11-06: P2-A implementation (branch, not a release claim)
+## 2026-11-06: P2-A initial implementation checkpoint (historical)
 - Branch `feat/p2-a-public-job-boards`, baseline `d98afe7367`; issue #20.
-- Public Greenhouse/Ashby adapters; registry/config, optional immutable source
-  metadata, typed employment exclusions, preserved pay units/date meaning,
-  read-only smoke CLI and disabled example targets. No source code copied from
-  external repos; existing HTTPClient/BaseAdapter reused against official APIs.
-- Local full regression: **803 passed in 32.68s** (76 new adapter/pipeline tests).
-- Remote CI/review and live GET receipts remain to be captured on the PR.
-  No new production employers enabled, no Discord test messages, no historical
-  state edits. The temporary source-export workflow is removed before PR review.
+- Public Greenhouse/Ashby adapters; registry/config, optional immutable source metadata, typed employment exclusions, preserved pay units/date meaning, read-only smoke CLI and disabled example targets. No source code copied from external repos; existing HTTPClient/BaseAdapter reused against official APIs.
+- Local initial full regression: **803 passed in 32.68s**, before the final two URL regressions and seven HTML review regressions. Remote checks were pending at this initial checkpoint; the later verified record below supersedes that pending state.
+- No production employers enabled, Discord test messages or historical state edits. Temporary transfer workflows/files removed from final diff.
+
+## 2026-11-07 UTC / 2026-11-06 Chicago: P2-A verified source checkpoint
+- **Implementation PR #23:** https://github.com/KanujVerma/jobbie/pull/23 . Source `5e56bc668a6615002b5ac0fbe8592b2a84987162`; PR remains open for remaining operational/merge gates, not production-enabled.
+- **CI #42342377756:** https://github.com/KanujVerma/jobbie/actions/runs/42342377756 . **812 passed in 32.95s** (727 baseline + 85 new), config valid, documentation continuity PASS, Python 3.12.16.
+- **Live read-only #42342377775:** https://github.com/KanujVerma/jobbie/actions/runs/42342377775 . GET requests observed 19 Greenhouse and 73 Ashby postings; all were classifier-excluded on these smoke boards. Metadata receipt confirms unchanged config/state hashes, no Discord sends and production_enabled=false.
+- **Independent Codex review:** https://github.com/KanujVerma/jobbie/pull/23#issuecomment-6702690334 . Completed with no findings on exact runtime source `5e56bc6` after fixing inline HTML splitting numeric tenure from experience. Added seven regression cases before re-review.
+- **Durable proof:** [verification narrative](evidence/P2-A-VERIFICATION.md) and [raw receipt](evidence/P2-A-live-2026-11-07.json). Receipt source SHA `00111df...` is the synthetic PR merge checkout of 5e56bc6 into d98afe7, NOT a production merge.
+- **Remaining:** Phase 1 issue #6 post-P1-E runtime check, final-head consistency, conditional merge/post-merge CI, separately authorized employer activation. Existing original 13 company config and history unchanged. Gemini should follow [exact completion runbook](agent-prompts/PHASE-2A-VERIFY.md), not reimplement source or start Phase 2B/C.

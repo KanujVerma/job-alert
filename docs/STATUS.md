@@ -1,55 +1,34 @@
 # Jobbie canonical project status
 
-**Last human/tool audit:** 2026-11-06 (America/Chicago; GitHub commits use UTC). **This is a snapshot, not live telemetry.** Confirm `main`, open PRs, current Actions runs and current state before execution; `state/seen_jobs.json` receives automatic commits after each scheduled scan.
+**Audited:** 2026-11-06 America/Chicago (evidence timestamps extend into 2026-11-07 UTC). This is a snapshot, not continuous telemetry. Verify GitHub HEAD, PRs and Actions before acting.
 
-**Repository:** `KanujVerma/jobbie` (GitHub rename verified; repository ID `1339847701`). **Main source release inspected:** `9c9365ae5f3d936b20fc8a90c7ac22a5e0c6ff42` (P1-E PR #18 squash). Any subsequent main head may be a state-only commit rather than a code release. Identity is no longer blocked on rename.
+Canonical repository: **KanujVerma/jobbie**, ID 1339847701. Repository rename is complete. Current inspected main is `d98afe73674925f8aaeb9d6fe21df0b077375689`; later state-only commits may advance main.
 
-## Phase and confidence ledger
+## Active delivery: Phase 2A, PR #23
+- **PR:** https://github.com/KanujVerma/jobbie/pull/23
+- **Branch:** `feat/p2-a-public-job-boards`
+- **Status:** IMPLEMENTED, CI-TESTED, PUBLIC-API-READ-VERIFIED, INDEPENDENTLY REVIEWED. **Not merged or production-enabled at this checkpoint.**
+- **Reviewed runtime source:** `5e56bc668a6615002b5ac0fbe8592b2a84987162`. Subsequent documentation-only commits do not change those source blobs; verify this with Git before reusing evidence.
+- **Full CI:** https://github.com/KanujVerma/jobbie/actions/runs/42342377756 — **812 passed in 32.95s**, Python 3.12.16, config validation and documentation gate passed. Baseline was 727 tests; P2-A adds 85 parametrized regression cases.
+- **Live public reads:** https://github.com/KanujVerma/jobbie/actions/runs/42342377775 — 19 Greenhouse postings and 73 Ashby postings. All 92 were classified excluded on these provider-owned smoke boards. These counts are source connectivity/normalization proof, NOT new-grad matches.
+- **Side effects:** receipt verifies identical `companies.yaml` and `state/seen_jobs.json` hashes before/after; no Discord sender was constructed or called; examples remain disabled.
+- **Independent review:** Codex completed review of `5e56bc6` with `has_any_findings=false`, `has_unresolved_findings=false`. Receipt: https://github.com/KanujVerma/jobbie/pull/23#issuecomment-6702690334 . The initial inline-HTML tenure bug was fixed and seven regressions added before this review.
+- **Durable evidence:** [P2-A verification record](evidence/P2-A-VERIFICATION.md) and [unaltered live JSON](evidence/P2-A-live-2026-11-07.json). The JSON source SHA is GitHub's synthetic PR merge checkout, not a deployed production commit.
 
-| Milestone | Code | CI / review | Actual operation | Next gate |
-|---|---|---|---|---|
-| P1-A/B/C (#12–14) | Merged | Historical synthetic fixtures, first review failure; see logs | Live manual Actions run #41915003368, 0 eligible at that time | Superseded by P1D/E |
-| P1-D1/D2/D3 (#15–17) | Merged | 654 tests in CI; final Codex review of #17 completed | Scheduled jobs subsequently delivered recorded alerts; see state heartbeats | Avoid treating those first Intel matches as verified suitable |
-| **P1-E (#18)** | **Merged** to `main` at `9c9365ae` | **716 passing tests**, [Actions #42329594922](https://github.com/KanujVerma/jobbie/actions/runs/42329594922) on state-reconciled branch; Codex completed review of same code at `69acbe23` with no major findings | **No post-merge eligible job alert proof recorded in this audit.** Source changes merged; wait for a scheduled run/authorized live check | Verify production scanner with new code and review actual new-grad relevance |
-| **Phase 2A** | Implemented on `feat/p2-a-public-job-boards`; not yet merged/enabled | Local full suite: **803 passed**; remote CI/review pending | Read-only smoke pending; no new active employers | Latest source CI, code review and read-only receipt; Phase 1 live gate remains |
-| Phase 2B/C | PLANNED | Not applicable | Not deployed | Separate reviewed phases; no feeds/database in P2-A |
-| Phases 3–6 | PLANNED | Not applicable | Not deployed | Sequential dependencies in `docs/PHASES.md` |
+## Implemented P2-A functionality
+`GreenhouseAdapter` and `AshbyAdapter` use official public GET endpoints and the existing HTTPClient/registry. Shared validation bounds response size/job count/detail requests, prevents arbitrary endpoints/redirects and preserves unknown fields. Prospect/unlisted jobs are excluded. Posting IDs, descriptions, location options, explicit employment, published-versus-updated dates and salary units retain their source meaning. HTML inline formatting cannot disconnect years from an experience requirement. Structured non-full-time types and incomplete descriptions cannot become verified new-grad alerts just because of a title.
 
-## What actually works today
-- Python `main.py` CLI and GitHub Actions monitor, 13 enabled original sources + 2 disabled.
-- `src/adapters/`: Workday, Eightfold PCSX, Amazon, Apple, Microsoft Research, Lever, SmartRecruiters, Oracle and disabled experimental adapters.
-- `src/eligibility.py`, `src/experience.py`: deterministic tri-state new-grad eligibility and guarded bachelor-appropriate experience rules. `src/filtering.py` composes freshness/location/classification.
-- `src/notifier.py`: Discord outbound webhook, star for `network_priority`, no assumed referral.
-- `src/storage.py` and `src/backfill.py`: v2 historical state, URL dedup, pending/alerted, bounded batches of at most 10 visible backfill links acknowledged only after confirmed delivery.
-- `src/health.py`: adapter health, actual run heartbeat/gap detection.
-- `tests/` + `.github/workflows/test.yml`: automated regression tests.
+The normal filter, immutable Job model, notification-payload builder, review queue, config validator and dry-run pipeline are integrated. `scripts/verify_public_boards.py` produces metadata-only read receipts without calling the notification loop. No database, LLM, private documents, feed scraping or application submission was added.
 
-## Operational risks and known unknowns
-1. **Scheduling:** GitHub Actions nominal `*/15` cron has shown gaps of roughly 4–8 hours, including on November 6. Diagnostics detect but DO NOT fix drift. No guarantee of real-time alerts.
-2. **Plaid:** Lever source has returned HTTP 404. The adapter now records failure rather than healthy zero; find an authorized new endpoint in a narrowly scoped later PR, not an authenticated bypass.
-3. **Some enabled sources have zero results** and may legitimately have no listings or need source investigation. Do not fabricate job counts or hiring-frozen conclusions.
-4. **Evidence of user eligibility:** Earlier Intel alerts were recorded as successfully sent, but qualified bachelor-path requirements were questioned; P1-E addresses parser risk. It has not established that those old jobs were actually new-grad eligible.
-5. **No actual referral contact records**: all original 13 are priority network entries with referral status unconfirmed.
-6. **Private features unavailable:** Discord slash commands, private resume indexing, approved private GitHub repos, tailored resumes, startup outreach, Gmail sending and application tracker belong to future phases.
-7. **No $0 hosting additions approved/deployed** beyond the current public Actions bot; provider plans in docs are hypotheses pending quota/security/terms verification.
+## Existing production system and constraints
+- The original Python GitHub Actions monitor remains unchanged in production configuration: 15 configured sources, original 13 enabled, 2 disabled.
+- Original network priority: Micron, Salesforce, CrowdStrike, Intel, Applied Materials, Western Digital, SanDisk, Plaid, Oracle, Microsoft Research, Microsoft, Amazon, Apple. Network priority does not mean a referral has been submitted.
+- Phase 1 A/B/C (#12–14), D1/D2/D3 (#15–17), E (#18) code is merged. P1-E source commit is `9c9365ae5f3d936b20fc8a90c7ac22a5e0c6ff42`.
+- **Issue #6 still needs post-P1-E production verification.** The latest scheduled Job Alerts run observed in this audit is #42319860893 at `473ad343...`, before the P1-E merge. Do not use that run as post-P1-E evidence.
+- GitHub's nominal 15-minute cron has observed multi-hour gaps. Source health logging does not fix the scheduler. Plaid's known Lever 404 is a failure, not evidence of no employer openings.
+- Phases 2B/2C and 3–6 remain PLANNED. The two P2-A example boards are outside production config and disabled; no new ongoing job alerts are active.
 
-## Immediate next execution
-1. Check [PR #18](https://github.com/KanujVerma/jobbie/pull/18) merged, CI, and latest post-merge `Job Alerts` scheduled run. Record actual runtime evidence with its SHA/timestamp; distinguish 0 qualifying openings from broken alerts.
-2. Check and reconcile [Phase 1 tracker #6](https://github.com/KanujVerma/jobbie/issues/6) and historical open tickets #2–5, without misrepresenting review-only gates as complete.
-3. Then begin **Phase 2, P2-A** under `docs/phases/PHASE-2.md`: official read-only Greenhouse/Ashby adapters, source verification, fixture tests; preserve original 13, state and webhook. Phase 2B and 2C follow as separate reviewed PRs; no large rewrite or preemptive Cloudflare service.
-4. Update this file, `docs/HANDOFF.md`, and `docs/RELEASE_LOG.md` in EACH functional PR. CI enforces doc freshness; source-data state commits are exempt.
+## Exact remaining work for Gemini / next agent
+Follow [PHASE-2A-VERIFY.md](agent-prompts/PHASE-2A-VERIFY.md), using **PR #23**, not a new implementation branch. Inspect exact latest HEAD and review/check results; resolve any genuine new defect with tests, without rewriting already working code. Verify the upstream Phase 1 operational gate, then merge only if all gates allow. Keep new production employers disabled until separately source-verified and activation is authorized. Record actual merge and post-merge CI, or leave PR open with precise blockers. Do not start Phase 2B.
 
-No new agent needs past ChatGPT conversation, locally stored resumes, or private credentials merely to continue the current phase.
-
-## Documentation continuity follow-up (2026-11-06)
-[PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged at `7458d18299b1ab36b25a221990ef2fd6d265252c` (725 tests), publishing current status, architecture and agent handoff. Codex subsequently found HTML-fixture and rename-path bypasses, fixed by [PR #21](https://github.com/KanujVerma/jobbie/pull/21), merged at `dbb309a6b30bbf90cf4fa2d887052467d8760720` with [727 passing CI tests](https://github.com/KanujVerma/jobbie/actions/runs/42331100940) and a completed Codex review **with no findings**. This changes documentation/CI only; P1-E's post-merge Job Alerts scan remains a separate live-verification gate. **Next code issue: [P2-A #20](https://github.com/KanujVerma/jobbie/issues/20)** after [Phase 1 #6](https://github.com/KanujVerma/jobbie/issues/6) is satisfied.
-
-## P2-A implementation checkpoint
-Owner explicitly requested implementation now. Greenhouse/Ashby adapters, typed
-source facts, config validators and regression tests are implemented in the
-P2-A branch. No existing employer config or production state has changed.
-The earlier Phase 1 live gate stays open; adapter staging does not claim it
-satisfied. Full local regression: 803 passed (727 existing + 76 new), 32.68s.
-See [P2-A implementation](implementation/P2-A.md),
-[source contracts](sources/P2-A_PUBLIC_APIS.md), and
-[Gemini verifier runbook](agent-prompts/PHASE-2A-VERIFY.md).
+Every functional PR updates STATUS, HANDOFF and RELEASE_LOG together. CI enforces their presence; a reviewer must still verify statements against actual code, logs and source evidence.
