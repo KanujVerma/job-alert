@@ -3,7 +3,7 @@
 **All phases PLANNED at 2026-11-04.** PR IDs below are stable planning slots, NOT actual GitHub PR numbers. Never claim a slot is implemented merely because a spec or issue exists. Finish each phase and its release gate before starting another phase's code. Preserve legacy production alerts until explicitly migrated.
 
 ## Required cadence
-One coding-agent objective == ONE COMPLETE PHASE, containing its bounded sequential PR slots. Do not open 20 PRs at once. PRs within a phase are ordered. Every PR must have passing tests, reviewed diff, and documented integration proof before the next merge (or stop as BLOCKED). A phase counts as shipped only with applicable LIVE evidence; work does not automatically release on PR creation.
+One primary assistant executes ONE COMPLETE PHASE at a time, directly implementing code/tests/PRs when GitHub tools permit. Gemini is reserved for independent checking or genuinely blocked work. The committed /code prompt is a fallback, not a replacement for implementing available code. Each phase contains bounded sequential PR slots. Do not open 20 PRs at once. PRs within a phase are ordered. Every PR must have passing tests, reviewed diff, and documented integration proof before the next merge (or stop as BLOCKED). A phase counts as shipped only with applicable LIVE evidence; work does not automatically release on PR creation.
 
 | Phase | PR slots | User-facing value immediately after phase | Upstream |
 |---|---|---|---|

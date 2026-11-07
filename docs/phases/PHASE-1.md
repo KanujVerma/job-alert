@@ -133,3 +133,12 @@ Release only when P1-A/B/C merged AND phase smoke verified. If provider blocks a
 - **Release Sign-Off:** Phase 1D is fully verified, operational, and all three sequential PRs are merged to `main`.
 
 
+
+
+## P1-E targeted correctness patch (2026-11-05)
+Issue discovered after P1D: experience extraction chose the lowest unrelated tenure number, which can treat a master's/PhD or specific-tool pathway as satisfying a bachelor's minimum. A seven-day backfill summary could acknowledge more jobs than it displayed. The owner requested primary-assistant code delivery, with Gemini used for checking only when necessary.
+
+- Implementation PR: [#18](https://github.com/KanujVerma/jobbie/pull/18) (status must be read from GitHub; do not infer merged from this text).
+- Source: `src/experience.py` (conservative bachelor's-path requirements), `src/backfill.py` (bounded, resumable, delivered-link-only ACK), plus integration and adversarial tests.
+- Required gates: passing automated tests on exact head, independent review, proof no unseen backfill candidate is marked alerted, and real employer JD spot-check for the three historical Intel alerts. Do not change public production state or trigger `--rerun-backfill` without safe preview/approval.
+- Previous "Complete & Verified" claims describe P1D at its earlier SHA, not automatic approval of this corrective PR. Phase 2 is blocked until P1E passes.

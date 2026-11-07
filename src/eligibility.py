@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from src.models import Job
+from src.experience import assess_experience_requirements
 
 POLICY_VERSION = "2026-11-newgrad-v1"
 
@@ -32,6 +33,7 @@ REASON_GRADUATION_OUTSIDE_WINDOW = "GRADUATION_OUTSIDE_WINDOW"
 REASON_COHORT_2027_UNSPECIFIED = "COHORT_2027_UNSPECIFIED"
 REASON_AMBIGUOUS_LEVEL = "AMBIGUOUS_LEVEL"
 REASON_EXPERIENCE_UNSPECIFIED = "EXPERIENCE_UNSPECIFIED"
+REASON_EXPERIENCE_PATHWAY_UNKNOWN = "EXPERIENCE_PATHWAY_UNKNOWN"
 REASON_LOCATION_UNKNOWN = "LOCATION_UNKNOWN"
 REASON_WORK_AUTH_UNKNOWN = "WORK_AUTH_UNKNOWN"
 REASON_FULL_TIME_UNSPECIFIED = "FULL_TIME_UNSPECIFIED"
@@ -446,9 +448,11 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
         reasons.append(REASON_SECURITY_CLEARANCE_REQUIRED)
         evidence_spans.append(f"Security clearance required: {ev}")
 
+    experience_assessment = assess_experience_requirements(raw_lower)
+
     # 5. Degree Requirements Check
     phd_req_match = _PHD_REQUIRED_PATTERN.search(raw_lower)
-    if phd_req_match:
+    if phd_req_match and not experience_assessment.has_bachelors_alternative:
         # Verify it's not actually preferred
         ev = _find_evidence(sentences, _PHD_REQUIRED_PATTERN) or phd_req_match.group(0)
         if not _PHD_PREFERRED_PATTERN.search(ev):
@@ -457,7 +461,7 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
             evidence_spans.append(f"PhD required: {ev}")
 
     masters_req_match = _MASTERS_REQUIRED_PATTERN.search(raw_lower)
-    if masters_req_match:
+    if masters_req_match and not experience_assessment.has_bachelors_alternative:
         ev = _find_evidence(sentences, _MASTERS_REQUIRED_PATTERN) or masters_req_match.group(0)
         if not _MASTERS_PREFERRED_PATTERN.search(ev):
             reasons.append(REASON_MASTERS_REQUIRED)
@@ -493,34 +497,33 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
         reasons.append(REASON_ENTRY_LEVEL_TITLE)
         evidence_spans.append(f"Entry level title: {title}")
 
-    # Check years of experience in requirements
-    exp_matches = _YEARS_EXP_PATTERN.findall(raw_lower)
-    max_years_req = None
-    min_years_req = None
-    if exp_matches:
-        for match in exp_matches:
-            # match is (min_str, range_end_str, range_to_str)
-            y_min = int(match[0]) if match[0] else 0
-            if min_years_req is None or y_min < min_years_req:
-                min_years_req = y_min
-            if max_years_req is None or y_min > max_years_req:
-                max_years_req = y_min
+    # Evaluate the minimum that applies to a bachelor's degree holder, not
+    # the smallest number in an unrelated master's/PhD or skill pathway.
+    min_years_req = experience_assessment.minimum_years
+    if experience_assessment.ambiguous:
+        reasons.append(REASON_EXPERIENCE_PATHWAY_UNKNOWN)
+        unknowns.append("experience_pathway")
+        if experience_assessment.evidence:
+            evidence_spans.append(experience_assessment.evidence)
 
-        # If min years >= 4, it's senior / exceeds range
-        if min_years_req is not None and min_years_req >= 4:
-            is_senior = True
+    if min_years_req is not None:
+        if min_years_req >= 4:
             career_level = "senior"
             reasons.append(REASON_EXPERIENCE_EXCEEDS_RANGE)
-            ev = _find_evidence(sentences, _YEARS_EXP_PATTERN) or f"{min_years_req}+ years required"
-            evidence_spans.append(f"Experience required >= 4 yrs: {ev}")
-        elif min_years_req == 3:
+            evidence_spans.append(
+                f"Bachelor's/overall experience requires {min_years_req:g}+ years: "
+                f"{experience_assessment.evidence or 'source requirement'}"
+            )
+        elif min_years_req > 2:
             reasons.append(REASON_EXPERIENCE_EXCEEDS_RANGE)
-            ev = _find_evidence(sentences, _YEARS_EXP_PATTERN) or "3 years required"
-            evidence_spans.append(f"3 years experience: {ev}")
-        elif min_years_req is not None and min_years_req <= 2:
+            evidence_spans.append(
+                f"Above-2-year stretch requirement ({min_years_req:g} years): "
+                f"{experience_assessment.evidence or 'source requirement'}"
+            )
+        elif not experience_assessment.ambiguous:
             reasons.append(REASON_ZERO_TO_TWO_YEARS)
-            ev = _find_evidence(sentences, _YEARS_EXP_PATTERN) or f"{min_years_req} years required"
-            evidence_spans.append(f"0-2 years experience: {ev}")
+            if experience_assessment.evidence:
+                evidence_spans.append(f"0-2 years experience: {experience_assessment.evidence}")
 
     # 7. Graduation Window / 2027 Cohort Check
     # Check if 2027 is mentioned
@@ -552,7 +555,7 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
 
     # 8. Check for unspecified career level on bare general SWE
     if career_level == "unknown" and is_tech:
-        if not exp_matches and not is_new_grad and not is_entry:
+        if min_years_req is None and not experience_assessment.ambiguous and not is_new_grad and not is_entry:
             reasons.append(REASON_EXPERIENCE_UNSPECIFIED)
             reasons.append(REASON_FULL_TIME_UNSPECIFIED)
             unknowns.append("career_level")
@@ -591,11 +594,12 @@ def classify_eligibility(job: Job, filters: dict | None = None) -> EligibilityVe
             REASON_COHORT_2027_UNSPECIFIED,
             REASON_AMBIGUOUS_LEVEL,
             REASON_EXPERIENCE_UNSPECIFIED,
+            REASON_EXPERIENCE_PATHWAY_UNKNOWN,
             REASON_LOCATION_UNKNOWN,
             REASON_WORK_AUTH_UNKNOWN,
         ]
         # 3 years experience is a stretch review
-        if min_years_req == 3:
+        if min_years_req is not None and 2 < min_years_req < 4:
             review_triggers.append(REASON_EXPERIENCE_EXCEEDS_RANGE)
 
         is_review = any(t in reasons for t in review_triggers)

@@ -26,6 +26,8 @@ Dated 2026-11-04. "Locked" means an agent cannot change it without explicit owne
 | J-020 | LOCKED | Existing README and historical plans are legacy references, not authoritative proof of 2.0 implementation. Published "live" status requires actual operator evidence. |
 | J-021 | LOCKED | Phase 1D Quality and Release Hardening: Enforce strict new-grad eligibility (levels, locations, 0-2 yrs), confirmed alert delivery invariant, 7-day backfill freshness decoupling, review queue ranking/retention, and CI test automation. |
 
+| J-022 | LOCKED | Owner-selected implementation flow (2026-11-05): Primary assistant writes code, tests, reviewable PRs and operational checks directly when tools permit. Gemini is for independent review or genuinely blocked implementation, not the default proxy for work that can be done here. Continue one phase at a time with working releases. |
+
 ## Open decisions: default actions (not questions to invent answers for)
 1. Referral people/contact details: UNKNOWN. Maintain `unconfirmed` for all 13 until owner supplies and confirms. Do not request names as prerequisite to Phase 1.
 2. Exact local 2027 cohort cutoff: PER-JOB. Quote original requirements and mark review when ambiguous.
