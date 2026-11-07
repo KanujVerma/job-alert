@@ -39,3 +39,6 @@
 4. Update this file, `docs/HANDOFF.md`, and `docs/RELEASE_LOG.md` in EACH functional PR. CI enforces doc freshness; source-data state commits are exempt.
 
 No new agent needs past ChatGPT conversation, locally stored resumes, or private credentials merely to continue the current phase.
+
+## Documentation continuity follow-up (2026-11-06)
+[PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged as `7458d18299b1ab36b25a221990ef2fd6d265252c`, establishing the canonical handoff and initial docs CI gate (725 tests). Its post-merge Codex review identified omitted HTML test fixtures and renamed-source detection; corrective PR is being developed on `fix/docs-gate-fixtures-renames`. This is documentation tooling only, not a Phase 2 feature or proof of a post-P1-E live alert.

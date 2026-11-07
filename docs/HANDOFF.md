@@ -46,3 +46,6 @@
 Write exact: phase/PR slot; what changed and why; reviewed SHAs; test command/output; CI URL; observed live run URL (or `BLOCKED_LIVE`); code/data contract deltas; provider/source rights; migration and rollback; remaining risk; next PR owner can start without asking questions. Log immutable history in `docs/RELEASE_LOG.md` and replace `docs/STATUS.md`'s live snapshot.
 
 Do not claim that simply adding documentation updates production behavior. Never schedule or promise background work without an authorized scheduler.
+
+## Handoff guard edge cases
+A functional change includes source files moved/deleted from `src/`, tests and ALL test fixtures (including HTML) in `tests/`. A PR guard must inspect BOTH old and new rename paths and reject deleted/empty required docs. This was identified in PR #19's subsequent review and is fixed through PR `fix/docs-gate-fixtures-renames`. Verify merged status and green CI rather than treating this paragraph as proof of deployment.

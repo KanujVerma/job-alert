@@ -15,6 +15,8 @@ def test_all_source_changes_require_three_handoff_documents():
         "companies.yaml",
         "requirements-dev.txt",
         "tests/test_ashby.py",
+        "tests/fixtures/applied_digital.html",
+        "tests/fixtures/example.txt",
         "scripts/check_handoff_docs.py",
         ".github/workflows/job-alerts.yml",
         ".github/workflows/test.yml",
@@ -91,3 +93,36 @@ def test_symlink_handoff_cannot_bypass_guard(tmp_path):
     target.write_text("x" * 400)
     status.symlink_to(target)
     assert "docs/STATUS.md" not in existing_handoff_documents(tmp_path)
+
+
+def test_html_fixture_is_a_functional_change():
+    path = "tests/fixtures/applied_digital.html"
+    assert functional_source_changed(path)
+    assert missing_handoff_documents({path}) == set(REQUIRED)
+
+
+def test_git_mv_out_of_src_remains_detectable(tmp_path, monkeypatch):
+    """Disable rename folding so both the original src/ and new paths appear."""
+    import subprocess
+
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=tmp_path, check=True, text=True,
+            capture_output=True,
+        )
+
+    git("init", "-q")
+    git("config", "user.name", "Jobbie Test")
+    git("config", "user.email", "jobbie@example.invalid")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/scheduler.py").write_text("def run(): return 42\n")
+    git("add", ".")
+    git("commit", "-q", "-m", "source")
+    (tmp_path / "archive").mkdir()
+    git("mv", "src/scheduler.py", "archive/scheduler.py")
+    git("commit", "-q", "-m", "archive old source")
+    monkeypatch.chdir(tmp_path)
+    from scripts.check_handoff_docs import changed_paths
+    files = changed_paths("HEAD~1", "HEAD")
+    assert {"src/scheduler.py", "archive/scheduler.py"} <= files
+    assert missing_handoff_documents(files) == set(REQUIRED)

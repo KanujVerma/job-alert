@@ -28,3 +28,7 @@ This is an **append-only summary of verified engineering milestones**, not a cla
 
 ## Future release log protocol
 Every functional PR must append a concise entry naming its PR slot, actual commit/CI URLs and truthful stage: `IMPLEMENTED`, `TESTED`, `LIVE_VERIFIED`, `BLOCKED_LIVE`, or `RELEASED`. Never invent a final merge SHA before merge; use "pending actual squash" and update after merge. No secret values or private resume contents. Update `docs/STATUS.md` and `docs/HANDOFF.md` in the same PR; CI enforces three-file handoff continuity.
+
+## 2026-11-06: handoff documentation and follow-up gate hardening
+- [PR #19](https://github.com/KanujVerma/jobbie/pull/19) merged `7458d18299b1ab36b25a221990ef2fd6d265252c` with canonical current state, cold-agent handoff, release log, accurate README and initial CI doc guard. 725 tests passed on PR CI; subsequent Codex review found test HTML and git-renamed source paths bypassing the guard.
+- Follow-up branch `fix/docs-gate-fixtures-renames` addresses the two review findings with HTML fixture and real Git rename regression tests. **Do not claim it is merged or CI-green until GitHub confirms.** No production scanner state/logic changes.
