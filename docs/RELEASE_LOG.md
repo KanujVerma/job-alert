@@ -1,6 +1,6 @@
 # Engineering release and verification log
 
-**Docs-continuity hardening:** [PR #19](https://github.com/KanujVerma/jobbie/pull/19) implements the canonical handoff and per-functional-PR documentation gate. Codex review found that deleted handoff docs were initially accepted by changed-file inspection; fixed with head-tree existence checks and regression cases. This PR remains implementation evidence until actual merge is verified.
+**Docs-continuity hardening:** [PR #19](https://github.com/KanujVerma/jobbie/pull/19) implements the canonical handoff and per-functional-PR documentation gate. Codex review found that deleted handoff docs were initially accepted by changed-file inspection; fixed with head-tree existence checks and regression cases. Both PR #19 and its corrective PR #21 have now merged; verified CI and reviewer evidence is logged below. Neither PR changes live job alert behavior.
 
 This is an **append-only summary of verified engineering milestones**, not a claim that every implemented feature is currently working live. Each entry has a code/CI/review layer distinct from user-facing live operational evidence. More detailed logs are in GitHub PRs, Actions and phase documents. Runtime state-only commits are NOT separate product releases.
 
