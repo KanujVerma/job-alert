@@ -1,3 +1,7 @@
+# FUTURE ARCHITECTURE (PLANNED / EVOLUTIONARY)
+
+> For actual deployed modules, first read [IMPLEMENTED_ARCHITECTURE.md](IMPLEMENTED_ARCHITECTURE.md) and [STATUS.md](STATUS.md). Design targets below are not proof of deployed providers, databases, private features or production verification.
+
 # System architecture, boundaries and evolutionary path
 
 ## Non-negotiable delivery strategy

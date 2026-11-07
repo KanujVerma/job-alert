@@ -1,6 +1,6 @@
 # Operations, baseline, migration and incident runbook
 
-**Current (legacy) app only until Phase 1 is released.** Future/cloud features are not active in this repo merely because they are documented.
+**Currently: Phase 1 implemented on the original GitHub Actions + Discord webhook architecture.** See [STATUS.md](STATUS.md) for precise code and live confidence. Phase 2+ private/cloud services are NOT deployed merely because their design is documented.
 
 ## Pre-flight each coding session
 1. Confirm repo actual identity with `gh repo view` or GitHub API, default branch and HEAD; rename status at `docs/RENAME.md`.
@@ -49,7 +49,7 @@ Workflow path `.github/workflows/job-alerts.yml`; configured cron `*/15 * * * *`
 - Unexpected spend: disable provider, inspect quotas, maintain old no-AI scraper.
 
 ## Rename migration
-Follow `RENAME.md` after owner performs GitHub Settings rename; do not create replacement repo. Verify actual repo ID and job workflow, update local origin and external references. The planned target name itself is `jobbie`.
+GitHub repository is already renamed and verified to `jobbie` (same ID 1339847701). Follow `RENAME.md` for local remotes and leftover historical links; do not create another repository.
 
 ## Phase 1 Release Addendum (Jobbie 2.1)
 - **Release Status:** Jobbie 2.1 is deployed.
@@ -62,7 +62,7 @@ Follow `RENAME.md` after owner performs GitHub Settings rename; do not create re
 - **State Schema & Migration (`2026-11-newgrad-v1`):**
   - Version 2 format is preserved with additive fields: `policy_version`, `migrations`, `alerted_urls`, `review_queue`, and `heartbeat_history`.
   - State corruption detection: `StateCorruptionError` is raised on malformed state files, failing safe to prevent mass re-alert storms.
-  - Bounded Backfill: First run under `2026-11-newgrad-v1` identifies source-verified postings from the last 7 days and delivers a single Discord summary embed capped at 10 items instead of firehosing individual alerts.
+  - Bounded Backfill: P1-E processes at most 10 *visible* direct links per scan; only jobs in a confirmed-delivered summary are acknowledged. When more remain, migration stays pending for later scans. Never mark 25 jobs alerted after showing 10.
   - Cross-Run URL Deduplication: Normalized URLs (stripped of tracking tokens and fragments) are tracked in `state["alerted_urls"]` to suppress duplicate alerts across multiple sources (e.g. Microsoft and Microsoft Research) and across subsequent runs.
   - Review Queue & Daily Digest: Ambiguous roles requiring review are stored in `state["review_queue"]` and batched into a daily summary digest (capped at 10) instead of being dropped silently.
 - **Scheduler Reality & Cron Drift:**
@@ -77,3 +77,13 @@ Follow `RENAME.md` after owner performs GitHub Settings rename; do not create re
 
 ## Subsequent phase releases
 Every new provider/feature behind flag and isolated from legacy polling. P2 catalogue dual-write and 72h shadow; P3 command+upload authorized test; P4 owner-approved sample documents; P5 exact approved outbound test; P6 confirmed application/reminder. Before cutover, validate free quota/pricing and rollback. Update docs from actual deployment, not hypothetical diagrams.
+## Post-P1-E operations and evidence
+- Merged source change [PR #18](https://github.com/KanujVerma/jobbie/pull/18) `9c9365ae5f3d936b20fc8a90c7ac22a5e0c6ff42`; [CI run #42329594922](https://github.com/KanujVerma/jobbie/actions/runs/42329594922) 716 passing tests on equivalent source, Codex review completed with no findings.
+- A source merge and green tests are not evidence of a post-merge live job alert. Observe next scheduled run and compare its job classification + webhook confirmations before updating `STATUS.md` or marking P1E `LIVE_VERIFIED`.
+- For safe backfill auditing: never run `--rerun-backfill` on production merely to prove it works; use a private copy of state with synthetic fixtures and explicit dry-run first. The real production state is an append-only operational record; never delete/reinitialize.
+- For future changes, update `docs/HANDOFF.md`, `docs/STATUS.md` and `docs/RELEASE_LOG.md` **in every functional PR**. CI enforces these files were touched. After deployment record actual run ID, not only mock test counts.
+
+## Live source and outage distinctions
+- Plaid Lever has returned an HTTP 404 (failed source). Label it failed; do not claim the employer has no open jobs.
+- A healthy API returning 0 is separate from a failed API.
+- The scheduled cron has documented multi-hour gaps even with a 15-minute expression. Observability is not a scheduler fix; if timeliness is a new scope, introduce a measured, free, authorized scheduling alternative in its own reviewed PR, without breaking existing source polling.

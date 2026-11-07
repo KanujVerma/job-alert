@@ -1,3 +1,7 @@
+# ARCHIVED SNAPSHOT — November 4, 2026 (NOT CURRENT)
+
+> This file preserves the original bot audit for historical regression comparison. To resume work now, read [STATUS.md](STATUS.md), [HANDOFF.md](HANDOFF.md), and [IMPLEMENTED_ARCHITECTURE.md](IMPLEMENTED_ARCHITECTURE.md). Do not implement from claims in this old snapshot.
+
 # Verified baseline: legacy bot (inspection 2026-11-04)
 
 This is a CODE INSPECTION snapshot, not a complete live test of every adapter. All features outside the observed inventory are PLANNED, not deployed.

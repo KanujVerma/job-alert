@@ -1,13 +1,15 @@
 # Jobbie delivery roadmap — six stable releases / 20 PR slots
 
-**All phases PLANNED at 2026-11-04.** PR IDs below are stable planning slots, NOT actual GitHub PR numbers. Never claim a slot is implemented merely because a spec or issue exists. Finish each phase and its release gate before starting another phase's code. Preserve legacy production alerts until explicitly migrated.
+**Current live status must be read from [STATUS.md](STATUS.md)**. Phase 1 A/B/C/D and corrective PR #18 (P1-E) are implemented and merged. P1-E is CI-tested and code-reviewed; post-merge operational check remains separate. Phase 2 is the next planned phase and begins with P2-A only after that check. All other phases remain planned. GitHub issue/PR numbers are not the abstract P1-A slots.
+
+**Original schedule written 2026-11-04.** PR slot labels below are stable design identifiers, NOT GitHub PR numbers. Phase 1 is now implemented; consult STATUS for actual release confidence. Never claim a slot is implemented merely because a spec or issue exists. Finish each phase and its release gate before starting another phase's code. Preserve legacy production alerts until explicitly migrated.
 
 ## Required cadence
 One primary assistant executes ONE COMPLETE PHASE at a time, directly implementing code/tests/PRs when GitHub tools permit. Gemini is reserved for independent checking or genuinely blocked work. The committed /code prompt is a fallback, not a replacement for implementing available code. Each phase contains bounded sequential PR slots. Do not open 20 PRs at once. PRs within a phase are ordered. Every PR must have passing tests, reviewed diff, and documented integration proof before the next merge (or stop as BLOCKED). A phase counts as shipped only with applicable LIVE evidence; work does not automatically release on PR creation.
 
 | Phase | PR slots | User-facing value immediately after phase | Upstream |
 |---|---|---|---|
-| 1. New-grad + network alerts | P1-A new-grad rules, P1-B network priority + embeds, P1-C migration/reliability/cutover | Existing company alerts now appropriate for Dec 2026 new grad; original 13 marked distinctly | Current legacy code |
+| 1. New-grad + network alerts | P1-A/B/C implemented (#12–14), D1/D2/D3 hardening (#15–17), E correction (#18) merged | Existing company alerts now appropriate for Dec 2026 new grad; original 13 marked distinctly | Current legacy code |
 | 2. More jobs | P2-A Greenhouse/Ashby, P2-B permitted feeds/startups, P2-C canonical catalogue + dedup | Wider verified postings, original 13 retain priority | Phase 1 shipped |
 | 3. Personal search | P3-A private Discord API, P3-B private persistence/upload, P3-C candidate + approved GitHub evidence, P3-D ranking/search commands | Search and explanatory matches using private profile; legacy alerts unaffected by AI | Phase 2 shipped |
 | 4. Tailored resumes | P4-A fact ledger + model quality harness, P4-B source-preserving tailoring, P4-C PDF/DOCX renderer, P4-D review UI and release | Role-specific, natural, reviewable PDF/DOCX tied to a job, with grounded facts | Phase 3 shipped |

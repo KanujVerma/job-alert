@@ -1,6 +1,6 @@
 # Phase 1 executable contract — new-grad-only + network-priority alerts
 
-**User-facing release:** Jobbie 2.1. **At foundation creation: NOT IMPLEMENTED.**
+**User-facing release:** Jobbie 2.1. **Current code status:** P1-A/B/C, P1-D1/D2/D3 and P1-E merged. Most recent correction has 716 tests and Codex reviewed source; post-merge operational eligibility verification remains separate. See `docs/STATUS.md` for actual evidence. (Historical first-authoring text below is retained for audit.)
 **Scope:** existing 13 enabled monitored career-site entries only, no new providers, no AI, no candidate PDFs, no Discord slash commands, no Cloudflare, no external email, no private storage. Keep legacy Python webhook + state/CLI available. Three ordered PRs P1-A/P1-B/P1-C. Do not skip live evidence.
 
 ## Exact before-state (RECONFIRM on HEAD)
@@ -142,3 +142,8 @@ Issue discovered after P1D: experience extraction chose the lowest unrelated ten
 - Source: `src/experience.py` (conservative bachelor's-path requirements), `src/backfill.py` (bounded, resumable, delivered-link-only ACK), plus integration and adversarial tests.
 - Required gates: passing automated tests on exact head, independent review, proof no unseen backfill candidate is marked alerted, and real employer JD spot-check for the three historical Intel alerts. Do not change public production state or trigger `--rerun-backfill` without safe preview/approval.
 - Previous "Complete & Verified" claims describe P1D at its earlier SHA, not automatic approval of this corrective PR. Phase 2 is blocked until P1E passes.
+## P1-E merged release evidence (2026-11-06)
+- [PR #18](https://github.com/KanujVerma/jobbie/pull/18) merged to `main`, squash code commit `9c9365ae5f3d936b20fc8a90c7ac22a5e0c6ff42`.
+- New `src/experience.py` handles bachelor's-specific qualification alternatives; `src/eligibility.py` avoids lowest-tenure/skill false eligibility and sends uncertain requirements to review. `src/backfill.py` batches at most 10 visible links and acknowledges exactly delivered ones.
+- [CI #42329594922](https://github.com/KanujVerma/jobbie/actions/runs/42329594922) passed **716 tests** on branch reconciled with current production state; final Codex review of same code blobs at `69acbe23` completed with no major findings. Merge preserved up-to-date state.
+- Post-merge live scan evidence and independent relevance of historical Intel alerts were NOT established by code tests. See canonical [STATUS.md](../STATUS.md) before proceeding to Phase 2. Do not rerun full backfill on the live state to force sample alerts.
