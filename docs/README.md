@@ -1,38 +1,36 @@
-# Jobbie 2.0 documentation map
+# Jobbie technical and product documentation
 
-**Status at foundation creation (2026-11-04):** planning baseline only. Production remains the legacy `job-alert` GitHub Actions + Discord webhook bot. The repo rename to `jobbie` is NOT complete until confirmed in GitHub settings.
+**Start here if joining cold:** [Agent handoff](HANDOFF.md) -> [Current audited status](STATUS.md) -> [Agent rules](../AGENTS.md) -> [Roadmap](PHASES.md) -> active [Phase 2 contract](phases/PHASE-2.md), once the Phase 1E post-merge live gate is verified. GitHub source HEAD and Actions evidence override old snapshots.
 
-## Read first
-- [AGENTS.md](../AGENTS.md): mandatory coding-agent contract and stop rules.
-- [PRODUCT.md](PRODUCT.md): user-facing workflows, audience, behavior, non-goals.
-- [DECISIONS.md](DECISIONS.md): locked decisions, unknowns, change control.
-- [CURRENT_STATE.md](CURRENT_STATE.md): verified repo baseline, known weaknesses, no invented capabilities.
-- [ARCHITECTURE.md](ARCHITECTURE.md): now and later, service and failure boundaries.
-- [CONTRACTS.md](CONTRACTS.md): data types, allowed status transitions, idempotency.
-- [SECURITY.md](SECURITY.md): privacy, permission boundaries, external sends.
-- [EVALS.md](EVALS.md): objective quality and phase release gates.
-- [OPERATIONS.md](OPERATIONS.md): operating/runbook/rollback/monitoring.
-- [OPEN_SOURCE.md](OPEN_SOURCE.md): vetted projects, license and reuse checks.
-- [RESUME_TAILORING.md](RESUME_TAILORING.md): evidence-locked natural resume production.
-- [RENAME.md](RENAME.md): owner-only GitHub rename checklist and verification.
-- [PHASES.md](PHASES.md): full PR sequence and dependencies.
+## Sources of truth
+- [STATUS.md](STATUS.md): CURRENT code release, CI evidence, live operation confidence, blockers and next implementation.
+- [HANDOFF.md](HANDOFF.md): exact fresh-agent onboarding, reading order, commands, code map, next PR and completion packet.
+- [RELEASE_LOG.md](RELEASE_LOG.md): chronological PR/commit/CI/review record and remaining live checks.
+- [MAINTENANCE.md](MAINTENANCE.md): documentation update requirements, CI checks and conflict resolution.
+- [IMPLEMENTED_ARCHITECTURE.md](IMPLEMENTED_ARCHITECTURE.md): running implementation and module map.
+- [ARCHITECTURE.md](ARCHITECTURE.md): FUTURE evolutionary architecture and provider boundaries; not already deployed.
+- [PRODUCT.md](PRODUCT.md): audience, three recruiting paths, 13 original priority sources, UX requirements.
+- [DECISIONS.md](DECISIONS.md): locked policy, architecture choices and defaults.
+- [CONTRACTS.md](CONTRACTS.md): eligibility, canonical IDs, candidate evidence, document/outreach models.
+- [SECURITY.md](SECURITY.md): privacy and outbound authorization.
+- [EVALS.md](EVALS.md): test matrices and release gates.
+- [OPERATIONS.md](OPERATIONS.md): dry run, Actions, state safety, monitoring and rollback.
+- [OPEN_SOURCE.md](OPEN_SOURCE.md): permitted reusable code, candidate feeds and license checks.
+- [RESUME_TAILORING.md](RESUME_TAILORING.md): planned natural, evidence-locked tailored resume quality pipeline.
+- [RENAME.md](RENAME.md): verified repository rename and local-remote migration checklist.
+- [CURRENT_STATE.md](CURRENT_STATE.md): **historical 2026-11-04 baseline only**; do not treat as current implementation.
 
-## Execute exactly one phase
-- [Phase 1: new-grad + original network alerts](phases/PHASE-1.md) -> [short /code prompt](agent-prompts/PHASE-1-CODE.md).
-- [Phase 2: more sources and catalogue](phases/PHASE-2.md) -> [prompt](agent-prompts/PHASE-2-CODE.md).
-- [Phase 3: identity + matching + Discord commands](phases/PHASE-3.md) -> [prompt](agent-prompts/PHASE-3-CODE.md).
-- [Phase 4: resume tailoring](phases/PHASE-4.md) -> [prompt](agent-prompts/PHASE-4-CODE.md).
-- [Phase 5: startup sourcing + approved outreach](phases/PHASE-5.md) -> [prompt](agent-prompts/PHASE-5-CODE.md).
-- [Phase 6: application lifecycle + optimization](phases/PHASE-6.md) -> [prompt](agent-prompts/PHASE-6-CODE.md).
+## The six release contracts and bounded prompts
+| Phase | User value / current state | Detailed contract | Agent objective |
+|---|---|---|---|
+| 1 | Initial new-grad bot + P1D/P1E correctness fixes merged; post-P1E production check pending | [P1](phases/PHASE-1.md) | [P1 prompt](agent-prompts/PHASE-1-CODE.md) is historical |
+| 2 | Wider verified job discovery; **next, planned** | [P2](phases/PHASE-2.md) | [P2 prompt](agent-prompts/PHASE-2-CODE.md) |
+| 3 | Private profile and search; planned | [P3](phases/PHASE-3.md) | [P3 prompt](agent-prompts/PHASE-3-CODE.md) |
+| 4 | Natural fact-preserving tailoring; planned | [P4](phases/PHASE-4.md) | [P4 prompt](agent-prompts/PHASE-4-CODE.md) |
+| 5 | Startup scouting and explicitly approved outbound; planned | [P5](phases/PHASE-5.md) | [P5 prompt](agent-prompts/PHASE-5-CODE.md) |
+| 6 | Applications, reminders, feedback; planned | [P6](phases/PHASE-6.md) | [P6 prompt](agent-prompts/PHASE-6-CODE.md) |
 
-Older `docs/superpowers/` plans describe historical bot development; they are REFERENCE ONLY if they disagree with these newly approved product/phase contracts. This directory's planning documents do not supersede current code when describing implementation.
+**Archive:** older `docs/superpowers/` development plans are historical, not the release contract. For requests to implement a phase, read active phase docs and live GitHub first. Never start a later phase because an old conversation said it is ready.
 
-## Document change precedence
-1. User-authorized changes recorded in `DECISIONS.md` with date and rationale.
-2. Current product/security/contracts/phase docs.
-3. Executable tests and inspected implementation for observed behavior.
-4. Archived design plans and conversation notes.
-When two authoritative documents conflict, stop and reconcile via a documentation PR before changing behavior.
-
-## Phase status at authoring
-Every phase is `PLANNED`. Do not mark any phase complete until the independently verifiable gates in `EVALS.md` are met and the phase document records evidence.
+## Exact update cadence
+Every functional PR changes [STATUS](STATUS.md), [HANDOFF](HANDOFF.md) and [RELEASE_LOG](RELEASE_LOG.md); a pull-request CI check enforces that these files were touched. Scheduled production state-only commits are exempt. The guard does NOT prove truth: reviewer must still compare documentation to code, CI and live logs.

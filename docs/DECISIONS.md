@@ -4,7 +4,7 @@ Dated 2026-11-04. "Locked" means an agent cannot change it without explicit owne
 
 | ID | Status | Decision / implication |
 |---|---|---|
-| J-001 | LOCKED | Product/repo target name `jobbie` lowercase. Current GitHub name `job-alert` until owner completes rename; docs must not assert rename happened. |
+| J-001 | LOCKED | Canonical product/repository slug `jobbie` lowercase. GitHub repository rename verified (same ID 1339847701); historical `job-alert` links/remotes require migration. |
 | J-002 | LOCKED | Personal single-user Discord-first product; only owner's authenticated Discord ID may change private state. |
 | J-003 | LOCKED | Six independent, sequential phases. Phase 1 is deployable WITHOUT AI, Cloudflare, private storage, a new UI or additional job sources. |
 | J-004 | LOCKED | December 2026 graduate; January 2027 preferred start; full-time new-grad/entry-level/appropriate 0–2-year roles; selected explicit stretch roles; internships excluded from alerts. |
@@ -28,14 +28,18 @@ Dated 2026-11-04. "Locked" means an agent cannot change it without explicit owne
 
 | J-022 | LOCKED | Owner-selected implementation flow (2026-11-05): Primary assistant writes code, tests, reviewable PRs and operational checks directly when tools permit. Gemini is for independent review or genuinely blocked implementation, not the default proxy for work that can be done here. Continue one phase at a time with working releases. |
 
-## Open decisions: default actions (not questions to invent answers for)
+| J-023 | LOCKED | Documentation continuity: every functional source/config/test/workflow PR updates `docs/STATUS.md`, `docs/HANDOFF.md` and `docs/RELEASE_LOG.md` in the same PR; automated CI presence gate plus independent truth review. Historical state-only runtime commits are exempt. |
+| J-024 | LOCKED | No manual reset/delete/forced push of production `state/seen_jobs.json` to force notifications. Keep existing 13-source priority cohort; migrations/backfills idempotent and scoped. Repo historical notes about `rm state/seen_jobs.json` are superseded by `docs/OPERATIONS.md`. |
+
+## Open decisions: default actions
+ (not questions to invent answers for)
 1. Referral people/contact details: UNKNOWN. Maintain `unconfirmed` for all 13 until owner supplies and confirms. Do not request names as prerequisite to Phase 1.
 2. Exact local 2027 cohort cutoff: PER-JOB. Quote original requirements and mark review when ambiguous.
 3. Explicit owner Discord ID, webhook, Cloudflare credentials, email OAuth: SECRET/NOT PROVIDED IN REPO. Phase 1 reuses existing webhook; later phases must stop at credential-dependent live validation and give exact setup instructions, not forge success.
 4. Private repo allowlist: NONE until owner explicitly approves each repository; public repo evidence is still filtered for verified authorship and readiness.
 5. Salary of any particular listing: UNKNOWN without source-backed posted compensation.
 6. Whether owner can claim included API credits: UNKNOWN until verified; default no paid billing.
-7. Rename of GitHub repository: EXTERNAL OWNER ACTION. See RENAME.md.
+7. GitHub repository rename COMPLETED and verified. Individual computers' local git remotes still need operator verification; do not claim they were updated.
 
 ## Change process
-New entry: `J-021` onward, date, request/justification, contracts affected, PR, migration, test delta, rollback. Never silently "resolve" two conflicting instructions. A lower-priority implementation detail may be selected with explicit rationale and tests; a LOCKED policy conflict requires owner decision.
+New entries: `J-025` onward, date, request/justification, contracts affected, PR, migration, test delta, rollback. Never silently "resolve" two conflicting instructions. A lower-priority implementation detail may be selected with explicit rationale and tests; a LOCKED policy conflict requires owner decision.

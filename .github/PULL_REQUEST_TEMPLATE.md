@@ -1,5 +1,10 @@
 ## Jobbie PR evidence contract
 
+**Functional PR?** Update all three durable handoff files in the same PR. CI rejects code/config/test/workflow changes without them. See [docs/MAINTENANCE.md](../docs/MAINTENANCE.md).
+
+- [ ] Updated `docs/STATUS.md` with current audited reality, source HEAD, next step
+- [ ] Updated `docs/HANDOFF.md` so a new agent can resume with zero chat history
+- [ ] Appended evidence / blockers to `docs/RELEASE_LOG.md`
 - **PR slot / phase:** P?-? (see `docs/PHASES.md`)
 - **Base SHA / head SHA:**
 - **Scope and behavior before -> after:**

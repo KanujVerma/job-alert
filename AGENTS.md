@@ -1,17 +1,17 @@
 # Jobbie: mandatory agent operating contract
 
-Repository identity target: `KanujVerma/jobbie`. Until the owner completes GitHub Settings rename, the canonical existing repository is `KanujVerma/job-alert`; do not invent a successful rename. Relative repository links should work before and after rename.
+Canonical repository: `KanujVerma/jobbie` (rename verified, GitHub repository ID 1339847701). Old `job-alert` URLs are historical; do not create another repository. Verify GitHub metadata and remotes instead of assuming redirects update local settings.
 
 **Important:** This repository presently runs the legacy Python webhook scraper. Most Jobbie 2.0 capabilities are SPECIFIED, NOT IMPLEMENTED. Never conflate a document, issue, passing unit test, mock fixture, or planned feature with deployed behavior.
 
 ## Entry point / reading order (required for EVERY coding run)
 1. `AGENTS.md` (this file).
-2. `docs/README.md` -> `docs/DECISIONS.md` -> `docs/CURRENT_STATE.md`.
+2. `docs/HANDOFF.md` -> `docs/STATUS.md` -> `docs/README.md` -> `docs/DECISIONS.md`. `docs/CURRENT_STATE.md` is an explicitly archived November 4 baseline, not current status.
 3. `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/CONTRACTS.md`, `docs/SECURITY.md`.
 4. `docs/PHASES.md` and the exact phase document `docs/phases/PHASE-N.md`; `docs/RESUME_TAILORING.md` for Phase 4; `docs/OPEN_SOURCE.md` before importing code.
 5. `docs/OPERATIONS.md` and `docs/EVALS.md` for gates; read the exact phase prompt in `docs/agent-prompts/`.
 
-If a referenced file is missing, stale, contradictory, or cannot be fetched, report a blocker. **Never infer implementation from a roadmap.**
+If a referenced file is missing, stale, contradictory, or cannot be fetched, inspect actual code and GitHub evidence, then report and reconcile the blocker in a doc PR. **Never infer implementation from a roadmap.**
 
 ## Fixed scope and invariants
 - SINGLE user; DECEMBER 2026 CS graduation; full-time US roles starting January 2027 onward; no internship alerts.
@@ -31,7 +31,7 @@ If a referenced file is missing, stale, contradictory, or cannot be fetched, rep
 4. Preserve adapter contracts (`src/adapters/base.py`, `src/models.py`), current CLI entry points and webhook behavior except where the phase authorizes migration.
 5. Use fixture-driven tests for every new rule. Run `python main.py validate-config`, `python main.py run --dry-run --verbose` where safe, and `pytest` with documented results. A dry run must never send Discord alerts or persist state.
 6. Report EXACT observed commands, results, source links, workflow run IDs, test counts and failures. "Green" only when independently observed. No claimed production success from mocked tests.
-7. Every PR needs a before/after behavior table, affected contracts, regression proof, privacy check, rollout/rollback, and unresolved risks. Update docs in the same PR when a contract changes.
+7. Every PR needs a before/after behavior table, affected contracts, regression proof, privacy check, rollout/rollback, and unresolved risks. **EVERY functional source/config/workflow/test PR must update `docs/STATUS.md`, `docs/HANDOFF.md`, and `docs/RELEASE_LOG.md` in the SAME PR.** CI enforces the three-file update; see `docs/MAINTENANCE.md`. Also update impacted PRODUCT/ARCHITECTURE/CONTRACTS/PHASES/SECURITY/OPERATIONS docs when applicable.
 8. A phase is DONE only when its acceptance matrix is satisfied on the actual HEAD, required PRs are reviewed/merged, and the documented live verification happened. Otherwise status is `PARTIAL` or `BLOCKED`.
 
 ## No-hallucination rules
@@ -45,9 +45,11 @@ If a referenced file is missing, stale, contradictory, or cannot be fetched, rep
 ## Single-phase executor
 Use only the matching `docs/agent-prompts/PHASE-N-CODE.md` as the short `/code` objective; the detailed source of truth is the phase file. If platform limits a slash-goal to 4,000 characters, DO NOT paste all docs into the command; point the agent at the committed files.
 
-The requested human-controlled rename (`job-alert` -> `jobbie`) is documented in `docs/RENAME.md` and remains an external precondition until verified by GitHub repository metadata.
+The `job-alert` -> `jobbie` rename has been verified in GitHub metadata; see `docs/RENAME.md`. Local origin remotes on other computers must still be verified by their operators.
 
 
 ## Owner-selected development workflow (2026-11-05)
 The primary coding assistant MUST implement the requested current phase directly in this GitHub repository whenever its tools permit. Do not replace an implementable code change with repeated Gemini prompts, theoretical reviews, or speculative follow-up questions. Produce a reviewable PR, tests, measured CI, and code review. Gemini may independently REVIEW finished code or perform genuinely tool-blocked tasks, reporting real evidence; it is not the default primary implementer. Continue one releasable phase at a time, carrying forward previously released functionality. The committed /code objectives remain fallback entrypoints, not a substitute for writing code.
 
+## Durable handoff / documentation ownership
+The repository is the only required work context for future agents. Begin with `docs/HANDOFF.md` and `docs/STATUS.md`; do not ask for prior chat transcripts or require private resumes to implement public-source phases. Update handoff, status, and release log in each functional PR. After merge, separately record actual merge commit and live checks when independently observed. Do not claim automatic background documentation edits; the PR CI guard verifies document changes, and operators maintain factual truth.

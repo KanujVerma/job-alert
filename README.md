@@ -1,248 +1,56 @@
-# Jobbie — Career Opportunity Engine (Repository: KanujVerma/jobbie)
+# jobbie
 
-> **Status on 2026-11-04:** **Jobbie 2.1 (Phase 1) is released.** Monitors 15 configured career sites (13 enabled with verified `NETWORK PRIORITY`, 2 disabled) for U.S.-based full-time early-career software engineering roles for December 2026 CS graduates (January 2027 start onward). Strictly excludes internships and co-ops.
+**Personal, Discord-first new-grad job search assistant.** Canonical repository: [KanujVerma/jobbie](https://github.com/KanujVerma/jobbie).
 
-**Documentation Index:**
-- [AGENTS.md](AGENTS.md) · [Documentation index](docs/README.md) · [Locked decisions](docs/DECISIONS.md) · [Six-phase roadmap](docs/PHASES.md)
-- [Phase 1 executable contract](docs/phases/PHASE-1.md) · [Operations Runbook](docs/OPERATIONS.md) · [Canonical Contracts](docs/CONTRACTS.md)
+> **Current truth:** [docs/STATUS.md](docs/STATUS.md) · **Agent resume:** [docs/HANDOFF.md](docs/HANDOFF.md) · **Full spec:** [docs/PRODUCT.md](docs/PRODUCT.md) · **Roadmap:** [docs/PHASES.md](docs/PHASES.md). This README describes the CURRENT Python bot. Later phases are planned, not already working.
 
----
+## Working functionality
+- Python 3.12 job monitors for 15 configured employer sources, 13 enabled and 2 disabled; scheduled by best-effort GitHub Actions plus manual dispatch.
+- Tri-state role filter (`eligible`, `needs_review`, `excluded`) focused on full-time US entry/new-grad roles; internships/co-ops excluded from normal alerts. Degree/experience interpretation remains rule-based, not a guarantee of suitability.
+- Original-company `NETWORK PRIORITY` star displayed on eligible jobs. A network connection is NOT a confirmed referral; every original source defaults to `referral_status: unconfirmed`.
+- Discord outbound webhooks, company/source health records, bounded review digest, versioned seen-job history, canonical URL deduplication, and safe limited backfill.
+- Automated regression tests on PRs and main via `.github/workflows/test.yml`.
+- **P1-E corrected** bachelor's degree/tenure pathways and only marks visibly included, successfully delivered backfill jobs as alerted (PR #18, CI 716 passing tests). Its merged code must be separately observed in a subsequent scheduled production run before claiming live validation.
 
-## 1. What Jobbie 2.1 Does
+## Original 13 network-priority monitored sources (verified against `companies.yaml`)
+Micron; Salesforce; CrowdStrike; Intel; Applied Materials; Western Digital; SanDisk; Plaid; Oracle; Microsoft Research; Microsoft; Amazon; Apple.
 
-- **Target Persona:** Single candidate, December 2026 Computer Science graduate seeking full-time U.S. software engineering positions (starting January 2027 onward).
-- **Zero Internships / Co-ops:** Pure deterministic classifier strictly eliminates all internships, co-ops, senior/lead roles, and non-US positions.
-- **Network Priority:** The 13 enabled target companies carry permanent `⭐ NETWORK PRIORITY` tags. Unverified referral contacts and unverified salaries remain strictly unassumed.
-- **State Migration & Deduplication:** Versioned state schema (`2026-11-newgrad-v1`), safe 7-day bounded first-run backfill summary, cross-run canonical URL deduplication, review queue for ambiguous roles, and scheduler gap observability.
-- **Rollback Safety:** If needed, setting `filters.mode: legacy` returns to previous alert behavior while preserving all historical state.
+Two disabled historical configurations: Snowflake and Applied Digital. Microsoft and Microsoft Research are separate *source entries*, not two unrelated employers. Do not automatically tag discovered companies as having referrals.
 
----
-
-## 2. Monitored Companies (15 Configured, 13 Enabled)
-
-- **Network Priority (13 Enabled):**
-  - Amazon, Apple, Cisco, Datadog, IBM, Micron, Microsoft, Microsoft Research, MongoDB, Oracle, Plaid, Salesforce, Workday.
-- **Disabled (2 Configured):**
-  - Snowflake, Applied Digital (kept in configuration without network tags).
-
----
-
-## 2. Quick start (local)
-
+## Getting started (local)
 ```bash
-git clone <your-repo-url>
-cd job-alert
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt          # runtime only
-# pip install -r requirements-dev.txt    # + pytest, for running the test suite
-cp .env.example .env
-# Edit .env: set DISCORD_WEBHOOK_URL to your webhook
+git clone https://github.com/KanujVerma/jobbie.git
+cd jobbie
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
 python main.py validate-config
-python main.py test-discord
-python main.py run --dry-run --verbose
-python main.py run
+pytest -q
+python main.py run --company Microsoft --dry-run --verbose
 ```
 
-Run the tests with `pip install -r requirements-dev.txt && pytest`. CI installs
-`requirements.txt` only, since the workflow runs the bot rather than the suite.
+The dry run is read-only for the persisted state and does not send webhooks. Do not run a real alert scan with a new/empty state unless backfill and delivery are explicitly reviewed.
 
----
+Actual alerts require the existing `DISCORD_WEBHOOK_URL` secret configured in GitHub Actions. **Never expose webhook credentials** in public issues, commits or logs. `python main.py test-discord` sends a REAL message; use only with an owner-approved test destination.
 
-## 3. GitHub Actions setup
+## Actual deployment and cadence
+- Monitor: `.github/workflows/job-alerts.yml` uses a scheduled 15-minute cron expression and `workflow_dispatch`.
+- **This does not mean it runs every 15 minutes.** Observed gaps have reached many hours. No near-real-time or SLA claim is justified.
+- Production job history: `state/seen_jobs.json`. **Never delete or reset it to force new alerts**; that risks lost history or spam. Follow [Operations](docs/OPERATIONS.md) for safe migration, rollback and diagnostic procedures.
+- Diagnostics distinguish a failed fetch (e.g. Plaid Lever 404) from a genuinely empty source. Source outages should not stop other company checks.
+- The app currently sends **webhooks only**. It does NOT yet receive Discord commands or resume uploads, tailor resumes, send founder emails, or manage applications.
 
-1. Push this repo to GitHub. **Use a public repo:** Actions minutes are unlimited and free on public repos, while a private repo bills every run against a 2,000 min/month allowance — at a 15-minute cron (~96 runs/day, ~6 min each) that allowance is gone in about three days.
-2. Go to repo **Settings → Secrets and variables → Actions → New repository secret**
-3. Name: `DISCORD_WEBHOOK_URL`, Value: your Discord webhook URL
-4. Go to **Actions** tab → enable workflows if prompted
-5. Click **"Job Alerts" → "Run workflow"** (first manual run — this will silent-backfill)
-6. After first run, state is committed. Cron runs every ~15 minutes automatically.
+## Roadmap (ordered, one usable release at a time)
+1. **Phase 1 + hardening:** new-grad filtering, 13 source stars, release tests and safe backfill. Implemented; last corrective code merged at [PR #18](https://github.com/KanujVerma/jobbie/pull/18), subsequent production validation tracked in STATUS.
+2. **Phase 2:** expand verified job discovery with Greenhouse/Ashby, authorized feeds, persistent canonical catalogue. [Exact scope](docs/phases/PHASE-2.md).
+3. **Phase 3:** authenticated Discord commands, private resume/GitHub evidence, personalized matching.
+4. **Phase 4:** fact-preserving, natural role/company-specific resume tailoring, review and PDF/DOCX.
+5. **Phase 5:** startup research and *explicitly approved* outreach.
+6. **Phase 6:** application lifecycle, reminders, ranking feedback.
 
-> **Note:** GitHub free-tier cron can drift 5–15 minutes during peak hours. Alerts are **near real-time**, not instant.
+Existing public/third-party source access, license and data-rights constraints remain in force. No LinkedIn automation, unsupported resume claims, unpaid job applications or unapproved paid API activity.
 
----
+## Handoff to any new coding agent
+**Do not ask for this conversation.** Start at [AGENTS.md](AGENTS.md), then [docs/HANDOFF.md](docs/HANDOFF.md), [docs/STATUS.md](docs/STATUS.md), and the referenced phase contract. Verify live GitHub HEAD, issues, CI and run logs. Every functional PR must update [STATUS](docs/STATUS.md), [HANDOFF](docs/HANDOFF.md) and [RELEASE_LOG](docs/RELEASE_LOG.md) together; CI enforces this on pull requests.
 
-## 4. CLI reference
-
-```
-python main.py run                          # one cycle, exits
-python main.py run --dry-run                # no Discord, no state writes
-python main.py run --dry-run --verbose      # + detailed per-company output
-python main.py run --company Micron         # debug one adapter only
-python main.py run --firehose-first-run     # send all current matches (first run)
-python main.py run --summary-first-run      # send one summary embed (first run)
-python main.py daemon                       # local long-running loop
-python main.py validate-config             # check config + env vars
-python main.py test-discord                # send test embed to verify webhook
-```
-
----
-
-## 5. How adapters work
-
-Each company uses one adapter class in `src/adapters/`. The adapter's `fetch()` yields normalized `Job` objects. The filtering pipeline then decides which jobs match and which to alert on. To swap out a company's adapter, change the `adapter:` field in `companies.yaml` — no Python code changes needed.
-
-**Current adapters:** workday (5 companies), smartrecruiters (2), lever (1), oracle_careers (1), amazon_jobs (1), apple_jobs (1), microsoft_research (1) — all enabled; plus phenom_people (1) and generic_html (1), both currently disabled (section 12).
-
-`eightfold` and `eightfold_playwright` adapters are implemented, registered and tested, but no company currently uses them.
-
-> **Note:** Snowflake, Microsoft Research, and Applied Digital use SPA-based sites that are difficult to scrape without a browser. These adapters return empty results until the sites expose a stable public API. The bot will not error out for these — it logs a warning and continues.
-
----
-
-## 6. Adding / editing companies
-
-To add a new company:
-
-1. Find which career platform they use (Workday, Lever, Greenhouse, etc.)
-2. Add an entry to `companies.yaml`:
-   ```yaml
-   - name: NewCompany
-     adapter: workday   # or lever, smartrecruiters, etc.
-     enabled: true
-     config:
-       base_url: https://newcompany.wd1.myworkdayjobs.com
-       tenant: newcompany
-       site: External
-   ```
-3. Run `python main.py validate-config` to check
-4. Run `python main.py run --company NewCompany --dry-run --verbose` to test
-5. Push to GitHub
-
-To disable a company without removing it:
-```yaml
-- name: Micron
-  enabled: false   # temporarily disabled
-  ...
-```
-
-To add a platform not yet supported: create a new adapter in `src/adapters/yournew.py` extending `BaseAdapter`, register it in `src/adapters/__init__.py`, and reference it in `companies.yaml`.
-
----
-
-## 7. Per-company keyword overrides
-
-Each company supports optional overrides that merge with global filters:
-
-```yaml
-- name: Amazon
-  adapter: amazon_jobs
-  enabled: true
-  extra_include_keywords:
-    - "apprentice"
-    - "rotational"
-  extra_exclude_keywords:
-    - "senior"
-    - "principal"
-  extra_preferred_locations:
-    - "Nashville"
-  config:
-    ...
-```
-
----
-
-## 8. Resetting state
-
-**Locally:**
-```bash
-rm state/seen_jobs.json
-python main.py run   # silent backfill again
-```
-
-Or use `--firehose-first-run` to get all current matches sent to Discord.
-
-**On GitHub:**
-- Delete or edit `state/seen_jobs.json` via the GitHub web UI (or push a reset from local)
-- The next cron run will treat it as a first run (silent backfill by default)
-
----
-
-## 9. Discord webhook hygiene
-
-To regenerate your webhook:
-
-1. Discord → Server Settings → Integrations → Webhooks
-2. Click your webhook → Edit → "Regenerate" or delete and create a new one
-3. Update your local `.env` file
-4. Update the GitHub Actions secret (**Settings → Secrets and variables → Actions → DISCORD_WEBHOOK_URL → Update**)
-
-> **Never commit your real webhook URL** — `.env` is gitignored, `.env.example` has a placeholder only.
-
----
-
-## 10. Cron drift caveat
-
-GitHub Actions free-tier cron runs are queued at the scheduled time but may start 5–15 minutes late during peak hours. Alerts are **near real-time** (roughly every 15–30 minutes in practice), not instant.
-
----
-
-## 11. Playwright — JavaScript-Rendered Career Sites
-
-Some career sites are JavaScript-rendered SPAs. The hybrid approach boots the SPA
-once with a headless Chromium browser to capture session cookies and/or XHR responses,
-then uses the normal HTTP client for pagination.
-
-**Currently enabled:** No browser-enabled adapters are active. Snowflake (`phenom_people`
-adapter) is disabled pending a solution for its headless-hostile SPA. See section 13.
-
-### Local setup
-
-```bash
-# Step 1: Python package (already in requirements.txt)
-pip install -r requirements.txt
-
-# Step 2: Chromium binary (only needed to run browser-enabled adapters)
-python -m playwright install chromium
-```
-
-The Chromium binary is only needed in environments where a browser-enabled adapter is
-active. When all browser adapters are disabled, no browser is ever started.
-
-### Debug artifacts
-
-If the browser bootstrap fails (timeout, anti-bot block, network error),
-artifacts are saved to:
-
-```
-debug_artifacts/<Company>/<timestamp>/
-├── screenshot.png     # page state at failure
-├── page.html          # DOM dump (capped at 1 MB)
-└── error.txt          # exception type + message
-```
-
-The `debug_artifacts/` directory is gitignored and never committed.
-
-### Adding more Playwright adapters (future)
-
-1. Extend `BaseAdapter` and use `BrowserClient` from `src/browser.py` for the
-   bootstrap session (`bootstrap_session`) and `evaluate_fetch` for in-page API calls.
-2. Register in `src/adapters/__init__.py`.
-3. Set `use_playwright: true` in the company's `config` block in `companies.yaml`.
-
----
-
-## 12. Known disabled / limited companies
-
-| Company | Adapter | Status | Reason |
-|---|---|---|---|
-| Snowflake | `phenom_people` | Disabled | Phenom People SPA: headless automation can't trigger `searchJobs` API; `evaluate_fetch` is CORS-blocked; direct API calls require session cookies from browser handshake |
-| Applied Digital | `generic_html` | Disabled | Careers page embeds an ADP Workforce Now JS-rendered portal (`<recruitment-current-openings>`); no static job cards or public JSON endpoint available; could be re-enabled with a dedicated `adp_workforce_now` Playwright adapter |
-| Oracle | `oracle_careers` | Enabled (returns 0) | Oracle HCM API (`recruitingCEJobRequisitions`) is auth-gated; returns empty results for anonymous requests; needs a JS session handshake to return data |
-| Microsoft Research | `microsoft_research` | Enabled (returns 0) | Eightfold API returns HTTP 403 for unauthenticated requests; HTML fallback is a fully JS-rendered SPA; both paths blocked |
-| Plaid | `lever` | Enabled (returns 0) | Adapter is healthy; Plaid currently has no open roles listed on Lever (hiring freeze or slow period) |
-
----
-
-## 13. Troubleshooting
-
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| No Discord messages after setup | Webhook URL not set | Check `.env` / GitHub secret |
-| Duplicate alerts | State file deleted or corrupted | Run `--dry-run` first, check `state/seen_jobs.json` |
-| Company X never alerts | Adapter hitting auth/SPA wall | Check logs; some sites (Snowflake, MSR) require browser |
-| Discord 429 errors | Too many alerts at once | Bot throttles to 4/sec; cap is 25/run |
-| GitHub Actions fails with auth error | Missing `permissions: contents: write` | Check `.github/workflows/job-alerts.yml` |
-| State file merge conflict on Actions | Two concurrent runs | `concurrency: group: job-alerts` prevents this |
-| `validate-config` shows no adapter warnings | Expected when every configured adapter resolves | Check `src/adapters/__init__.py` imports |
-| Run killed at 20 minutes | A step hung — usually `playwright install` stalling on an apt mirror | Expected safety behaviour; the job caps at `timeout-minutes: 20` and the install retries 3× before failing |
+The current product, future architecture, contracts, evaluation, privacy, open-source reuse and rollback instructions are linked from [docs/README.md](docs/README.md).

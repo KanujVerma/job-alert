@@ -19,10 +19,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
+      - name: Ensure implementation PR includes a fresh agent handoff
+        if: github.event_name == 'pull_request'
+        run: python scripts/check_handoff_docs.py --base origin/main --head HEAD
       - name: Install dependencies
         timeout-minutes: 4
         run: |
