@@ -17,7 +17,7 @@ Other doc contracts to update if affected:
 - `README.md` when command examples, configured companies or deployed features change.
 
 ## Automated gate
-`scripts/check_handoff_docs.py` runs for ALL GitHub pull requests against `main` via `.github/workflows/test.yml`. It examines changed files. When any functional Python/config/workflow/dependency source changes, the PR must also modify `STATUS.md`, `HANDOFF.md`, and `RELEASE_LOG.md`. It rejects PRs that omit any of the three **or delete/rename/replace them with empty/symlinked files**. Presence is verified against the reviewed checkout, not merely Git's changed-file list. Synthetic tests check the detector.
+`scripts/check_handoff_docs.py` runs for ALL GitHub pull requests against `main` via `.github/workflows/test.yml`. It examines the full PR diff with rename detection disabled (preserving deleted source paths). Source and test directories, including HTML fixtures, count as functional. When any functional Python/config/workflow/dependency source changes, the PR must also modify `STATUS.md`, `HANDOFF.md`, and `RELEASE_LOG.md`. It rejects PRs that omit any of the three **or delete/rename/replace them with empty/symlinked files**. Presence is verified against the reviewed checkout, not merely Git's changed-file list. Synthetic tests check the detector.
 
 The gate intentionally excludes state-only `state/seen_jobs.json` commits (the live bot generates them automatically), and does not pretend to verify whether documentation statements are truthful. **Human or independent reviewer still checks claims and links**. A docs-only PR may update these records without changing runtime.
 
